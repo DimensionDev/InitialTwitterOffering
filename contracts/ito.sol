@@ -13,7 +13,7 @@ contract HappyTokenPool {
         mapping(address => bool) claimed_map;
     }
 
-    event CreationSuccess(
+    event FillSuccess(
         uint total,
         bytes32 id,
         address creator,
@@ -47,34 +47,34 @@ contract HappyTokenPool {
 
     function fill_pool (bytes32 _hash, uint _number, uint _duration, 
                         address[] memory _exchange_addrs, uint256[] memory _ratios,
-                        address _token_addr, uint _total_tokens)
+                        address _token_addr, uint _total_tokens, uint _limit)
     public payable {
         nonce ++;
-        require(_total_tokens >= _number, "001");
+        require(_total_tokens >= _number, "Number of total tokens needs to be larger than number of splits");
+        require(_limit < _total_tokens, "Limit needs to be less than the total supply");
 
-        require(IERC20(_token_addr).allowance(msg.sender, address(this)) >= _total_tokens, "009");
+        require(IERC20(_token_addr).allowance(msg.sender, address(this)) >= _total_tokens, "Insuffcient allowance");
+        require(_ratios.length == 2 * _exchange_addrs.length, "Size of ratios = 2 * size of exchange_addrs")
         transfer_token(_token_addr, msg.sender, address(this), _total_tokens);
 
         bytes32 _id = keccak256(abi.encodePacked(msg.sender, now, nonce, seed));
         Pool storage pool = pool_by_id[_id];
         pool.packed1 = wrap1(_hash, _total_tokens, _duration);
-        pool.packed2 = wrap2(_token_addr, _number);
+        pool.packed2 = wrap2(_token_addr, _limit);
         pool.exchange_addrs = _exchange_addrs;
         pool.ratios = _ratios;
-        emit CreationSuccess(_total_tokens, _id, msg.sender, now, _token_addr);
+        emit FillSuccess(_total_tokens, _id, msg.sender, now, _token_addr);
     }
 
     // It takes the unhashed password and a hashed random seed generated from the user
-    function claim(bytes32 id, string memory password, address _recipient, bytes32 validation) 
+    function claim(bytes32 id, string memory password, address _recipient, bytes32 validation, address exchange_addr) 
     public payable returns (uint claimed) {
 
         Pool storage pool = pool_by_id[id];
         address payable recipient = address(uint160(_recipient));
-        // Unsuccessful
-        require (unbox(pool.packed1, 208, 48) > now, "003");
-        uint total_number = unbox(pool.packed2, 240, 16);
-        uint claimed_number = unbox(pool.packed2, 224, 16);
-        require (claimed_number < total_number, "004");
+        require (unbox(pool.packed1, 208, 48) > now, "Expired");
+        uint remaining = unbox(pool.packed1, 240, 16);
+        require (claimed_number < total_number, "Out of Stock");
         require (uint256(keccak256(bytes(password))) >> 128 == unbox(pool.packed1, 0, 128), "006");
         require (validation == keccak256(toBytes(msg.sender)), "007");
 
@@ -147,12 +147,11 @@ contract HappyTokenPool {
         return _packed1;
     }
 
-    function wrap2 (address _token_addr, uint _number) internal view returns (uint256 packed2) {
+    function wrap2 (address _token_addr, uint _limit) internal view returns (uint256 packed2) {
         uint256 _packed2 = 0;
         _packed2 |= box(0, 160, uint256(_token_addr));  // token_address = 160 bits
         _packed2 |= box(160, 64, (uint256(keccak256(abi.encodePacked(msg.sender))) >> 192));  // creator.hash = 64 bit
-        _packed2 |= box(224, 16, 0);                     // claimed_number = 16 bits
-        _packed2 |= box(240, 16, _number);               // total_ number = 16 bits
+        _packed2 |= box(224, 32, _limit);                     // limit = 32 bits
         return _packed2;
     }
 
