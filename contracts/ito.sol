@@ -10,7 +10,7 @@ contract HappyTokenPool {
         uint256 packed2;            // total_number(16) claimed(16) creator(64) token_addr(160)
         address[] exchange_addrs;
         uint256[] ratios;
-        mapping(address => bool) claimed_map;
+        mapping(address => uint256) claimed_map;
     }
 
     event FillSuccess(
@@ -54,43 +54,44 @@ contract HappyTokenPool {
         require(_limit < _total_tokens, "Limit needs to be less than the total supply");
 
         require(IERC20(_token_addr).allowance(msg.sender, address(this)) >= _total_tokens, "Insuffcient allowance");
-        require(_ratios.length == 2 * _exchange_addrs.length, "Size of ratios = 2 * size of exchange_addrs")
-        transfer_token(_token_addr, msg.sender, address(this), _total_tokens);
+        require(_ratios.length == 2 * _exchange_addrs.length, "Size of ratios = 2 * size of exchange_addrs");
 
         bytes32 _id = keccak256(abi.encodePacked(msg.sender, now, nonce, seed));
         Pool storage pool = pool_by_id[_id];
-        pool.packed1 = wrap1(_hash, _total_tokens, _duration);
-        pool.packed2 = wrap2(_token_addr, _limit);
+        pool.packed1 = wrap1(_token_addr, _hash, _duration);
+        pool.packed2 = wrap2(_total_tokens, _limit);
         pool.exchange_addrs = _exchange_addrs;
         pool.ratios = _ratios;
+        transfer_token(_token_addr, msg.sender, address(this), _total_tokens);
         emit FillSuccess(_total_tokens, _id, msg.sender, now, _token_addr);
     }
 
     // It takes the unhashed password and a hashed random seed generated from the user
-    function claim(bytes32 id, string memory password, address _recipient, bytes32 validation, address exchange_addr) 
+    function claim(bytes32 id, string memory password, address _recipient, bytes32 validation, uint _exchange_addr_i) 
     public payable returns (uint claimed) {
 
         Pool storage pool = pool_by_id[id];
         address payable recipient = address(uint160(_recipient));
         require (unbox(pool.packed1, 208, 48) > now, "Expired");
-        uint remaining = unbox(pool.packed1, 240, 16);
-        require (claimed_number < total_number, "Out of Stock");
-        require (uint256(keccak256(bytes(password))) >> 128 == unbox(pool.packed1, 0, 128), "006");
-        require (validation == keccak256(toBytes(msg.sender)), "007");
+        require (uint256(keccak256(bytes(password))) >> 208 == unbox(pool.packed1, 160, 48), "Wrong Password");
+        require (validation == keccak256(toBytes(msg.sender)), "Validation Failed");
 
         uint claimed_tokens;
-        uint total_tokens = unbox(pool.packed1, 128, 80);
+        uint total_tokens = unbox(pool.packed2, 160, 48);
 
-        for(uint i = 0; i < pool.exchange_addrs.length; i ++) {
-            uint allowance = IERC20(pool.exchange_addrs[i]).allowance(msg.sender, address(this));
-            claimed_tokens += allowance * pool.ratios[i*2] / pool.ratios[i*2 + 1];   // TODO SAFEMATH
+        uint allowance = IERC20(pool.exchange_addrs[_exchange_addr_i]).allowance(msg.sender, address(this));
+        claimed_tokens = allowance * pool.ratios[_exchange_addr_i*2] / pool.ratios[_exchange_addr_i*2 + 1];   // TODO SAFEMATH
+
+        // Don't be greedy
+        if (claimed_tokens > unbox(pool.packed2, 208, 48)) {
+            claimed_tokens = unbox(pool.packed2, 208, 48);
         }
 
         // Penalize greedy attackers by placing duplication check at the very last
-        require (pool.claimed_map[_recipient] == false, "005");
+        require (pool.claimed_map[_recipient] == 0, "Already Claimed");
 
-        pool.claimed_map[_recipient] = true;
-        pool.packed2 = rewriteBox(pool.packed2, 224, 16, claimed_number + 1);
+        pool.packed2 = rewriteBox(pool.packed2, 160, 48, total_tokens - claimed_tokens);
+        pool.claimed_map[_recipient] = claimed_tokens;
 
 
         // Transfer the red packet after state changing
@@ -102,16 +103,11 @@ contract HappyTokenPool {
     }
 
     // Returns 1. remaining value 2. total number of red packets 3. claimed number of red packets
-    function check_availability(bytes32 id) external view returns (address token_address, uint balance, uint total, 
-                                                                    uint claimed, bool expired, bool ifclaimed) {
+    function check_availability(bytes32 id) external view returns (uint total, bool expired, uint claimed) {
         Pool storage pool = pool_by_id[id];
-        uint256 sender_hash = (uint256(keccak256(abi.encodePacked(msg.sender))) >> 192);
-        uint256 number = unbox(pool.packed2, 224, 8);
-        return (address(unbox(pool.packed2, 0, 160)), 
-                unbox(pool.packed1, 128, 80), 
-                unbox(pool.packed2, 232, 8),
-                unbox(pool.packed2, 224, 8), 
-                now > unbox(pool.packed1, 208, 48), 
+        return (
+                unbox(pool.packed2, 160, 48),           // total
+                now > unbox(pool.packed1, 208, 48),     // expired
                 pool.claimed_map[msg.sender]);
     }
 
@@ -139,19 +135,19 @@ contract HappyTokenPool {
 
 
     // helper functions
-    function wrap1 (bytes32 _hash, uint _total_tokens, uint _duration) internal view returns (uint256 packed1) {
+    function wrap1 (address _token_addr, bytes32 _hash, uint _duration) internal view returns (uint256 packed1) {
         uint256 _packed1 = 0;
-        _packed1 |= box(0, 128, uint256(_hash) >> 128); // hash = 128 bits (NEED TO CONFIRM THIS)
-        _packed1 |= box(128, 80, _total_tokens);        // total tokens = 80 bits = ~10^24.1 = ~10^6 18 decimals
+        _packed1 |= box(0, 160,  uint256(_token_addr)); // token_addr = 160 bits
+        _packed1 |= box(160, 48, uint256(_hash) >> 208); // hash = 128 bits (NEED TO CONFIRM THIS)
         _packed1 |= box(208, 48, (now + _duration));    // expiration_time = 48 bits (to the end of the world)
         return _packed1;
     }
 
-    function wrap2 (address _token_addr, uint _limit) internal view returns (uint256 packed2) {
+    function wrap2 (uint _total_tokens, uint _limit) internal view returns (uint256 packed2) {
         uint256 _packed2 = 0;
-        _packed2 |= box(0, 160, uint256(_token_addr));  // token_address = 160 bits
-        _packed2 |= box(160, 64, (uint256(keccak256(abi.encodePacked(msg.sender))) >> 192));  // creator.hash = 64 bit
-        _packed2 |= box(224, 32, _limit);                     // limit = 32 bits
+        _packed2 |= box(0, 160, uint256(msg.sender));  // creator_address = 160 bits
+        _packed2 |= box(160, 48, _total_tokens);       // total_tokens = 48 bits ~= 2.8e14
+        _packed2 |= box(208, 48, _limit);              // limit = 48 bits
         return _packed2;
     }
 
