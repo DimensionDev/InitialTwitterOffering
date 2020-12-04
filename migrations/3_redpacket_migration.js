@@ -1,5 +1,5 @@
-var HappyRedPacket = artifacts.require("HappyRedPacket");
+var HappyTokenPool = artifacts.require("HappyTokenPool");
 
 module.exports = function(deployer){
-    deployer.deploy(HappyRedPacket);
+    deployer.deploy(HappyTokenPool);
 };

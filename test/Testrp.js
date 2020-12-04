@@ -1,49 +1,52 @@
-const TestToken = artifacts.require("TestToken");
-const Test721Token = artifacts.require("Test721Token");
-const HappyRedPacket = artifacts.require("HappyRedPacket");
-var testtoken;
-var test721token;
-var redpacket;
-var redpacket_id;
-var _total_tokens
+const TestTokenA = artifacts.require("TestTokenA");
+const TestTokenB = artifacts.require("TestTokenB");
+const TestTokenC = artifacts.require("TestTokenC");
+const HappyTokenPool = artifacts.require("HappyTokenPool");
+var testtokenA;
+var testtokenB;
+var testtokenC;
+var pool;
+var pool_id;
+var _total_tokens;
+var _limit;
 
 contract("TestToken", accounts => {
     beforeEach(async () =>{
         console.log("Before ALL\n");
-        testtoken = await TestToken.deployed();
-        redpacket = await HappyRedPacket.deployed();
+        testtokenA = await TestTokenA.deployed();
+        testtokenB = await TestTokenB.deployed();
+        testtokenC = await TestTokenC.deployed();
+        pool = await HappyTokenPool.deployed();
         _total_tokens = 101;
+        _limit = 5;
     });
 
     it("Should return the HappyRedPacket contract creator", async () => {
-        const contract_creator = await redpacket.contract_creator.call();
+        const contract_creator = await pool.contract_creator.call();
         assert.equal(contract_creator, accounts[0]);
     });
 
-    it("Should return a redpacket id", async () => {
+    it("Should return a pool id", async () => {
 
-        const passwords = ["1", "2"];
-        const hashes = passwords.map(function (pass) {
-            return web3.utils.sha3(pass);
-        });
+        const password = "1";
+        const hash = web3.utils.sha3(password);
+
         const name = "cache";
         const msg = "hi";
-        const number = 3;
         const duration = 1200;
         const seed = web3.utils.sha3("lajsdklfjaskldfhaikl");
-        const token_type = 1;
         const token_address = testtoken.address;
         const token_ids = [];
         const total_tokens = _total_tokens;
+        const limit = _limit;
 
-        const creation_success_encode = 'CreationSuccess(uint256,bytes32,string,string,address,uint256,address,uint256[])';
-        const creation_success_types = ['uint256', 'bytes32', 'string', 'string','address', 'uint256', 'address', 'uint256[]'];
+        const fill_success_encode = 'FillSuccess(uint256,bytes32,address,uint256,address)';
+        const fill_success_types = ['uint256', 'bytes32', 'address', 'uint256', 'address'];
 
-        await testtoken.approve.sendTransaction(redpacket.address, total_tokens);
-        const creation_receipt = await redpacket.create_red_packet
-                                .sendTransaction(hashes[0], number, true, duration, seed, msg,
-                                                    name, token_type, token_address, total_tokens, token_ids);
-        const logs = await web3.eth.getPastLogs({address: redpacket.address, topics: [web3.utils.sha3(creation_success_encode)]});
+        await testtoken.approve.sendTransaction(pool.address, total_tokens);
+        const fill_receipt = await pool.fill_pool
+                                .sendTransaction(hash, duration, token_address, total_tokens, limit);
+        const logs = await web3.eth.getPastLogs({address: pool.address, topics: [web3.utils.sha3(creation_success_encode)]});
         redpacket_id = web3.eth.abi.decodeParameters(creation_success_types, logs[0].data)['1'];
         assert.notEqual(redpacket_id, null);
     });

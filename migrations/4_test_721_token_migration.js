@@ -1,4 +1,4 @@
-let Test721Token = artifacts.require('Test721Token');
+let testTokenB = artifacts.require('TestToken');
 
 module.exports = function(deployer){
   deployer.deploy(Test721Token, 20);
