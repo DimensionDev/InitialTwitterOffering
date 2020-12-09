@@ -8,6 +8,7 @@ contract HappyTokenPool {
     struct Pool {
         uint256 packed1;            // exp(48) total_tokens(80) hash(64) id(64) BIG ENDIAN
         uint256 packed2;            // total_number(16) claimed(16) creator(64) token_addr(160)
+        address creator;
         address[] exchange_addrs;
         uint256[] ratios;
         mapping(address => uint256) claimed_map;
@@ -35,6 +36,7 @@ contract HappyTokenPool {
     );
 
     uint32 nonce;
+    uint256 base_timestamp;
     address public contract_creator;
     mapping(bytes32 => Pool) pool_by_id;
     string constant private magic = "Former NBA Commissioner David St"; // 32 bytes
@@ -43,9 +45,10 @@ contract HappyTokenPool {
     constructor() public {
         contract_creator = msg.sender;
         seed = keccak256(abi.encodePacked(magic, now, contract_creator));
+        base_timestamp = 1606780800;
     }
 
-    function fill_pool (bytes32 _hash, uint _duration, 
+    function fill_pool (bytes32 _hash, uint _start, uint _end, 
                         address[] memory _exchange_addrs, uint256[] memory _ratios,
                         address _token_addr, uint _total_tokens, uint _limit)
     public payable {
@@ -56,11 +59,13 @@ contract HappyTokenPool {
 
         bytes32 _id = keccak256(abi.encodePacked(msg.sender, now, nonce, seed));
         Pool storage pool = pool_by_id[_id];
-        pool.packed1 = wrap1(_token_addr, _hash, _duration);
+        pool.packed1 = wrap1(_token_addr, _hash, _start, _end);
         pool.packed2 = wrap2(_total_tokens, _limit);
+        pool.creator = msg.sender;
         pool.exchange_addrs = _exchange_addrs;
         pool.ratios = _ratios;
-        transfer_token(_token_addr, msg.sender, address(this), _total_tokens);
+        //IERC20(token_address).transferFrom(msg.sender, address(this), _total_tokens);
+
         emit FillSuccess(_total_tokens, _id, msg.sender, now, _token_addr);
     }
 
@@ -70,26 +75,27 @@ contract HappyTokenPool {
 
         Pool storage pool = pool_by_id[id];
         address payable recipient = address(uint160(_recipient));
-        require (unbox(pool.packed1, 208, 48) > now, "Expired");
+        require (unbox(pool.packed1, 208, 24) + base_timestamp < now, "Not started.");
+        require (unbox(pool.packed1, 232, 24) + base_timestamp > now, "Expired.");
         require (uint256(keccak256(bytes(password))) >> 208 == unbox(pool.packed1, 160, 48), "Wrong Password");
         require (validation == keccak256(toBytes(msg.sender)), "Validation Failed");
 
 
         uint claimed_tokens;
-        uint total_tokens = unbox(pool.packed2, 160, 48);
+        uint total_tokens = unbox(pool.packed2, 0, 128);
 
         uint allowance = IERC20(pool.exchange_addrs[_exchange_addr_i]).allowance(msg.sender, address(this));
         claimed_tokens = allowance / pool.ratios[_exchange_addr_i*2 + 1] * pool.ratios[_exchange_addr_i*2];   // TODO SAFEMATH
 
         // Don't be greedy
-        if (claimed_tokens > unbox(pool.packed2, 208, 48)) {
-            claimed_tokens = unbox(pool.packed2, 208, 48);
+        if (claimed_tokens > unbox(pool.packed2, 128, 128)) {
+            claimed_tokens = unbox(pool.packed2, 128, 128);
         }
 
         // Penalize greedy attackers by placing duplication check at the very last
         require (pool.claimed_map[_recipient] == 0, "Already Claimed");
 
-        pool.packed2 = rewriteBox(pool.packed2, 160, 48, total_tokens - claimed_tokens);
+        pool.packed2 = rewriteBox(pool.packed2, 0, 128, total_tokens - claimed_tokens);
         pool.claimed_map[_recipient] = claimed_tokens;
 
 
@@ -105,9 +111,9 @@ contract HappyTokenPool {
     function check_availability(bytes32 id) external view returns (uint total, bool expired, uint claimed) {
         Pool storage pool = pool_by_id[id];
         return (
-                unbox(pool.packed2, 160, 48),           // total
-                now > unbox(pool.packed1, 208, 48),     // expired
-                pool.claimed_map[msg.sender]);
+                unbox(pool.packed2, 0, 128),                            // total
+                now > unbox(pool.packed1, 232, 24) + base_timestamp,    // expired
+                pool.claimed_map[msg.sender]);                          // claimed number
     }
 
     function destruct(bytes32 id) public {
@@ -134,25 +140,19 @@ contract HappyTokenPool {
 
 
     // helper functions
-    function wrap1 (address _token_addr, bytes32 _hash, uint _duration) internal view returns (uint256 packed1) {
+    function wrap1 (address _token_addr, bytes32 _hash, uint _start, uint _end) internal view returns (uint256 packed1) {
         uint256 _packed1 = 0;
         _packed1 |= box(160, 48, uint256(_hash) >> 208); // hash = 128 bits (NEED TO CONFIRM THIS)
-        require(validRange(256, _packed1), '1A');
         _packed1 |= box(0, 160,  uint256(_token_addr)); // token_addr = 160 bits
-        require(validRange(256, _packed1), '1B');
-        _packed1 |= box(208, 48, (now + _duration));    // expiration_time = 48 bits (to the end of the world)
-        require(validRange(256, _packed1), '1C');
+        _packed1 |= box(208, 24, _start);    // expiration_time = 48 bits (to the end of the world)
+        _packed1 |= box(232, 24, _end);    // expiration_time = 48 bits (to the end of the world)
         return _packed1;
     }
 
     function wrap2 (uint _total_tokens, uint _limit) internal view returns (uint256 packed2) {
         uint256 _packed2 = 0;
-        _packed2 |= box(0, 160, uint256(msg.sender));  // creator_address = 160 bits
-        require(validRange(256, _packed2), '2A');
-        _packed2 |= box(160, 48, _total_tokens);       // total_tokens = 48 bits ~= 2.8e14
-        require(validRange(256, _packed2), '2B');
-        _packed2 |= box(208, 48, _limit);              // limit = 48 bits
-        require(validRange(256, _packed2), '2C');
+        _packed2 |= box(0, 128, _total_tokens);       // total_tokens = 128 bits ~= 3.4e38
+        _packed2 |= box(128, 128, _limit);            // limit = 128 bits
         return _packed2;
     }
 
@@ -166,7 +166,7 @@ contract HappyTokenPool {
         return (base << position) >> (256 - size);
     }
 
-    function validRange(uint16 size, uint256 data) public pure returns(bool) { 
+    function validRange(uint16 size, uint256 data) internal pure returns(bool) { 
         if (data > 2 ** uint256(size) - 1) {
             return false;
         } else {
@@ -196,7 +196,7 @@ contract HappyTokenPool {
     
     // https://ethereum.stackexchange.com/questions/884/how-to-convert-an-address-to-bytes-in-solidity
     // 695 gas consumed
-    function toBytes(address a) public pure returns (bytes memory b) {
+    function toBytes(address a) internal pure returns (bytes memory b) {
         assembly {
             let m := mload(0x40)
             a := and(a, 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF)
