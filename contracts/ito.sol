@@ -19,7 +19,9 @@ contract HappyTokenPool {
         bytes32 id,
         address creator,
         uint creation_time,
-        address token_address
+        address token_address,
+        string name,
+        string message
     );
 
     event ClaimSuccess(
@@ -48,7 +50,7 @@ contract HappyTokenPool {
         base_timestamp = 1606780800;
     }
 
-    function fill_pool (bytes32 _hash, uint _start, uint _end, 
+    function fill_pool (bytes32 _hash, uint _start, uint _end, string name, string message,
                         address[] memory _exchange_addrs, uint256[] memory _ratios,
                         address _token_addr, uint _total_tokens, uint _limit)
     public payable {
@@ -66,7 +68,7 @@ contract HappyTokenPool {
         pool.ratios = _ratios;
         //IERC20(token_address).transferFrom(msg.sender, address(this), _total_tokens);
 
-        emit FillSuccess(_total_tokens, _id, msg.sender, now, _token_addr);
+        emit FillSuccess(_total_tokens, _id, msg.sender, now, _token_addr, name, message);
     }
 
     // It takes the unhashed password and a hashed random seed generated from the user
