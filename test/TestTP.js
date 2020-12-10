@@ -40,13 +40,15 @@ contract("HappyTokenPool", accounts => {
         var ratios = [1, 2000, 4000, 1];
         const total_tokens = _total_tokens;
         const limit = _limit;
+        const name = "Cache Miss";
+        const message = "Hello From the Outside";
 
-        const fill_success_encode = 'FillSuccess(uint256,bytes32,address,uint256,address)';
-        const fill_success_types = ['uint256', 'bytes32', 'address', 'uint256', 'address'];
+        const fill_success_encode = 'FillSuccess(uint256,bytes32,address,uint256,address,string,string)';
+        const fill_success_types = ['uint256', 'bytes32', 'address', 'uint256', 'address', 'string', 'string'];
 
-        await testtokenA.approve.sendTransaction(pool.address, total_tokens);
+        await testtokenA.approve.sendTransaction(pool.address, total_tokens, {'from': accounts[0]});
         const fill_receipt = await pool.fill_pool
-                                .sendTransaction(hash, 0, 2592000,
+                                .sendTransaction(hash, 0, 2592000, name, message,
                                                 exchange_addrs, ratios,
                                                 tokenA_address, total_tokens, limit);
         const logs = await web3.eth.getPastLogs({address: pool.address, topics: [web3.utils.sha3(fill_success_encode)]});
@@ -57,9 +59,10 @@ contract("HappyTokenPool", accounts => {
     it("Should allow one to exchange 2 tokenB for 1 token A.", async () => {
         const amount = web3.utils.toBN(3*1e18);
         await testtokenB.approve.sendTransaction(accounts[1], amount);
-        //await testtokenB.transfer.sendTransaction(accounts[1], 2*1e18);
+        await testtokenB.transfer.sendTransaction(accounts[1], amount);
         const validation = web3.utils.sha3(accounts[1]);
-        const claim_receipt = await pool.claim.sendTransaction(pool_id, "1", accounts[1], validation, 0, {'from': accounts[1]});
+        await testtokenB.approve.sendTransaction(pool.address, amount, {'from': accounts[1]});
+        const claim_receipt = await pool.claim.sendTransaction(pool_id, "1", accounts[1], validation, 0, amount, {'from': accounts[1]});
 
         const claim_success_encode = "ClaimSuccess(bytes32,address,uint256,address)";
         const claim_success_types = ['bytes32', 'address', 'uint256', 'address'];
@@ -71,9 +74,10 @@ contract("HappyTokenPool", accounts => {
     it("Should allow one to exchange 1 tokenC for 2 token A.", async () => {
         const amount = web3.utils.toBN(1.5*1e14);
         await testtokenC.approve.sendTransaction(accounts[2], amount);
-        //await testtokenC.transfer.sendTransaction(accounts[2], 1*1e18);
+        await testtokenC.transfer.sendTransaction(accounts[2], amount);
         const validation = web3.utils.sha3(accounts[2]);
-        const claim_receipt = await pool.claim.sendTransaction(pool_id, "1", accounts[2], validation, 1, {'from': accounts[2]});
+        await testtokenC.approve.sendTransaction(pool.address, amount, {'from': accounts[2]});
+        const claim_receipt = await pool.claim.sendTransaction(pool_id, "1", accounts[2], validation, 1, amount, {'from': accounts[2]});
 
         const claim_success_encode = "ClaimSuccess(bytes32,address,uint256,address)";
         const claim_success_types = ['bytes32', 'address', 'uint256', 'address'];

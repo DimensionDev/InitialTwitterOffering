@@ -1,9 +1,12 @@
+const BigNumber = require('bignumber.js');
+
 let TestTokenA = artifacts.require('TestTokenA');
 let TestTokenB = artifacts.require('TestTokenB');
 let TestTokenC = artifacts.require('TestTokenC');
 
 module.exports = function(deployer){
-    deployer.deploy(TestTokenA, 1000000);
-    deployer.deploy(TestTokenB, 1000000);
-    deployer.deploy(TestTokenC, 1000000);
+    const amount = new BigNumber('2e21').toFixed();
+    deployer.deploy(TestTokenA, amount);
+    deployer.deploy(TestTokenB, amount);
+    deployer.deploy(TestTokenC, amount);
 };

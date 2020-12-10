@@ -37,6 +37,10 @@ contract HappyTokenPool {
         uint remaining_balance
     );
 
+    event Test(
+        uint256 a
+    );
+
     uint32 nonce;
     uint256 base_timestamp;
     address public contract_creator;
@@ -50,7 +54,7 @@ contract HappyTokenPool {
         base_timestamp = 1606780800;
     }
 
-    function fill_pool (bytes32 _hash, uint _start, uint _end, string name, string message,
+    function fill_pool (bytes32 _hash, uint _start, uint _end, string memory name, string memory message,
                         address[] memory _exchange_addrs, uint256[] memory _ratios,
                         address _token_addr, uint _total_tokens, uint _limit)
     public payable {
@@ -66,13 +70,14 @@ contract HappyTokenPool {
         pool.creator = msg.sender;
         pool.exchange_addrs = _exchange_addrs;
         pool.ratios = _ratios;
-        //IERC20(token_address).transferFrom(msg.sender, address(this), _total_tokens);
+        IERC20(_token_addr).transferFrom(msg.sender, address(this), _total_tokens);
 
         emit FillSuccess(_total_tokens, _id, msg.sender, now, _token_addr, name, message);
     }
 
     // It takes the unhashed password and a hashed random seed generated from the user
-    function claim(bytes32 id, string memory password, address _recipient, bytes32 validation, uint _exchange_addr_i) 
+    function claim(bytes32 id, string memory password, address _recipient, 
+                   bytes32 validation, uint256 _exchange_addr_i, uint256 input_total) 
     public payable returns (uint claimed) {
 
         Pool storage pool = pool_by_id[id];
@@ -86,8 +91,18 @@ contract HappyTokenPool {
         uint claimed_tokens;
         uint total_tokens = unbox(pool.packed2, 0, 128);
 
-        uint allowance = IERC20(pool.exchange_addrs[_exchange_addr_i]).allowance(msg.sender, address(this));
-        claimed_tokens = allowance / pool.ratios[_exchange_addr_i*2 + 1] * pool.ratios[_exchange_addr_i*2];   // TODO SAFEMATH
+        address exchange_addr = pool.exchange_addrs[_exchange_addr_i];
+        uint256 ratioA = pool.ratios[_exchange_addr_i*2];
+        uint256 ratioB = pool.ratios[_exchange_addr_i*2 + 1];
+        emit Test(input_total);
+        if (exchange_addr == 0x0000000000000000000000000000000000000000) {
+            require(msg.value == input_total, 'No enough ether.');
+            claimed_tokens = SafeMath.mul(SafeMath.div(input_total, ratioB), ratioA);
+        } else {
+            uint allowance = IERC20(exchange_addr).allowance(msg.sender, address(this));
+            require(allowance == input_total, 'No enough allowance.');
+            claimed_tokens = SafeMath.mul(SafeMath.div(input_total, ratioB), ratioA);
+        }
 
         // Don't be greedy
         if (claimed_tokens > unbox(pool.packed2, 128, 128)) {
@@ -102,6 +117,7 @@ contract HappyTokenPool {
 
 
         // Transfer the token after state changing
+        IERC20(exchange_addr).transferFrom(msg.sender, address(this), input_total);
         transfer_token(address(unbox(pool.packed1, 0, 160)), address(this), recipient, claimed_tokens);
 
         // Claim success event
@@ -142,7 +158,7 @@ contract HappyTokenPool {
 
 
     // helper functions
-    function wrap1 (address _token_addr, bytes32 _hash, uint _start, uint _end) internal view returns (uint256 packed1) {
+    function wrap1 (address _token_addr, bytes32 _hash, uint _start, uint _end) internal pure returns (uint256 packed1) {
         uint256 _packed1 = 0;
         _packed1 |= box(160, 48, uint256(_hash) >> 208); // hash = 128 bits (NEED TO CONFIRM THIS)
         _packed1 |= box(0, 160,  uint256(_token_addr)); // token_addr = 160 bits
@@ -151,7 +167,7 @@ contract HappyTokenPool {
         return _packed1;
     }
 
-    function wrap2 (uint _total_tokens, uint _limit) internal view returns (uint256 packed2) {
+    function wrap2 (uint _total_tokens, uint _limit) internal pure returns (uint256 packed2) {
         uint256 _packed2 = 0;
         _packed2 |= box(0, 128, _total_tokens);       // total_tokens = 128 bits ~= 3.4e38
         _packed2 |= box(128, 128, _limit);            // limit = 128 bits
