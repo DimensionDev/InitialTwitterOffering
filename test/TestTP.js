@@ -19,8 +19,8 @@ contract("HappyTokenPool", accounts => {
         testtokenB = await TestTokenB.deployed();
         testtokenC = await TestTokenC.deployed();
         pool = await HappyTokenPool.deployed();
-        _total_tokens = web3.utils.toBN(100*1e18);
-        _limit = web3.utils.toBN(1*1e18);
+        _total_tokens = BigNumber('100e18').toFixed();
+        _limit = BigNumber('1e18').toFixed();
     });
     it("Should return the HappyTokenPool contract creator", async () => {
         const contract_creator = await pool.contract_creator.call();
@@ -36,8 +36,8 @@ contract("HappyTokenPool", accounts => {
         const tokenA_address = testtokenA.address;
         const tokenB_address = testtokenB.address;
         const tokenC_address = testtokenC.address;
-        var exchange_addrs = [tokenB_address, tokenC_address];
-        var ratios = [1, 2000, 4000, 1];
+        var exchange_addrs = ["0x0000000000000000000000000000000000000000", tokenB_address, tokenC_address];
+        var ratios = [1, 100000, 1, 2000, 4000, 1];
         const total_tokens = _total_tokens;
         const limit = _limit;
         const name = "Cache Miss";
@@ -56,18 +56,19 @@ contract("HappyTokenPool", accounts => {
         assert.notEqual(pool_id, null);
     });
     it("Should allow one to exchange 2 tokenB for 1 token A.", async () => {
-        const amount = BigNumber('3e21').toFixed();
+        const amount = BigNumber('2e21').toFixed();
         await testtokenB.approve.sendTransaction(accounts[1], amount);
         await testtokenB.transfer.sendTransaction(accounts[1], amount);
         const validation = web3.utils.sha3(accounts[1]);
         await testtokenB.approve.sendTransaction(pool.address, amount, {'from': accounts[1]});
-        const claim_receipt = await pool.claim.sendTransaction(pool_id, "1", accounts[1], validation, 0, amount, {'from': accounts[1]});
+        const claim_receipt = await pool.claim.sendTransaction(pool_id, "1", accounts[1], validation, 1, amount, {'from': accounts[1]});
 
         const claim_success_encode = "ClaimSuccess(bytes32,address,uint256,address)";
         const claim_success_types = ['bytes32', 'address', 'uint256', 'address'];
         const logs = await web3.eth.getPastLogs({address: pool.address, topics: [web3.utils.sha3(claim_success_encode)]});
-        const balance1 = testtokenA.balanceOf(accounts[1]);
-        assert(balance1, BigNumber('1.5e18').toFixed());
+        var balance1 = await testtokenA.balanceOf.call(accounts[1]);
+        balance1 = BigNumber(balance1).toFixed();
+        assert.equal(balance1, BigNumber('1e18').toFixed());
     });
     it("Should allow one to exchange 1 tokenC for 2 token A.", async () => {
         const amount = BigNumber('1.222222e18').toFixed();
@@ -75,13 +76,15 @@ contract("HappyTokenPool", accounts => {
         await testtokenC.transfer.sendTransaction(accounts[2], amount);
         const validation = web3.utils.sha3(accounts[2]);
         await testtokenC.approve.sendTransaction(pool.address, amount, {'from': accounts[2]});
-        const claim_receipt = await pool.claim.sendTransaction(pool_id, "1", accounts[2], validation, 1, amount, {'from': accounts[2]});
+        const claim_receipt = await pool.claim.sendTransaction(pool_id, "1", accounts[2], validation, 2, amount, {'from': accounts[2]});
 
         const claim_success_encode = "ClaimSuccess(bytes32,address,uint256,address)";
         const claim_success_types = ['bytes32', 'address', 'uint256', 'address'];
         const logs = await web3.eth.getPastLogs({address: pool.address, topics: [web3.utils.sha3(claim_success_encode)]});
-        const balance2 = testtokenA.balanceOf(accounts[2]);
-        assert(balance2, BigNumber('4.888888e22').toFixed());
+        var balance2 = await testtokenA.balanceOf.call(accounts[2]);
+        balance2 = BigNumber(balance2).toFixed();
+        assert.notEqual(balance2, BigNumber('4.888888e22').toFixed());
+        assert.equal(balance2, BigNumber('1e18').toFixed());
     });
 });
 

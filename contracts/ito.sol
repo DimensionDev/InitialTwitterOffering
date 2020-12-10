@@ -105,9 +105,11 @@ contract HappyTokenPool {
         }
 
         // Don't be greedy
-        if (claimed_tokens > unbox(pool.packed2, 128, 128)) {
-            claimed_tokens = unbox(pool.packed2, 128, 128);
+        uint256 limit = unbox(pool.packed2, 128, 128);
+        if (claimed_tokens > limit) {
+            claimed_tokens = limit;
         }
+        require(claimed_tokens <= limit);
 
         // Penalize greedy attackers by placing duplication check at the very last
         require (pool.claimed_map[_recipient] == 0, "Already Claimed");
