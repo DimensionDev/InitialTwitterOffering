@@ -19,8 +19,8 @@ contract("HappyTokenPool", accounts => {
         testtokenB = await TestTokenB.deployed();
         testtokenC = await TestTokenC.deployed();
         pool = await HappyTokenPool.deployed();
-        _total_tokens = BigNumber('100e18').toFixed();
-        _limit = BigNumber('1e18').toFixed();
+        _total_tokens = BigNumber('10000e18').toFixed();
+        _limit = BigNumber('1000e18').toFixed();
     });
     it("Should return the HappyTokenPool contract creator", async () => {
         const contract_creator = await pool.contract_creator.call();
@@ -37,7 +37,7 @@ contract("HappyTokenPool", accounts => {
         const tokenB_address = testtokenB.address;
         const tokenC_address = testtokenC.address;
         var exchange_addrs = ["0x0000000000000000000000000000000000000000", tokenB_address, tokenC_address];
-        var ratios = [1, 100000, 1, 2000, 4000, 1];
+        var ratios = [100000, 1, 1, 2000, 4000, 1];
         const total_tokens = _total_tokens;
         const limit = _limit;
         const name = "Cache Miss";
@@ -55,7 +55,7 @@ contract("HappyTokenPool", accounts => {
         pool_id = web3.eth.abi.decodeParameters(fill_success_types, logs[0].data)['1'];
         assert.notEqual(pool_id, null);
     });
-    it("Should allow one to exchange 2 tokenB for 1 token A.", async () => {
+    it("Should allow one to exchange 2000 tokenB for 1 token A.", async () => {
         const amount = BigNumber('2e21').toFixed();
         await testtokenB.approve.sendTransaction(accounts[1], amount);
         await testtokenB.transfer.sendTransaction(accounts[1], amount);
@@ -70,8 +70,8 @@ contract("HappyTokenPool", accounts => {
         balance1 = BigNumber(balance1).toFixed();
         assert.equal(balance1, BigNumber('1e18').toFixed());
     });
-    it("Should allow one to exchange 1 tokenC for 2 token A.", async () => {
-        const amount = BigNumber('1.222222e18').toFixed();
+    it("Should allow one to exchange 0.1222222 tokenC for 488.8888 token A.", async () => {
+        const amount = BigNumber('1.222222e17').toFixed();
         await testtokenC.approve.sendTransaction(accounts[2], amount);
         await testtokenC.transfer.sendTransaction(accounts[2], amount);
         const validation = web3.utils.sha3(accounts[2]);
@@ -83,8 +83,20 @@ contract("HappyTokenPool", accounts => {
         const logs = await web3.eth.getPastLogs({address: pool.address, topics: [web3.utils.sha3(claim_success_encode)]});
         var balance2 = await testtokenA.balanceOf.call(accounts[2]);
         balance2 = BigNumber(balance2).toFixed();
-        assert.notEqual(balance2, BigNumber('4.888888e22').toFixed());
-        assert.equal(balance2, BigNumber('1e18').toFixed());
+        assert.equal(balance2, BigNumber('4.888888e20').toFixed());
+        //assert.equal(balance2, BigNumber('1e18').toFixed());
+    });
+    it("Should allow one to exchange 0.1 eth for 10000 token A.", async () => {
+        const amount = BigNumber('1e16').toFixed();
+        const validation = web3.utils.sha3(accounts[3]);
+        const claim_receipt = await pool.claim.sendTransaction(pool_id, "1", accounts[3], validation, 0, amount, {'from': accounts[3], 'value': amount});
+
+        const claim_success_encode = "ClaimSuccess(bytes32,address,uint256,address)";
+        const claim_success_types = ['bytes32', 'address', 'uint256', 'address'];
+        const logs = await web3.eth.getPastLogs({address: pool.address, topics: [web3.utils.sha3(claim_success_encode)]});
+        var balance3 = await testtokenA.balanceOf.call(accounts[3]);
+        balance3 = BigNumber(balance3).toFixed();
+        assert.notEqual(balance3, BigNumber('1e22').toFixed());
+        assert.equal(balance3, BigNumber('1e21').toFixed());
     });
 });
-

@@ -10,6 +10,7 @@ contract HappyTokenPool {
         uint256 packed2;            // total_number(16) claimed(16) creator(64) token_addr(160)
         address creator;
         address[] exchange_addrs;
+        uint256[] exchanged_tokens;
         uint256[] ratios;
         mapping(address => uint256) claimed_map;
     }
@@ -59,17 +60,20 @@ contract HappyTokenPool {
                         address _token_addr, uint _total_tokens, uint _limit)
     public payable {
         nonce ++;
-        require(_limit < _total_tokens, "Limit needs to be less than the total supply");
+        require(_limit <= _total_tokens, "Limit needs to be less than the total supply");
         require(IERC20(_token_addr).allowance(msg.sender, address(this)) >= _total_tokens, "Insuffcient allowance");
         require(_ratios.length == 2 * _exchange_addrs.length, "Size of ratios = 2 * size of exchange_addrs");
 
         bytes32 _id = keccak256(abi.encodePacked(msg.sender, now, nonce, seed));
         Pool storage pool = pool_by_id[_id];
-        pool.packed1 = wrap1(_token_addr, _hash, _start, _end);
-        pool.packed2 = wrap2(_total_tokens, _limit);
-        pool.creator = msg.sender;
-        pool.exchange_addrs = _exchange_addrs;
-        pool.ratios = _ratios;
+        pool.packed1 = wrap1(_token_addr, _hash, _start, _end);         // 256 bytes
+        pool.packed2 = wrap2(_total_tokens, _limit);                    // 256 bytes
+        pool.creator = msg.sender;                                      // 160 bytes
+        pool.exchange_addrs = _exchange_addrs;                          // 160 bytes
+        for (uint8 i = 0; i < _exchange_addrs.length; i++){
+            pool.exchanged_tokens.push(0); 
+        }
+        pool.ratios = _ratios;                                          // 256 * k
         IERC20(_token_addr).transferFrom(msg.sender, address(this), _total_tokens);
 
         emit FillSuccess(_total_tokens, _id, msg.sender, now, _token_addr, name, message);
@@ -97,12 +101,11 @@ contract HappyTokenPool {
         emit Test(input_total);
         if (exchange_addr == 0x0000000000000000000000000000000000000000) {
             require(msg.value == input_total, 'No enough ether.');
-            claimed_tokens = SafeMath.mul(SafeMath.div(input_total, ratioB), ratioA);
         } else {
             uint allowance = IERC20(exchange_addr).allowance(msg.sender, address(this));
             require(allowance == input_total, 'No enough allowance.');
-            claimed_tokens = SafeMath.mul(SafeMath.div(input_total, ratioB), ratioA);
         }
+        claimed_tokens = SafeMath.mul(SafeMath.div(input_total, ratioB), ratioA);
 
         // Don't be greedy
         uint256 limit = unbox(pool.packed2, 128, 128);
@@ -110,6 +113,7 @@ contract HappyTokenPool {
             claimed_tokens = limit;
         }
         require(claimed_tokens <= limit);
+        pool.exchanged_tokens[_exchange_addr_i] += input_total;
 
         // Penalize greedy attackers by placing duplication check at the very last
         require (pool.claimed_map[_recipient] == 0, "Already Claimed");
@@ -117,23 +121,25 @@ contract HappyTokenPool {
         pool.packed2 = rewriteBox(pool.packed2, 0, 128, total_tokens - claimed_tokens);
         pool.claimed_map[_recipient] = claimed_tokens;
 
-
         // Transfer the token after state changing
-        IERC20(exchange_addr).transferFrom(msg.sender, address(this), input_total);
+        if (exchange_addr != 0x0000000000000000000000000000000000000000) {
+            IERC20(exchange_addr).transferFrom(msg.sender, address(this), input_total);
+        }
         transfer_token(address(unbox(pool.packed1, 0, 160)), address(this), recipient, claimed_tokens);
 
         // Claim success event
-        emit ClaimSuccess(id, recipient, claimed_tokens, address(unbox(pool.packed2, 0, 160)));
+        emit ClaimSuccess(id, recipient, claimed_tokens, address(unbox(pool.packed1, 0, 160)));
         return claimed_tokens;
     }
 
-    // Returns 1. remaining value 2. total number of red packets 3. claimed number of red packets
-    function check_availability(bytes32 id) external view returns (uint total, bool expired, uint claimed) {
+    // Returns 0. exchange_addrs in the given pool 1. remaining tokens 2. if expired 3. if claimed
+    function check_availability(bytes32 id) external view returns (address[] memory exchange_addrs, uint total, bool expired, uint claimed) {
         Pool storage pool = pool_by_id[id];
         return (
-                unbox(pool.packed2, 0, 128),                            // total
-                now > unbox(pool.packed1, 232, 24) + base_timestamp,    // expired
-                pool.claimed_map[msg.sender]);                          // claimed number
+            pool.exchange_addrs,                                    // exchange_addrs
+            unbox(pool.packed2, 0, 128),                            // total
+            now > unbox(pool.packed1, 232, 24) + base_timestamp,    // expired
+            pool.claimed_map[msg.sender]);                          // claimed number
     }
 
     function destruct(bytes32 id) public {
@@ -141,17 +147,30 @@ contract HappyTokenPool {
         require(uint256(keccak256(abi.encodePacked(msg.sender)) >> 192) == unbox(pool.packed2, 160, 64), "011");
         require(unbox(pool.packed1, 208, 48) <= now, "012");
 
-        uint256 remaining_tokens = unbox(pool.packed1, 128, 80);
-        address token_address = address(unbox(pool.packed2, 0, 160));
+        uint256 remaining_tokens = unbox(pool.packed2, 128, 128);
+        address token_address = address(unbox(pool.packed1, 0, 160));
 
-        IERC20(token_address).approve(msg.sender, remaining_tokens);
+        //IERC20(token_address).approve(msg.sender, remaining_tokens);
         transfer_token(token_address, address(this), msg.sender, remaining_tokens);
 
+        for (uint i = 0; i < pool.exchange_addrs.length; i++){
+            if (pool.exchanged_tokens[i] > 0) {
+                transfer_token(pool.exchange_addrs[i], address(this), msg.sender, pool.exchanged_tokens[i]);
+            }
+        }
+
         emit RefundSuccess(id, token_address, remaining_tokens);
-        pool.packed1 = rewriteBox(pool.packed1, 128, 80, 0);
+        //pool.packed1 = rewriteBox(pool.packed2, 128, 128, 0);
         // Gas Refund
         pool.packed1 = 0;
         pool.packed2 = 0;
+        pool.creator = 0x0000000000000000000000000000000000000000;
+        for (uint i = 0; i < pool.exchange_addrs.length; i++){
+            pool.exchange_addrs[i] = 0x0000000000000000000000000000000000000000;
+            pool.exchanged_tokens[i] = 0;
+            pool.ratios[i*2] = 0;
+            pool.ratios[i*2+1] = 0;
+        }
     }
 
      // One cannot send tokens to this contract after constructor anymore
