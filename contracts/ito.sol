@@ -91,7 +91,6 @@ contract HappyTokenPool {
         require (uint256(keccak256(bytes(password))) >> 208 == unbox(pool.packed1, 160, 48), "Wrong Password");
         require (validation == keccak256(toBytes(msg.sender)), "Validation Failed");
 
-
         uint claimed_tokens;
         uint total_tokens = unbox(pool.packed2, 0, 128);
 
@@ -133,19 +132,21 @@ contract HappyTokenPool {
     }
 
     // Returns 0. exchange_addrs in the given pool 1. remaining tokens 2. if expired 3. if claimed
-    function check_availability(bytes32 id) external view returns (address[] memory exchange_addrs, uint total, bool expired, uint claimed) {
+    function check_availability(bytes32 id) external view returns (address[] memory exchange_addrs, uint remaining, bool expired, uint claimed, uint256[] memory exchanged_tokens) {
         Pool storage pool = pool_by_id[id];
         return (
             pool.exchange_addrs,                                    // exchange_addrs
-            unbox(pool.packed2, 0, 128),                            // total
+            unbox(pool.packed2, 0, 128),                            // remaining
             now > unbox(pool.packed1, 232, 24) + base_timestamp,    // expired
-            pool.claimed_map[msg.sender]);                          // claimed number
+            pool.claimed_map[msg.sender],                           // claimed number 
+            pool.exchanged_tokens                                   // exhcnaged tokens
+        );
     }
 
     function destruct(bytes32 id) public {
         Pool storage pool = pool_by_id[id];
-        require(uint256(keccak256(abi.encodePacked(msg.sender)) >> 192) == unbox(pool.packed2, 160, 64), "011");
-        require(unbox(pool.packed1, 208, 48) <= now, "012");
+        require(msg.sender == pool.creator, "Only the pool creator can destruct.");
+        require(unbox(pool.packed1, 208, 24) + base_timestamp <= now, "Not expired yet");
 
         uint256 remaining_tokens = unbox(pool.packed2, 128, 128);
         address token_address = address(unbox(pool.packed1, 0, 160));
@@ -155,7 +156,10 @@ contract HappyTokenPool {
 
         for (uint i = 0; i < pool.exchange_addrs.length; i++){
             if (pool.exchanged_tokens[i] > 0) {
-                transfer_token(pool.exchange_addrs[i], address(this), msg.sender, pool.exchanged_tokens[i]);
+                if (pool.exchange_addrs[i] != 0x0000000000000000000000000000000000000000)
+                    transfer_token(pool.exchange_addrs[i], address(this), msg.sender, pool.exchanged_tokens[i]);
+                else
+                    msg.sender.transfer(pool.exchanged_tokens[i]);
             }
         }
 
@@ -165,7 +169,7 @@ contract HappyTokenPool {
         pool.packed1 = 0;
         pool.packed2 = 0;
         pool.creator = 0x0000000000000000000000000000000000000000;
-        for (uint i = 0; i < pool.exchange_addrs.length; i++){
+        for (uint i = 0; i < pool.exchange_addrs.length; i++) {
             pool.exchange_addrs[i] = 0x0000000000000000000000000000000000000000;
             pool.exchanged_tokens[i] = 0;
             pool.ratios[i*2] = 0;
