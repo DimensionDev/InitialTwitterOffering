@@ -132,13 +132,14 @@ contract HappyTokenPool {
     }
 
     // Returns 0. exchange_addrs in the given pool 1. remaining tokens 2. if expired 3. if claimed
-    function check_availability (bytes32 id) external view returns (address[] memory exchange_addrs, 
-                                                                    uint remaining, bool expired, uint claimed,
+    function check_availability (bytes32 id) external view returns (address[] memory exchange_addrs, uint remaining, 
+                                                                    bool started, bool expired, uint claimed,
                                                                     uint256[] memory exchanged_tokens) {
         Pool storage pool = pool_by_id[id];
         return (
             pool.exchange_addrs,                                    // exchange_addrs
             unbox(pool.packed2, 0, 128),                            // remaining
+            now < unbox(pool.packed1, 208, 24) + base_timestamp,    // started
             now > unbox(pool.packed1, 232, 24) + base_timestamp,    // expired
             pool.claimed_map[msg.sender],                           // claimed number 
             pool.exchanged_tokens                                   // exchanged tokens
@@ -178,7 +179,8 @@ contract HappyTokenPool {
     }
 
     // helper functions
-    function wrap1 (address _token_addr, bytes32 _hash, uint _start, uint _end) internal pure returns (uint256 packed1) {
+    function wrap1 (address _token_addr, bytes32 _hash, uint _start, uint _end) internal pure 
+                    returns (uint256 packed1) {
         uint256 _packed1 = 0;
         _packed1 |= box(160, 48, uint256(_hash) >> 208);    // hash = 128 bits (NEED TO CONFIRM THIS)
         _packed1 |= box(0, 160,  uint256(_token_addr));     // token_addr = 160 bits
@@ -207,9 +209,7 @@ contract HappyTokenPool {
     function validRange (uint16 size, uint256 data) internal pure returns(bool) { 
         if (data > 2 ** uint256(size) - 1) {
             return false;
-        } else {
-            return true;
-        }
+        return true;
     }
 
     function rewriteBox (uint256 _box, uint16 position, uint16 size, uint256 data) 
