@@ -209,6 +209,7 @@ contract HappyTokenPool {
     function validRange (uint16 size, uint256 data) internal pure returns(bool) { 
         if (data > 2 ** uint256(size) - 1) {
             return false;
+        }
         return true;
     }
 

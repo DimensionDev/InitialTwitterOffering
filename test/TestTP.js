@@ -73,7 +73,7 @@ contract("HappyTokenPool", accounts => {
         balance1 = BigNumber(balance1).toFixed();
         assert.equal(balance1, BigNumber('1e18').toFixed());
         var remaining = await pool.check_availability.call(pool_id, {'from': accounts[1]});
-        assert.equal(BigNumber(remaining[1]).toFixed(), BigNumber(previous_total - BigNumber(remaining[3])).toFixed());
+        assert.equal(BigNumber(remaining[1]).toFixed(), BigNumber(previous_total - BigNumber(remaining[4])).toFixed());
     });
     it("Should allow one to exchange 0.1222222 tokenC for 488.8888 token A.", async () => {
         var amount = BigNumber('1e26').toFixed();
@@ -93,7 +93,7 @@ contract("HappyTokenPool", accounts => {
         balance2 = BigNumber(balance2).toFixed();
         assert.equal(balance2, BigNumber('4.888888e20').toFixed());
         var remaining = await pool.check_availability.call(pool_id, {'from': accounts[2]});
-        assert.equal(BigNumber(remaining[1]).toFixed(), BigNumber(previous_total - BigNumber(remaining[3])).toFixed());
+        assert.equal(BigNumber(remaining[1]).toFixed(), BigNumber(previous_total - BigNumber(remaining[4])).toFixed());
     });
     it("Should allow one to exchange 0.1 eth for 1000 token A.", async () => {
         const amount = BigNumber('1e17').toFixed();
@@ -110,7 +110,7 @@ contract("HappyTokenPool", accounts => {
         assert.notEqual(balance3, BigNumber('1e22').toFixed());
         assert.equal(balance3, BigNumber('1e21').toFixed());
         var remaining = await pool.check_availability.call(pool_id, {'from': accounts[3]});
-        assert.equal(BigNumber(remaining[1]).toFixed(), BigNumber(previous_total - BigNumber(remaining[3])).toFixed());
+        assert.equal(BigNumber(remaining[1]).toFixed(), BigNumber(previous_total - BigNumber(remaining[4])).toFixed());
     });
     it("Should allow the pool creator to destruct the pool and withdraw the corresponding tokens.", async () => {
         var previous_eth_balance = await web3.eth.getBalance(accounts[0]);
@@ -118,9 +118,9 @@ contract("HappyTokenPool", accounts => {
         const stats = await pool.check_availability.call(pool_id, {'from': accounts[0]});
         assert.equal(stats[2], false);
         assert.equal(stats[3], 0);
-        assert.equal(BigNumber(stats[4][0]).toFixed(), BigNumber('1e17').toFixed());
-        assert.equal(BigNumber(stats[4][1]).toFixed(), BigNumber('2e21').toFixed());
-        assert.equal(BigNumber(stats[4][2]).toFixed(), BigNumber('1.222222e17').toFixed());
+        assert.equal(BigNumber(stats[5][0]).toFixed(), BigNumber('1e17').toFixed());
+        assert.equal(BigNumber(stats[5][1]).toFixed(), BigNumber('2e21').toFixed());
+        assert.equal(BigNumber(stats[5][2]).toFixed(), BigNumber('1.222222e17').toFixed());
 
         const destruct_receipt = await pool.destruct.sendTransaction(pool_id, {'from': accounts[0]});
         var balance1 = await web3.eth.getBalance(accounts[0]);
