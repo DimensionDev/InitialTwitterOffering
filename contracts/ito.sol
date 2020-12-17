@@ -39,20 +39,21 @@ contract HappyTokenPool {
     );
 
     event Test (
-        uint256 a
+        uint256 a,
+        uint256 b
     );
 
     uint32 nonce;
     uint256 base_timestamp;
     address public contract_creator;
     mapping(bytes32 => Pool) pool_by_id;
-    string constant private magic = "Former NBA Commissioner David St"; // 32 bytes
+    string constant private magic = "Putting his authority on the line, McConnell also asked his Senate colleagues not to stage any stunts when Congress meets for a joint session to ratify the election on January 6, effectively crushing the President's hopes of an 11th hour reprieve.";
     bytes32 private seed;
 
     constructor() public {
         contract_creator = msg.sender;
         seed = keccak256(abi.encodePacked(magic, now, contract_creator));
-        base_timestamp = 1606780800;
+        base_timestamp = 1606780800;                                    // 00:00:00 12/01/2020 UTC+0
     }
 
     function fill_pool (bytes32 _hash, uint _start, uint _end, string memory name, string memory message,
@@ -60,6 +61,7 @@ contract HappyTokenPool {
                         address _token_addr, uint _total_tokens, uint _limit)
     public payable {
         nonce ++;
+        require(_start < _end, "Start time should be earlier than end time.");
         require(_limit <= _total_tokens, "Limit needs to be less than the total supply");
         require(IERC20(_token_addr).allowance(msg.sender, address(this)) >= _total_tokens, "Insuffcient allowance");
         require(_ratios.length == 2 * _exchange_addrs.length, "Size of ratios = 2 * size of exchange_addrs");
@@ -80,7 +82,7 @@ contract HappyTokenPool {
     }
 
     // It takes the unhashed password and a hashed random seed generated from the user
-    function claim (bytes32 id, string memory password, address _recipient, 
+    function claim (bytes32 id, bytes32 verification, address _recipient, 
                    bytes32 validation, uint256 _exchange_addr_i, uint256 input_total) 
     public payable returns (uint claimed) {
 
@@ -88,7 +90,7 @@ contract HappyTokenPool {
         address payable recipient = address(uint160(_recipient));
         require (unbox(pool.packed1, 208, 24) + base_timestamp < now, "Not started.");
         require (unbox(pool.packed1, 232, 24) + base_timestamp > now, "Expired.");
-        require (uint256(keccak256(bytes(password))) >> 208 == unbox(pool.packed1, 160, 48), "Wrong Password");
+        require (verification == keccak256(abi.encodePacked(unbox(pool.packed1, 160, 48), msg.sender)), 'Wrong Password');
         require (validation == keccak256(toBytes(msg.sender)), "Validation Failed");
 
         uint claimed_tokens;
@@ -97,7 +99,6 @@ contract HappyTokenPool {
         address exchange_addr = pool.exchange_addrs[_exchange_addr_i];
         uint256 ratioA = pool.ratios[_exchange_addr_i*2];
         uint256 ratioB = pool.ratios[_exchange_addr_i*2 + 1];
-        emit Test(input_total);
         if (exchange_addr == 0x0000000000000000000000000000000000000000) {
             require(msg.value == input_total, 'No enough ether.');
         } else {
@@ -105,6 +106,7 @@ contract HappyTokenPool {
             require(allowance == input_total, 'No enough allowance.');
         }
         claimed_tokens = SafeMath.mul(SafeMath.div(input_total, ratioB), ratioA);
+        require(claimed_tokens > 0, "Better not draw water with a sieve");
 
         // Don't be greedy
         uint256 limit = unbox(pool.packed2, 128, 128);
@@ -182,8 +184,8 @@ contract HappyTokenPool {
     function wrap1 (address _token_addr, bytes32 _hash, uint _start, uint _end) internal pure 
                     returns (uint256 packed1) {
         uint256 _packed1 = 0;
-        _packed1 |= box(160, 48, uint256(_hash) >> 208);    // hash = 128 bits (NEED TO CONFIRM THIS)
         _packed1 |= box(0, 160,  uint256(_token_addr));     // token_addr = 160 bits
+        _packed1 |= box(160, 48, uint256(_hash) >> 208);    // hash = 48 bits (safe?)
         _packed1 |= box(208, 24, _start);                   // start_time = 24 bits 
         _packed1 |= box(232, 24, _end);                     // expiration_time = 24 bits
         return _packed1;
@@ -209,6 +211,7 @@ contract HappyTokenPool {
     function validRange (uint16 size, uint256 data) internal pure returns(bool) { 
         if (data > 2 ** uint256(size) - 1) {
             return false;
+        }
         return true;
     }
 
@@ -222,7 +225,7 @@ contract HappyTokenPool {
 
     function transfer_token (address token_address, address sender_address,
                             address recipient_address, uint amount) internal {
-        require(IERC20(token_address).balanceOf(sender_address) >= amount, "010");
+        require(IERC20(token_address).balanceOf(sender_address) >= amount, "Balance not enough");
         IERC20(token_address).approve(sender_address, amount);
         IERC20(token_address).transferFrom(sender_address, recipient_address, amount);
     }

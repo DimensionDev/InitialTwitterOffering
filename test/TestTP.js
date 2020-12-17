@@ -12,6 +12,12 @@ var pool_id;
 var _total_tokens;
 var _limit;
 
+const fromHexString = hexString =>
+  new Uint8Array(hexString.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
+
+const toHexString = bytes =>
+  bytes.reduce((str, byte) => str + byte.toString(16).padStart(2, '0'), '');
+
 contract("HappyTokenPool", accounts => {
     beforeEach(async () =>{
         console.log("Before ALL\n");
@@ -64,8 +70,12 @@ contract("HappyTokenPool", accounts => {
         var previous_total = await pool.check_availability.call(pool_id, {'from': accounts[1]});
         previous_total = BigNumber(previous_total[1]);
         await testtokenB.approve.sendTransaction(pool.address, amount, {'from': accounts[1]});
-        const claim_receipt = await pool.claim.sendTransaction(pool_id, "1", accounts[1], validation, 1, amount, {'from': accounts[1]});
-
+        var hash = web3.utils.sha3("1");
+        var hash_bytes = Uint8Array.from(Buffer.from(hash.slice(2,), 'hex'));
+        hash = hash_bytes.slice(0,6);
+        hash = '0x'+Buffer.from(hash).toString('hex');
+        var verification = web3.utils.soliditySha3(web3.utils.hexToNumber(hash), accounts[1]);
+        const claim_receipt = await pool.claim.sendTransaction(pool_id, verification, accounts[1], validation, 1, amount, {'from': accounts[1]});
         const claim_success_encode = "ClaimSuccess(bytes32,address,uint256,address)";
         const claim_success_types = ['bytes32', 'address', 'uint256', 'address'];
         const logs = await web3.eth.getPastLogs({address: pool.address, topics: [web3.utils.sha3(claim_success_encode)]});
@@ -73,7 +83,7 @@ contract("HappyTokenPool", accounts => {
         balance1 = BigNumber(balance1).toFixed();
         assert.equal(balance1, BigNumber('1e18').toFixed());
         var remaining = await pool.check_availability.call(pool_id, {'from': accounts[1]});
-        assert.equal(BigNumber(remaining[1]).toFixed(), BigNumber(previous_total - BigNumber(remaining[3])).toFixed());
+        assert.equal(BigNumber(remaining[1]).toFixed(), BigNumber(previous_total - BigNumber(remaining[4])).toFixed());
     });
     it("Should allow one to exchange 0.1222222 tokenC for 488.8888 token A.", async () => {
         var amount = BigNumber('1e26').toFixed();
@@ -84,7 +94,12 @@ contract("HappyTokenPool", accounts => {
         var previous_total = await pool.check_availability.call(pool_id, {'from': accounts[2]});
         previous_total = BigNumber(previous_total[1]);
         await testtokenC.approve.sendTransaction(pool.address, amount, {'from': accounts[2]});
-        const claim_receipt = await pool.claim.sendTransaction(pool_id, "1", accounts[2], validation, 2, amount, {'from': accounts[2]});
+        var hash = web3.utils.sha3("1");
+        var hash_bytes = Uint8Array.from(Buffer.from(hash.slice(2,), 'hex'));
+        hash = hash_bytes.slice(0,6);
+        hash = '0x'+Buffer.from(hash).toString('hex');
+        var verification = web3.utils.soliditySha3(web3.utils.hexToNumber(hash), accounts[2]);
+        const claim_receipt = await pool.claim.sendTransaction(pool_id, verification, accounts[2], validation, 2, amount, {'from': accounts[2]});
 
         const claim_success_encode = "ClaimSuccess(bytes32,address,uint256,address)";
         const claim_success_types = ['bytes32', 'address', 'uint256', 'address'];
@@ -93,14 +108,19 @@ contract("HappyTokenPool", accounts => {
         balance2 = BigNumber(balance2).toFixed();
         assert.equal(balance2, BigNumber('4.888888e20').toFixed());
         var remaining = await pool.check_availability.call(pool_id, {'from': accounts[2]});
-        assert.equal(BigNumber(remaining[1]).toFixed(), BigNumber(previous_total - BigNumber(remaining[3])).toFixed());
+        assert.equal(BigNumber(remaining[1]).toFixed(), BigNumber(previous_total - BigNumber(remaining[4])).toFixed());
     });
     it("Should allow one to exchange 0.1 eth for 1000 token A.", async () => {
         const amount = BigNumber('1e17').toFixed();
         const validation = web3.utils.sha3(accounts[3]);
         var previous_total = await pool.check_availability.call(pool_id, {'from': accounts[3]});
         previous_total = BigNumber(previous_total[1]);
-        const claim_receipt = await pool.claim.sendTransaction(pool_id, "1", accounts[3], validation, 0, amount, {'from': accounts[3], 'value': amount});
+        var hash = web3.utils.sha3("1");
+        var hash_bytes = Uint8Array.from(Buffer.from(hash.slice(2,), 'hex'));
+        hash = hash_bytes.slice(0,6);
+        hash = '0x'+Buffer.from(hash).toString('hex');
+        var verification = web3.utils.soliditySha3(web3.utils.hexToNumber(hash), accounts[3]);
+        const claim_receipt = await pool.claim.sendTransaction(pool_id, verification, accounts[3], validation, 0, amount, {'from': accounts[3], 'value': amount});
 
         const claim_success_encode = "ClaimSuccess(bytes32,address,uint256,address)";
         const claim_success_types = ['bytes32', 'address', 'uint256', 'address'];
@@ -110,7 +130,7 @@ contract("HappyTokenPool", accounts => {
         assert.notEqual(balance3, BigNumber('1e22').toFixed());
         assert.equal(balance3, BigNumber('1e21').toFixed());
         var remaining = await pool.check_availability.call(pool_id, {'from': accounts[3]});
-        assert.equal(BigNumber(remaining[1]).toFixed(), BigNumber(previous_total - BigNumber(remaining[3])).toFixed());
+        assert.equal(BigNumber(remaining[1]).toFixed(), BigNumber(previous_total - BigNumber(remaining[4])).toFixed());
     });
     it("Should allow the pool creator to destruct the pool and withdraw the corresponding tokens.", async () => {
         var previous_eth_balance = await web3.eth.getBalance(accounts[0]);
@@ -118,9 +138,9 @@ contract("HappyTokenPool", accounts => {
         const stats = await pool.check_availability.call(pool_id, {'from': accounts[0]});
         assert.equal(stats[2], false);
         assert.equal(stats[3], 0);
-        assert.equal(BigNumber(stats[4][0]).toFixed(), BigNumber('1e17').toFixed());
-        assert.equal(BigNumber(stats[4][1]).toFixed(), BigNumber('2e21').toFixed());
-        assert.equal(BigNumber(stats[4][2]).toFixed(), BigNumber('1.222222e17').toFixed());
+        assert.equal(BigNumber(stats[5][0]).toFixed(), BigNumber('1e17').toFixed());
+        assert.equal(BigNumber(stats[5][1]).toFixed(), BigNumber('2e21').toFixed());
+        assert.equal(BigNumber(stats[5][2]).toFixed(), BigNumber('1.222222e17').toFixed());
 
         const destruct_receipt = await pool.destruct.sendTransaction(pool_id, {'from': accounts[0]});
         var balance1 = await web3.eth.getBalance(accounts[0]);
