@@ -62,7 +62,7 @@ contract HappyTokenPool {
     public payable {
         nonce ++;
         require(_start < _end, "Start time should be earlier than end time.");
-        require(_limit <= _total_tokens, "Limit needs to be less than the total supply");
+        require(_limit <= _total_tokens, "Limit needs to be less than or equal to the total supply");
         require(IERC20(_token_addr).allowance(msg.sender, address(this)) >= _total_tokens, "Insuffcient allowance");
         require(_ratios.length == 2 * _exchange_addrs.length, "Size of ratios = 2 * size of exchange_addrs");
 
@@ -141,7 +141,7 @@ contract HappyTokenPool {
         return (
             pool.exchange_addrs,                                    // exchange_addrs
             unbox(pool.packed2, 0, 128),                            // remaining
-            now < unbox(pool.packed1, 208, 24) + base_timestamp,    // started
+            now > unbox(pool.packed1, 208, 24) + base_timestamp,    // started
             now > unbox(pool.packed1, 232, 24) + base_timestamp,    // expired
             pool.claimed_map[msg.sender],                           // claimed number 
             pool.exchanged_tokens                                   // exchanged tokens
