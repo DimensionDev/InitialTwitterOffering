@@ -35,7 +35,7 @@ contract HappyTokenPool {
     event RefundSuccess (
         bytes32 id,
         address token_address,
-        uint remaining_balance
+        uint256 remaining_balance
     );
 
     event Test (
@@ -151,9 +151,9 @@ contract HappyTokenPool {
     function destruct (bytes32 id) public {
         Pool storage pool = pool_by_id[id];
         require(msg.sender == pool.creator, "Only the pool creator can destruct.");
-        require(unbox(pool.packed1, 208, 24) + base_timestamp <= now, "Not expired yet");
+        require(unbox(pool.packed1, 232, 24) + base_timestamp <= now, "Not expired yet");
 
-        uint256 remaining_tokens = unbox(pool.packed2, 128, 128);
+        uint256 remaining_tokens = unbox(pool.packed2, 0, 128);
         address token_address = address(unbox(pool.packed1, 0, 160));
 
         transfer_token(token_address, address(this), msg.sender, remaining_tokens);
