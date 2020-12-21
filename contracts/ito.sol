@@ -35,7 +35,7 @@ contract HappyTokenPool {
     event RefundSuccess (
         bytes32 id,
         address token_address,
-        uint remaining_balance
+        uint256 remaining_balance
     );
 
     event Test (
@@ -62,7 +62,7 @@ contract HappyTokenPool {
     public payable {
         nonce ++;
         require(_start < _end, "Start time should be earlier than end time.");
-        require(_limit <= _total_tokens, "Limit needs to be less than the total supply");
+        require(_limit <= _total_tokens, "Limit needs to be less than or equal to the total supply");
         require(IERC20(_token_addr).allowance(msg.sender, address(this)) >= _total_tokens, "Insuffcient allowance");
         require(_ratios.length == 2 * _exchange_addrs.length, "Size of ratios = 2 * size of exchange_addrs");
 
@@ -103,7 +103,7 @@ contract HappyTokenPool {
             require(msg.value == input_total, 'No enough ether.');
         } else {
             uint allowance = IERC20(exchange_addr).allowance(msg.sender, address(this));
-            require(allowance == input_total, 'No enough allowance.');
+            require(allowance >= input_total, 'No enough allowance.');
         }
         claimed_tokens = SafeMath.mul(SafeMath.div(input_total, ratioB), ratioA);
         require(claimed_tokens > 0, "Better not draw water with a sieve");
@@ -141,7 +141,7 @@ contract HappyTokenPool {
         return (
             pool.exchange_addrs,                                    // exchange_addrs
             unbox(pool.packed2, 0, 128),                            // remaining
-            now < unbox(pool.packed1, 208, 24) + base_timestamp,    // started
+            now > unbox(pool.packed1, 208, 24) + base_timestamp,    // started
             now > unbox(pool.packed1, 232, 24) + base_timestamp,    // expired
             pool.claimed_map[msg.sender],                           // claimed number 
             pool.exchanged_tokens                                   // exchanged tokens
@@ -151,9 +151,9 @@ contract HappyTokenPool {
     function destruct (bytes32 id) public {
         Pool storage pool = pool_by_id[id];
         require(msg.sender == pool.creator, "Only the pool creator can destruct.");
-        require(unbox(pool.packed1, 208, 24) + base_timestamp <= now, "Not expired yet");
+        require(unbox(pool.packed1, 232, 24) + base_timestamp <= now, "Not expired yet");
 
-        uint256 remaining_tokens = unbox(pool.packed2, 128, 128);
+        uint256 remaining_tokens = unbox(pool.packed2, 0, 128);
         address token_address = address(unbox(pool.packed1, 0, 160));
 
         transfer_token(token_address, address(this), msg.sender, remaining_tokens);
