@@ -105,7 +105,7 @@ contract HappyTokenPool {
             uint allowance = IERC20(exchange_addr).allowance(msg.sender, address(this));
             require(allowance >= input_total, 'No enough allowance.');
         }
-        claimed_tokens = SafeMath.mul(SafeMath.div(input_total, ratioB), ratioA);
+        claimed_tokens = SafeMath.mul(SafeMath.div(input_total, ratioA), ratioB);
         require(claimed_tokens > 0, "Better not draw water with a sieve");
 
         // Don't be greedy
