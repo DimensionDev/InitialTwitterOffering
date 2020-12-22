@@ -112,6 +112,9 @@ contract HappyTokenPool {
         uint256 limit = unbox(pool.packed2, 128, 128);
         if (claimed_tokens > limit) {
             claimed_tokens = limit;
+        } else if (claimed_tokens > total_tokens) {
+            claimed_tokens = total_tokens;
+            input_total = SafeMath.mul(SafeMath.div(claimed_tokens, ratioA), ratioB);
         }
         require(claimed_tokens <= limit);
         pool.exchanged_tokens[_exchange_addr_i] += input_total;
