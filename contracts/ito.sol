@@ -18,7 +18,7 @@ contract HappyTokenPool {
     }
 
     event FillSuccess (
-        uint total,
+        uint256 total,
         bytes32 id,
         address creator,
         uint256 creation_time,
@@ -52,7 +52,7 @@ contract HappyTokenPool {
     uint256 base_timestamp;
     address public contract_creator;
     mapping(bytes32 => Pool) pool_by_id;
-    string constant private magic = "Putting his authority on the line, McConnell also asked his Senate colleagues not to stage any stunts when Congress meets for a joint session to ratify the election on January 6, effectively crushing the President's hopes of an 11th hour reprieve.";
+    string constant private magic = "Anthony Quinn Warner, 63, was identified as the bomber. Warner, a 63-year-old described by one neighbor as a loner, died when his recreational vehicle exploded on 2nd Avenue North in the city's downtown. The blast injured at least eight people and damaged-";
     bytes32 private seed;
 
     constructor() public {
@@ -78,8 +78,25 @@ contract HappyTokenPool {
         pool.creator = msg.sender;                                      // 160 bytes
         pool.exchange_addrs = _exchange_addrs;                          // 160 bytes
         pool.qualification = _qualification;
-        for (uint8 i = 0; i < _exchange_addrs.length; i++){
+        for (uint8 i = 0; i < _exchange_addrs.length; i++) {
+            if (_exchange_addrs[i] != 0x0000000000000000000000000000000000000000) {
+                require(IERC20(_exchange_addrs[i]).totalSupply() > 0, "Not Valid ERC20");
+            }
             pool.exchanged_tokens.push(0); 
+        }
+
+        for (uint8 i = 0; i < _ratios.length; i+= 2) {
+            uint256 divA = SafeMath.div(_ratios[i], _ratios[i+1]);      // Non-zero checked by SafteMath.div
+            uint256 divB = SafeMath.div(_ratios[i+1], _ratios[i]);
+            
+            if (_ratios[i] == 1) {
+                require(divB == _ratios[i+1]);
+            } else if (_ratios[i+1] == 1) {
+                require(divA == _ratios[i]);
+            } else {
+                require(divA * _ratios[i+1] != _ratios[i]);
+                require(divB * _ratios[i] != _ratios[i+1]);
+            }
         }
         pool.ratios = _ratios;                                          // 256 * k
         IERC20(_token_addr).transferFrom(msg.sender, address(this), _total_tokens);
@@ -100,8 +117,7 @@ contract HappyTokenPool {
         require (verification == keccak256(abi.encodePacked(unbox(pool.packed1, 160, 48), msg.sender)), 'Wrong Password');
         require (validation == keccak256(toBytes(msg.sender)), "Validation Failed");
 
-        uint claimed_tokens;
-        uint total_tokens = unbox(pool.packed2, 0, 128);
+        uint256 total_tokens = unbox(pool.packed2, 0, 128);
 
         address exchange_addr = pool.exchange_addrs[_exchange_addr_i];
         uint256 ratioA = pool.ratios[_exchange_addr_i*2];
@@ -112,7 +128,9 @@ contract HappyTokenPool {
             uint allowance = IERC20(exchange_addr).allowance(msg.sender, address(this));
             require(allowance >= input_total, 'No enough allowance.');
         }
-        claimed_tokens = SafeMath.mul(SafeMath.div(input_total, ratioA), ratioB);
+
+        uint claimed_tokens;
+        claimed_tokens = SafeMath.div(SafeMath.mul(input_total, ratioB), ratioA);       // 2^256=10e77 >> 10e18 * 10e18
         require(claimed_tokens > 0, "Better not draw water with a sieve");
 
         // Don't be greedy
@@ -121,15 +139,15 @@ contract HappyTokenPool {
             claimed_tokens = limit;
         } else if (claimed_tokens > total_tokens) {
             claimed_tokens = total_tokens;
-            input_total = SafeMath.mul(SafeMath.div(claimed_tokens, ratioA), ratioB);
+            input_total = SafeMath.div(SafeMath.mul(claimed_tokens, ratioB), ratioA);   // same
         }
-        require(claimed_tokens <= limit);
-        pool.exchanged_tokens[_exchange_addr_i] += input_total;
+        require(claimed_tokens <= limit);                                               // make sure
+        SafeMath.add(pool.exchanged_tokens[_exchange_addr_i], input_total);
 
         // Penalize greedy attackers by placing duplication check at the very last
         require (pool.claimed_map[_recipient] == 0, "Already Claimed");
 
-        pool.packed2 = rewriteBox(pool.packed2, 0, 128, total_tokens - claimed_tokens);
+        pool.packed2 = rewriteBox(pool.packed2, 0, 128, SafeMath.sub(total_tokens, claimed_tokens));
         pool.claimed_map[_recipient] = claimed_tokens;
 
         // Transfer the token after state changing
