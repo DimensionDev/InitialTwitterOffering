@@ -29,7 +29,9 @@ contract HappyTokenPool {
         bytes32 id,
         address claimer,
         uint claimed_value,
-        address token_address
+        address token_address,
+        uint exchanged_value,
+        address exchanged_address
     );
 
     event RefundSuccess (
@@ -132,7 +134,7 @@ contract HappyTokenPool {
         transfer_token(address(unbox(pool.packed1, 0, 160)), address(this), recipient, claimed_tokens);
 
         // Claim success event
-        emit ClaimSuccess(id, recipient, claimed_tokens, address(unbox(pool.packed1, 0, 160)));
+        emit ClaimSuccess(id, recipient, claimed_tokens, address(unbox(pool.packed1, 0, 160), input_total, exchange_addr));
         return claimed_tokens;
     }
 
