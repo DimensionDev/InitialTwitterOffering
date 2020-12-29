@@ -22,18 +22,21 @@ const fill_success_types = [
     { type: 'string', name: 'name' },
     { type: 'string', name: 'message' }
 ]
-const claim_success_encode = 'ClaimSuccess(bytes32,address,uint256,address)'
+const claim_success_encode = 'ClaimSuccess(bytes32,address,address,address,uint256,uint256)'
 const claim_success_types = [
     { type: 'bytes32', name: 'id' },
-    { type: 'address', name: 'claimerC' },
-    { type: 'uint', name: 'claimed_value' },
-    { type: 'address', name: 'token_address' }
+    { type: 'address', name: 'claimer' },
+    { type: 'address', name: 'from_address' },
+    { type: 'address', name: 'to_address' },
+    { type: 'uint256', name: 'from_value' },
+    { type: 'uint256', name: 'to_value' }
 ]
-const refund_success_encode = 'RefundSuccess(bytes32,address,uint256)'
+const refund_success_encode = 'RefundSuccess(bytes32,address,uint256,uint256[])'
 const refund_success_types = [
     { type: 'bytes32', name: 'id' },
     { type: 'address', name: 'token_address' },
-    { type: 'uint256', name: 'remaining_tokens' }
+    { type: 'uint256', name: 'remaining_tokens' },
+    { type: 'uint256[]', name: 'exchanged_values' }
 ]
 const PASSWORD = "password"
 let internalFunctions
@@ -340,9 +343,11 @@ contract("HappyTokenPool", accounts => {
             const ratio = fpp.exchange_ratios[5] / fpp.exchange_ratios[4] // tokenA <=> tokenC
 
             expect(result).to.have.property('id').that.to.not.be.null
-            expect(result).to.have.property('claimerC').that.to.not.be.null
-            expect(result).to.have.property('claimed_value').that.to.be.eq(String(exchange_amount * ratio))
-            expect(result).to.have.property('token_address').that.to.be.eq(test_tokenA.address)
+            expect(result).to.have.property('claimer').that.to.not.be.null
+            expect(result).to.have.property('from_value').that.to.be.eq(String(exchange_amount))
+            expect(result).to.have.property('to_value').that.to.be.eq(String(exchange_amount * ratio))
+            expect(result).to.have.property('from_address').that.to.be.eq(test_tokenC.address)
+            expect(result).to.have.property('to_address').that.to.be.eq(test_tokenA.address)
         })
 
         it("Should claim the maximum number of token equals to limit", async () => {
@@ -356,8 +361,8 @@ contract("HappyTokenPool", accounts => {
             const result = web3.eth.abi.decodeParameters(claim_success_types, logs[0].data)
             const ratio = fpp.exchange_ratios[5] / fpp.exchange_ratios[4] // tokenA <=> tokenC
 
-            expect(result).to.have.property('claimed_value').that.to.be.eq(fpp.limit)
-            expect(result).to.have.property('claimed_value').that.to.not.be.eq(String(exchange_amount * ratio))
+            expect(result).to.have.property('to_value').that.to.be.eq(fpp.limit)
+            expect(result).to.have.property('to_value').that.to.not.be.eq(String(exchange_amount * ratio))
         })
 
         it("Should claim various numbers of token", async () => {
@@ -374,7 +379,7 @@ contract("HappyTokenPool", accounts => {
             const result_eth = web3.eth.abi.decodeParameters(claim_success_types, logs_eth[0].data)
             const ratio_eth = fpp.exchange_ratios[1] / fpp.exchange_ratios[0] // tokenA <=> tokenC
 
-            expect(result_eth).to.have.property('claimed_value').that.to.be.eq(String(exchange_amount * ratio_eth))
+            expect(result_eth).to.have.property('to_value').that.to.be.eq(String(exchange_amount * ratio_eth))
 
             // 0.02 TESTB => 40 TESTA
             _transfer_amount = BigNumber('1e26').toFixed()
@@ -390,7 +395,7 @@ contract("HappyTokenPool", accounts => {
             const result_b = web3.eth.abi.decodeParameters(claim_success_types, logs_b[0].data)
             const ratio_b = fpp.exchange_ratios[3] / fpp.exchange_ratios[2] // tokenA <=> tokenC
 
-            expect(result_b).to.have.property('claimed_value').that.to.be.eq(String(exchange_amount * ratio_b))
+            expect(result_b).to.have.property('to_value').that.to.be.eq(String(exchange_amount * ratio_b))
 
             // 80000 TESTC => 20 TESTA
             approve_amount = BigNumber('1.6e23').toFixed()
@@ -402,9 +407,9 @@ contract("HappyTokenPool", accounts => {
             const result_c = web3.eth.abi.decodeParameters(claim_success_types, logs_c[0].data)
             const ratio_c = fpp.exchange_ratios[5] / fpp.exchange_ratios[4] // tokenA <=> tokenC
 
-            expect(result_c).to.have.property('claimed_value').that.to.not.be.eq(String(exchange_amount * ratio_c))
-            expect(result_c).to.have.property('claimed_value').that.to.not.be.eq(fpp.limit)
-            expect(result_c).to.have.property('claimed_value').that.to.be.eq(BigNumber('2e19').toFixed())
+            expect(result_c).to.have.property('to_value').that.to.not.be.eq(String(exchange_amount * ratio_c))
+            expect(result_c).to.have.property('to_value').that.to.not.be.eq(fpp.limit)
+            expect(result_c).to.have.property('to_value').that.to.be.eq(BigNumber('2e19').toFixed())
         })
     })
 
@@ -476,6 +481,7 @@ contract("HappyTokenPool", accounts => {
             expect(result).to.have.property('id').that.to.be.eq(pool_id)
             expect(result).to.have.property('token_address').that.to.be.eq(test_tokenA.address)
             expect(result).to.have.property('remaining_tokens')
+            expect(result).to.have.property('exchanged_values')
 
             const ratioETH = fpp.exchange_ratios[1] / fpp.exchange_ratios[0]
             const ratioB = fpp.exchange_ratios[3] / fpp.exchange_ratios[2]
