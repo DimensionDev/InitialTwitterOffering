@@ -19,7 +19,7 @@ contract HappyTokenPool {
         uint total,
         bytes32 id,
         address creator,
-        uint creation_time,
+        uint256 creation_time,
         address token_address,
         string name,
         string message
@@ -28,16 +28,17 @@ contract HappyTokenPool {
     event ClaimSuccess (
         bytes32 id,
         address claimer,
-        uint claimed_value,
-        address token_address,
-        uint exchanged_value,
-        address exchanged_address
+        address from_address,
+        address to_address,
+        uint256 from_value,
+        uint256 to_value
     );
 
     event RefundSuccess (
         bytes32 id,
         address token_address,
-        uint256 remaining_balance
+        uint256 remaining_balance,
+        uint256[] exchanged_values
     );
 
     event Test (
@@ -134,7 +135,7 @@ contract HappyTokenPool {
         transfer_token(address(unbox(pool.packed1, 0, 160)), address(this), recipient, claimed_tokens);
 
         // Claim success event
-        emit ClaimSuccess(id, recipient, claimed_tokens, address(unbox(pool.packed1, 0, 160), input_total, exchange_addr));
+        emit ClaimSuccess(id, recipient, exchange_addr, address(unbox(pool.packed1, 0, 160)), input_total, claimed_tokens);
         return claimed_tokens;
     }
 
@@ -171,7 +172,7 @@ contract HappyTokenPool {
                     msg.sender.transfer(pool.exchanged_tokens[i]);
             }
         }
-        emit RefundSuccess(id, token_address, remaining_tokens);
+        emit RefundSuccess(id, token_address, remaining_tokens, pool.exchanged_tokens);
 
         // Gas Refund
         pool.packed1 = 0;
