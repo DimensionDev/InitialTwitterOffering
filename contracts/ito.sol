@@ -61,9 +61,9 @@ contract HappyTokenPool {
         base_timestamp = 1606780800;                                    // 00:00:00 12/01/2020 UTC+0
     }
 
-    function fill_pool (bytes32 _hash, uint _start, uint _end, string memory name, string memory message,
+    function fill_pool (bytes32 _hash, uint256 _start, uint256 _end, string memory name, string memory message,
                         address[] memory _exchange_addrs, uint256[] memory _ratios,
-                        address _token_addr, uint _total_tokens, uint _limit, address _qualification)
+                        address _token_addr, uint256 _total_tokens, uint256 _limit, address _qualification)
     public payable {
         nonce ++;
         require(_start < _end, "Start time should be earlier than end time.");
@@ -107,7 +107,7 @@ contract HappyTokenPool {
     // It takes the unhashed password and a hashed random seed generated from the user
     function claim (bytes32 id, bytes32 verification, address _recipient, 
                    bytes32 validation, uint256 _exchange_addr_i, uint256 input_total) 
-    public payable returns (uint claimed) {
+    public payable returns (uint256 claimed) {
 
         Pool storage pool = pool_by_id[id];
         address payable recipient = address(uint160(_recipient));
@@ -125,11 +125,11 @@ contract HappyTokenPool {
         if (exchange_addr == 0x0000000000000000000000000000000000000000) {
             require(msg.value == input_total, 'No enough ether.');
         } else {
-            uint allowance = IERC20(exchange_addr).allowance(msg.sender, address(this));
+            uint256 allowance = IERC20(exchange_addr).allowance(msg.sender, address(this));
             require(allowance >= input_total, 'No enough allowance.');
         }
 
-        uint claimed_tokens;
+        uint256 claimed_tokens;
         claimed_tokens = SafeMath.div(SafeMath.mul(input_total, ratioB), ratioA);       // 2^256=10e77 >> 10e18 * 10e18
         require(claimed_tokens > 0, "Better not draw water with a sieve");
 
@@ -162,8 +162,8 @@ contract HappyTokenPool {
     }
 
     // Returns 0. exchange_addrs in the given pool 1. remaining tokens 2. if expired 3. if claimed
-    function check_availability (bytes32 id) external view returns (address[] memory exchange_addrs, uint remaining, 
-                                                                    bool started, bool expired, uint claimed,
+    function check_availability (bytes32 id) external view returns (address[] memory exchange_addrs, uint256 remaining, 
+                                                                    bool started, bool expired, uint256 claimed,
                                                                     uint256[] memory exchanged_tokens) {
         Pool storage pool = pool_by_id[id];
         return (
@@ -186,7 +186,7 @@ contract HappyTokenPool {
 
         transfer_token(token_address, address(this), msg.sender, remaining_tokens);
 
-        for (uint i = 0; i < pool.exchange_addrs.length; i++){
+        for (uint8 i = 0; i < pool.exchange_addrs.length; i++){
             if (pool.exchanged_tokens[i] > 0) {
                 if (pool.exchange_addrs[i] != 0x0000000000000000000000000000000000000000)
                     transfer_token(pool.exchange_addrs[i], address(this), msg.sender, pool.exchanged_tokens[i]);
@@ -200,7 +200,7 @@ contract HappyTokenPool {
         pool.packed1 = 0;
         pool.packed2 = 0;
         pool.creator = 0x0000000000000000000000000000000000000000;
-        for (uint i = 0; i < pool.exchange_addrs.length; i++) {
+        for (uint8 i = 0; i < pool.exchange_addrs.length; i++) {
             pool.exchange_addrs[i] = 0x0000000000000000000000000000000000000000;
             pool.exchanged_tokens[i] = 0;
             pool.ratios[i*2] = 0;
@@ -209,7 +209,7 @@ contract HappyTokenPool {
     }
 
     // helper functions
-    function wrap1 (address _token_addr, bytes32 _hash, uint _start, uint _end) internal pure 
+    function wrap1 (address _token_addr, bytes32 _hash, uint256 _start, uint256 _end) internal pure 
                     returns (uint256 packed1) {
         uint256 _packed1 = 0;
         _packed1 |= box(0, 160,  uint256(_token_addr));     // token_addr = 160 bits
@@ -219,7 +219,7 @@ contract HappyTokenPool {
         return _packed1;
     }
 
-    function wrap2 (uint _total_tokens, uint _limit) internal pure returns (uint256 packed2) {
+    function wrap2 (uint256 _total_tokens, uint256 _limit) internal pure returns (uint256 packed2) {
         uint256 _packed2 = 0;
         _packed2 |= box(0, 128, _total_tokens);             // total_tokens = 128 bits ~= 3.4e38
         _packed2 |= box(128, 128, _limit);                  // limit = 128 bits
@@ -252,7 +252,7 @@ contract HappyTokenPool {
     }
 
     function transfer_token (address token_address, address sender_address,
-                            address recipient_address, uint amount) internal {
+                             address recipient_address, uint256 amount) internal {
         require(IERC20(token_address).balanceOf(sender_address) >= amount, "Balance not enough");
         IERC20(token_address).approve(sender_address, amount);
         IERC20(token_address).transferFrom(sender_address, recipient_address, amount);
