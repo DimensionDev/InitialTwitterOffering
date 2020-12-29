@@ -501,25 +501,25 @@ contract("HappyTokenPool", accounts => {
             expect(
                 (eth_balance - previous_eth_balance) / Number(exchange_ETH_amount)
             ).to.be.greaterThan(0.995).and.to.be.lessThan(1)
+            */
 
             const transfer_amount = BigNumber('1e26').toFixed()
             const tokenB_balance = await test_tokenB.balanceOf.call(accounts[0])
 
-            expect(BigInt(tokenB_balance)).to.be.eq(
-                BigInt(previous_tokenB_balance) - BigInt(transfer_amount) + BigInt(exchange_tokenB_amount)
+            expect(BigNumber(tokenB_balance.valueOf()).toFixed()).to.be.eq(
+                BigNumber(previous_tokenB_balance).minus(BigNumber(transfer_amount)).plus(BigNumber(exchange_tokenB_amount)).toFixed()
             ).and.to.be.eq(
-                BigInt("900000000000000020000000000")
+                BigNumber("9e26").plus(BigNumber("2e10")).toFixed()
             )
 
             const tokenC_balance = await test_tokenC.balanceOf.call(accounts[0])
-            expect(BigInt(tokenC_balance)).to.be.eq(
-                BigInt(previous_tokenC_balance) - BigInt(transfer_amount) + BigInt(exchange_tokenC_amount)
+            expect(BigNumber(tokenC_balance.valueOf()).toFixed()).to.be.eq(
+                BigNumber(previous_tokenC_balance).minus(BigNumber(transfer_amount)).plus(BigNumber(exchange_tokenC_amount)).toFixed()
             ).and.to.be.eq(
-                BigInt("800000000000000010000000000")
+                BigNumber("80001e22").toFixed()
             )
 
             this.clock.restore()
-            */
         })
     })
 
