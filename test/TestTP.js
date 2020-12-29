@@ -415,7 +415,7 @@ contract("HappyTokenPool", accounts => {
 
     describe("destruct()", async () => {
         beforeEach(async () => {
-            await test_tokenA.approve.sendTransaction(pool.address, fpp.total_tokens, {'from': accounts[0]})
+            await test_tokenA.approve.sendTransaction(pool.address, BigNumber("1e27"), {'from': accounts[0]})
         })
 
         it("Should throw error when you're not the creator of the pool", async () => {
@@ -517,6 +517,89 @@ contract("HappyTokenPool", accounts => {
                 BigNumber(previous_tokenC_balance).minus(BigNumber(transfer_amount)).plus(BigNumber(exchange_tokenC_amount)).toFixed()
             ).and.to.be.eq(
                 BigNumber("80001e22").toFixed()
+            )
+
+            this.clock.restore()
+        })
+
+        it("Should emit RefundSuccess event and withdraw the corresponding tokens correctly", async () => {
+            const creator = accounts[0]
+            this.clock = sinon.useFakeTimers(new Date().getTime() + 1000 * 1000)
+            fpp.end_time = Math.ceil(this.clock.now / 1000) - base_timestamp
+            fpp.exchange_ratios = [1, 75000, 1, 100, 1, 100],
+            fpp.limit = BigNumber('100000e18').toFixed()
+            fpp.total_tokens = BigNumber('1000000e18').toFixed()
+            const { id: pool_id } = await getResultFromPoolFill(pool, fpp)
+            let previous_eth_balance = await web3.eth.getBalance(accounts[0])
+            const previous_tokenB_balance = await test_tokenB.balanceOf.call(accounts[0])
+            const previous_tokenC_balance = await test_tokenC.balanceOf.call(accounts[0])
+
+            const claimerETH = accounts[3]
+            const ETH_address_index = 0
+            const exchange_ETH_amount = BigNumber('1.3e18').toFixed()
+            const { verification, validation } = getVerification(PASSWORD, claimerETH)
+            await pool.claim.sendTransaction(
+                pool_id,
+                verification,
+                claimerETH,
+                validation,
+                ETH_address_index,
+                exchange_ETH_amount,
+                { 'from': claimerETH, 'value': exchange_ETH_amount }
+            );
+
+            const claimerB = accounts[4]
+            const tokenB_address_index = 1
+            const exchange_tokenB_amount = BigNumber('500e18').toFixed()
+            await approveThenClaimToken(test_tokenB, claimerB, tokenB_address_index, pool_id, exchange_tokenB_amount)
+
+            const claimerC = accounts[5]
+            const tokenC_address_index = 2
+            const exchange_tokenC_amount = BigNumber('2000e18').toFixed()
+            await approveThenClaimToken(test_tokenC, claimerC, tokenC_address_index, pool_id, exchange_tokenC_amount)
+
+            await helper.advanceTimeAndBlock(2000 * 1000);
+            await pool.destruct.sendTransaction(pool_id, { from: creator })
+
+            const logs = await web3.eth.getPastLogs({address: pool.address, topics: [web3.utils.sha3(refund_success_encode)]})
+            const result = web3.eth.abi.decodeParameters(refund_success_types, logs[0].data)
+
+            expect(result).to.have.property('id').that.to.be.eq(pool_id)
+            expect(result).to.have.property('token_address').that.to.be.eq(test_tokenA.address)
+            expect(result).to.have.property('remaining_tokens')
+            expect(result).to.have.property('exchanged_values')
+
+            const ratioETH = fpp.exchange_ratios[1] / fpp.exchange_ratios[0]
+            const ratioB = fpp.exchange_ratios[3] / fpp.exchange_ratios[2]
+            const ratioC = fpp.exchange_ratios[5] / fpp.exchange_ratios[4]
+            const remaining_tokens =
+                BigNumber(fpp.total_tokens).minus(
+                    BigNumber(ratioB).times(BigNumber(exchange_tokenB_amount)).plus(
+                        BigNumber('100000e18')
+                    ).plus(
+                        BigNumber(ratioETH).times(BigNumber(exchange_ETH_amount))
+                    )
+                ).toFixed()
+            const result_remaining_tokens = BigNumber(result.remaining_tokens).toFixed()
+
+            expect(result_remaining_tokens).to.be.eq(remaining_tokens)
+
+            const eth_balance = await web3.eth.getBalance(accounts[0])
+            assert((BigNumber(eth_balance).minus(BigNumber(previous_eth_balance))).gt(BigNumber(1e18)))     // gain >1
+            assert((BigNumber(eth_balance).minus(BigNumber(previous_eth_balance))).lt(BigNumber(1.3e18)))   // gain<1.3
+
+            const transfer_amount = BigNumber('1e26').toFixed()
+            const tokenB_balance = await test_tokenB.balanceOf.call(accounts[0])
+
+            expect(BigNumber(tokenB_balance.valueOf()).toFixed()).to.be.eq(
+                BigNumber(previous_tokenB_balance).minus(BigNumber(transfer_amount)).plus(BigNumber(exchange_tokenB_amount)).toFixed()
+            )
+
+            const tokenC_balance = await test_tokenC.balanceOf.call(accounts[0])
+            expect(BigNumber(tokenC_balance.valueOf()).toFixed()).to.be.eq(
+                BigNumber(previous_tokenC_balance).minus(BigNumber(transfer_amount)).plus(
+                    BigNumber(exchange_tokenC_amount)
+                ).toFixed()
             )
 
             this.clock.restore()
