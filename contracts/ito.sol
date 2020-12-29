@@ -142,7 +142,7 @@ contract HappyTokenPool {
             input_total = SafeMath.div(SafeMath.mul(claimed_tokens, ratioB), ratioA);   // same
         }
         require(claimed_tokens <= limit);                                               // make sure
-        SafeMath.add(pool.exchanged_tokens[_exchange_addr_i], input_total);
+        pool.exchanged_tokens[_exchange_addr_i] = SafeMath.add(pool.exchanged_tokens[_exchange_addr_i], input_total);
 
         // Penalize greedy attackers by placing duplication check at the very last
         require (pool.claimed_map[_recipient] == 0, "Already Claimed");
