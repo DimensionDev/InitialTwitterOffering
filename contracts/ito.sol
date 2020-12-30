@@ -49,6 +49,7 @@ contract HappyTokenPool {
     a 63-year-old described by one neighbor as a loner, died when his recreational vehicle exploded \
     on 2nd Avenue North in the city's downtown. The blast injured at least eight people and damaged-";
     bytes32 private seed;
+    address DEFAULT_ADDRESS = 0x0000000000000000000000000000000000000000;
 
     constructor() public {
         contract_creator = msg.sender;
@@ -74,7 +75,7 @@ contract HappyTokenPool {
         pool.creator = msg.sender;                                      // 160 bytes
         pool.exchange_addrs = _exchange_addrs;                          // 160 bytes
         for (uint8 i = 0; i < _exchange_addrs.length; i++) {
-            if (_exchange_addrs[i] != 0x0000000000000000000000000000000000000000) {
+            if (_exchange_addrs[i] != DEFAULT_ADDRESS) {
                 require(IERC20(_exchange_addrs[i]).totalSupply() > 0, "Not Valid ERC20");
             }
             pool.exchanged_tokens.push(0); 
@@ -117,7 +118,7 @@ contract HappyTokenPool {
         address exchange_addr = pool.exchange_addrs[_exchange_addr_i];
         uint256 ratioA = pool.ratios[_exchange_addr_i*2];
         uint256 ratioB = pool.ratios[_exchange_addr_i*2 + 1];
-        if (exchange_addr == 0x0000000000000000000000000000000000000000) {
+        if (exchange_addr == DEFAULT_ADDRESS) {
             require(msg.value == input_total, 'No enough ether.');
         } else {
             uint256 allowance = IERC20(exchange_addr).allowance(msg.sender, address(this));
@@ -146,7 +147,7 @@ contract HappyTokenPool {
         pool.claimed_map[_recipient] = claimed_tokens;
 
         // Transfer the token after state changing
-        if (exchange_addr != 0x0000000000000000000000000000000000000000) {
+        if (exchange_addr != DEFAULT_ADDRESS) {
             IERC20(exchange_addr).transferFrom(msg.sender, address(this), input_total);
         }
         transfer_token(address(unbox(pool.packed1, 0, 160)), address(this), recipient, claimed_tokens);
@@ -184,7 +185,7 @@ contract HappyTokenPool {
 
         for (uint8 i = 0; i < pool.exchange_addrs.length; i++){
             if (pool.exchanged_tokens[i] > 0) {
-                if (pool.exchange_addrs[i] != 0x0000000000000000000000000000000000000000)
+                if (pool.exchange_addrs[i] != DEFAULT_ADDRESS)
                     transfer_token(pool.exchange_addrs[i], address(this), msg.sender, pool.exchanged_tokens[i]);
                 else
                     msg.sender.transfer(pool.exchanged_tokens[i]);
@@ -195,9 +196,9 @@ contract HappyTokenPool {
         // Gas Refund
         pool.packed1 = 0;
         pool.packed2 = 0;
-        pool.creator = 0x0000000000000000000000000000000000000000;
+        pool.creator = DEFAULT_ADDRESS;
         for (uint8 i = 0; i < pool.exchange_addrs.length; i++) {
-            pool.exchange_addrs[i] = 0x0000000000000000000000000000000000000000;
+            pool.exchange_addrs[i] = DEFAULT_ADDRESS;
             pool.exchanged_tokens[i] = 0;
             pool.ratios[i*2] = 0;
             pool.ratios[i*2+1] = 0;
