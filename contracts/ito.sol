@@ -52,7 +52,9 @@ contract HappyTokenPool {
     uint256 base_timestamp;
     address public contract_creator;
     mapping(bytes32 => Pool) pool_by_id;
-    string constant private magic = "Anthony Quinn Warner, 63, was identified as the bomber. Warner, a 63-year-old described by one neighbor as a loner, died when his recreational vehicle exploded on 2nd Avenue North in the city's downtown. The blast injured at least eight people and damaged-";
+    string constant private magic = "Anthony Quinn Warner, 63, was identified as the bomber. Warner, \
+    a 63-year-old described by one neighbor as a loner, died when his recreational vehicle exploded \
+    on 2nd Avenue North in the city's downtown. The blast injured at least eight people and damaged-";
     bytes32 private seed;
 
     constructor() public {
@@ -68,6 +70,7 @@ contract HappyTokenPool {
         nonce ++;
         require(_start < _end, "Start time should be earlier than end time.");
         require(_limit <= _total_tokens, "Limit needs to be less than or equal to the total supply");
+        require(_total_tokens < 2**128, "No more than 2^128 tokens(incluidng decimals) allowed");
         require(IERC20(_token_addr).allowance(msg.sender, address(this)) >= _total_tokens, "Insuffcient allowance");
         require(_ratios.length == 2 * _exchange_addrs.length, "Size of ratios = 2 * size of exchange_addrs");
 
@@ -114,7 +117,8 @@ contract HappyTokenPool {
         require (IQLF(pool.qualification).ifQualified(msg.sender) == true, "Not Qualified");
         require (unbox(pool.packed1, 208, 24) + base_timestamp < now, "Not started.");
         require (unbox(pool.packed1, 232, 24) + base_timestamp > now, "Expired.");
-        require (verification == keccak256(abi.encodePacked(unbox(pool.packed1, 160, 48), msg.sender)), 'Wrong Password');
+        require (verification == keccak256(abi.encodePacked(unbox(pool.packed1, 160, 48), msg.sender)), 
+                 'Wrong Password');
         require (validation == keccak256(toBytes(msg.sender)), "Validation Failed");
 
         uint256 total_tokens = unbox(pool.packed2, 0, 128);
@@ -157,7 +161,8 @@ contract HappyTokenPool {
         transfer_token(address(unbox(pool.packed1, 0, 160)), address(this), recipient, claimed_tokens);
 
         // Claim success event
-        emit ClaimSuccess(id, recipient, exchange_addr, address(unbox(pool.packed1, 0, 160)), input_total, claimed_tokens);
+        emit ClaimSuccess(id, recipient, exchange_addr, address(unbox(pool.packed1, 0, 160)), 
+                          input_total, claimed_tokens);
         return claimed_tokens;
     }
 
