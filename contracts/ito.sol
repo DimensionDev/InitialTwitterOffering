@@ -43,11 +43,6 @@ contract HappyTokenPool {
         uint256[] exchanged_values
     );
 
-    event Test (
-        uint256 a,
-        uint256 b
-    );
-
     uint32 nonce;
     uint256 base_timestamp;
     address public contract_creator;
