@@ -77,14 +77,14 @@ contract HappyTokenPool {
         pool.creator = msg.sender;                                      // 160 bytes
         pool.exchange_addrs = _exchange_addrs;                          // 160 bytes
         pool.qualification = _qualification;
-        for (uint8 i = 0; i < _exchange_addrs.length; i++) {
+        for (uint256 i = 0; i < _exchange_addrs.length; i++) {
             if (_exchange_addrs[i] != DEFAULT_ADDRESS) {
                 require(IERC20(_exchange_addrs[i]).totalSupply() > 0, "Not Valid ERC20");
             }
             pool.exchanged_tokens.push(0); 
         }
 
-        for (uint8 i = 0; i < _ratios.length; i+= 2) {
+        for (uint256 i = 0; i < _ratios.length; i+= 2) {
             uint256 divA = SafeMath.div(_ratios[i], _ratios[i+1]);      // Non-zero checked by SafteMath.div
             uint256 divB = SafeMath.div(_ratios[i+1], _ratios[i]);
             
@@ -187,7 +187,7 @@ contract HappyTokenPool {
 
         transfer_token(token_address, address(this), msg.sender, remaining_tokens);
 
-        for (uint8 i = 0; i < pool.exchange_addrs.length; i++){
+        for (uint256 i = 0; i < pool.exchange_addrs.length; i++){
             if (pool.exchanged_tokens[i] > 0) {
                 if (pool.exchange_addrs[i] != DEFAULT_ADDRESS)
                     transfer_token(pool.exchange_addrs[i], address(this), msg.sender, pool.exchanged_tokens[i]);
@@ -201,7 +201,7 @@ contract HappyTokenPool {
         pool.packed1 = 0;
         pool.packed2 = 0;
         pool.creator = DEFAULT_ADDRESS;
-        for (uint8 i = 0; i < pool.exchange_addrs.length; i++) {
+        for (uint256 i = 0; i < pool.exchange_addrs.length; i++) {
             pool.exchange_addrs[i] = DEFAULT_ADDRESS;
             pool.exchanged_tokens[i] = 0;
             pool.ratios[i*2] = 0;
