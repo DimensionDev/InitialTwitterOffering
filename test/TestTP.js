@@ -58,7 +58,7 @@ contract("HappyTokenPool", accounts => {
         fpp = {
             hash: web3.utils.sha3(PASSWORD),
             start_time: 0,
-            end_time: 2592000, // duration 30 days
+            end_time: 5184000, // duration 60 days
             poor_name: "Cache Miss",
             message: "Hello From the Outside",
             exchange_addrs: [eth_address, test_tokenB.address, test_tokenC.address],
