@@ -176,12 +176,15 @@ contract HappyTokenPool {
     function destruct (bytes32 id) public {
         Pool storage pool = pool_by_id[id];
         require(msg.sender == pool.creator, "Only the pool creator can destruct.");
-        require(unbox(pool.packed1, 232, 24) + base_timestamp <= now, "Not expired yet");
 
-        uint256 remaining_tokens = unbox(pool.packed2, 0, 128);
         address token_address = address(unbox(pool.packed1, 0, 160));
+        uint256 expiration = unbox(pool.packed1, 232, 24) + base_timestamp;
+        uint256 remaining_tokens = unbox(pool.packed2, 0, 128);
+        require(expiration <= now || remaining_tokens == 0, "Not expired yet");
 
-        transfer_token(token_address, address(this), msg.sender, remaining_tokens);
+        if (remaining_tokens != 0) {
+            transfer_token(token_address, address(this), msg.sender, remaining_tokens);
+        }
 
         for (uint256 i = 0; i < pool.exchange_addrs.length; i++){
             if (pool.exchanged_tokens[i] > 0) {
