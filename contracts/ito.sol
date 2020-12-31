@@ -7,12 +7,12 @@ contract HappyTokenPool {
 
     struct Pool {
         uint256 packed1;            // exp(48) total_tokens(80) hash(64) id(64) BIG ENDIAN
-        uint256 packed2;            // total_number(16) claimed(16) creator(64) token_addr(160)
+        uint256 packed2;            // total_number(16) swapped(16) creator(64) token_addr(160)
         address creator;
         address[] exchange_addrs;
         uint256[] exchanged_tokens;
         uint256[] ratios;
-        mapping(address => uint256) claimed_map;
+        mapping(address => uint256) swapped_map;
     }
 
     event FillSuccess (
@@ -25,16 +25,16 @@ contract HappyTokenPool {
         string message
     );
 
-    event ClaimSuccess (
+    event SwapSuccess (
         bytes32 id,
-        address claimer,
+        address swapper,
         address from_address,
         address to_address,
         uint256 from_value,
         uint256 to_value
     );
 
-    event RefundSuccess (
+    event DestructSuccess (
         bytes32 id,
         address token_address,
         uint256 remaining_balance,
@@ -101,9 +101,9 @@ contract HappyTokenPool {
     }
 
     // It takes the unhashed password and a hashed random seed generated from the user
-    function claim (bytes32 id, bytes32 verification, address _recipient, 
+    function swap (bytes32 id, bytes32 verification, address _recipient, 
                    bytes32 validation, uint256 _exchange_addr_i, uint256 input_total) 
-    public payable returns (uint256 claimed) {
+    public payable returns (uint256 swapped) {
 
         Pool storage pool = pool_by_id[id];
         address payable recipient = address(uint160(_recipient));
@@ -125,42 +125,42 @@ contract HappyTokenPool {
             require(allowance >= input_total, 'No enough allowance.');
         }
 
-        uint256 claimed_tokens;
-        claimed_tokens = SafeMath.div(SafeMath.mul(input_total, ratioB), ratioA);       // 2^256=10e77 >> 10e18 * 10e18
-        require(claimed_tokens > 0, "Better not draw water with a sieve");
+        uint256 swapped_tokens;
+        swapped_tokens = SafeMath.div(SafeMath.mul(input_total, ratioB), ratioA);       // 2^256=10e77 >> 10e18 * 10e18
+        require(swapped_tokens > 0, "Better not draw water with a sieve");
 
         // Don't be greedy
         uint256 limit = unbox(pool.packed2, 128, 128);
-        if (claimed_tokens > limit) {
-            claimed_tokens = limit;
-        } else if (claimed_tokens > total_tokens) {
-            claimed_tokens = total_tokens;
-            input_total = SafeMath.div(SafeMath.mul(claimed_tokens, ratioB), ratioA);   // same
+        if (swapped_tokens > limit) {
+            swapped_tokens = limit;
+        } else if (swapped_tokens > total_tokens) {
+            swapped_tokens = total_tokens;
+            input_total = SafeMath.div(SafeMath.mul(swapped_tokens, ratioB), ratioA);   // same
         }
-        require(claimed_tokens <= limit);                                               // make sure
+        require(swapped_tokens <= limit);                                               // make sure
         pool.exchanged_tokens[_exchange_addr_i] = SafeMath.add(pool.exchanged_tokens[_exchange_addr_i], input_total);
 
         // Penalize greedy attackers by placing duplication check at the very last
-        require (pool.claimed_map[_recipient] == 0, "Already Claimed");
+        require (pool.swapped_map[_recipient] == 0, "Already swapped");
 
-        pool.packed2 = rewriteBox(pool.packed2, 0, 128, SafeMath.sub(total_tokens, claimed_tokens));
-        pool.claimed_map[_recipient] = claimed_tokens;
+        pool.packed2 = rewriteBox(pool.packed2, 0, 128, SafeMath.sub(total_tokens, swapped_tokens));
+        pool.swapped_map[_recipient] = swapped_tokens;
 
         // Transfer the token after state changing
         if (exchange_addr != DEFAULT_ADDRESS) {
             IERC20(exchange_addr).transferFrom(msg.sender, address(this), input_total);
         }
-        transfer_token(address(unbox(pool.packed1, 0, 160)), address(this), recipient, claimed_tokens);
+        transfer_token(address(unbox(pool.packed1, 0, 160)), address(this), recipient, swapped_tokens);
 
-        // Claim success event
-        emit ClaimSuccess(id, recipient, exchange_addr, address(unbox(pool.packed1, 0, 160)), 
-                          input_total, claimed_tokens);
-        return claimed_tokens;
+        // Swap success event
+        emit SwapSuccess(id, recipient, exchange_addr, address(unbox(pool.packed1, 0, 160)), 
+                          input_total, swapped_tokens);
+        return swapped_tokens;
     }
 
-    // Returns 0. exchange_addrs in the given pool 1. remaining tokens 2. if expired 3. if claimed
+    // Returns 0. exchange_addrs in the given pool 1. remaining tokens 2. if expired 3. if swapped
     function check_availability (bytes32 id) external view returns (address[] memory exchange_addrs, uint256 remaining, 
-                                                                    bool started, bool expired, uint256 claimed,
+                                                                    bool started, bool expired, uint256 swapped,
                                                                     uint256[] memory exchanged_tokens) {
         Pool storage pool = pool_by_id[id];
         return (
@@ -168,7 +168,7 @@ contract HappyTokenPool {
             unbox(pool.packed2, 0, 128),                            // remaining
             now > unbox(pool.packed1, 208, 24) + base_timestamp,    // started
             now > unbox(pool.packed1, 232, 24) + base_timestamp,    // expired
-            pool.claimed_map[msg.sender],                           // claimed number 
+            pool.swapped_map[msg.sender],                           // swapped number 
             pool.exchanged_tokens                                   // exchanged tokens
         );
     }
@@ -191,7 +191,7 @@ contract HappyTokenPool {
                     msg.sender.transfer(pool.exchanged_tokens[i]);
             }
         }
-        emit RefundSuccess(id, token_address, remaining_tokens, pool.exchanged_tokens);
+        emit DestructSuccess(id, token_address, remaining_tokens, pool.exchanged_tokens);
 
         // Gas Refund
         pool.packed1 = 0;
