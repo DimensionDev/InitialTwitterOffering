@@ -604,6 +604,36 @@ contract("HappyTokenPool", accounts => {
 
             this.clock.restore()
         })
+
+        it("Should emit DestructSuccess event and withdraw the corresponding tokens correctly before expiry", async () => {
+            const creator = accounts[0]
+            this.clock = sinon.useFakeTimers(new Date().getTime() + 1000 * 1000)
+            fpp.end_time = Math.ceil(this.clock.now / 1000) - base_timestamp
+            fpp.exchange_ratios = [1, 75000, 1, 100, 1, 100],
+            fpp.limit = BigNumber('50000e18').toFixed()
+            fpp.total_tokens = BigNumber('50000e18').toFixed()
+            const { id: pool_id } = await getResultFromPoolFill(pool, fpp)
+            let previous_eth_balance = await web3.eth.getBalance(accounts[0])
+            const previous_tokenB_balance = await test_tokenB.balanceOf.call(accounts[0])
+            const previous_tokenC_balance = await test_tokenC.balanceOf.call(accounts[0])
+
+            const swapperB = accounts[4]
+            const tokenB_address_index = 1
+            const exchange_tokenB_amount = BigNumber('500e18').toFixed()
+            await approveThenSwapToken(test_tokenB, swapperB, tokenB_address_index, pool_id, exchange_tokenB_amount)
+
+            await pool.destruct.sendTransaction(pool_id, { from: creator })
+
+            const logs = await web3.eth.getPastLogs({address: pool.address, topics: [web3.utils.sha3(destruct_success_encode)]})
+            const result = web3.eth.abi.decodeParameters(destruct_success_types, logs[0].data)
+
+            expect(result).to.have.property('id').that.to.be.eq(pool_id)
+            expect(result).to.have.property('token_address').that.to.be.eq(test_tokenA.address)
+            expect(result).to.have.property('remaining_tokens')
+            expect(result).to.have.property('exchanged_values')
+
+            this.clock.restore()
+        })
     })
 
     async function approveThenSwapToken (test_token, swapper, token_address_index, pool_id, exchange_amount) {
