@@ -9,6 +9,7 @@ const TestTokenA = artifacts.require("TestTokenA")
 const TestTokenB = artifacts.require("TestTokenB")
 const TestTokenC = artifacts.require("TestTokenC")
 const HappyTokenPool = artifacts.require("HappyTokenPool")
+const QualificationTester = artifacts.require("QLF");
 const InternalFunctions = artifacts.require("InternalFunctions")
 const base_timestamp = 1606780800
 const eth_address = "0x0000000000000000000000000000000000000000"
@@ -56,6 +57,7 @@ contract("HappyTokenPool", accounts => {
         test_tokenA = await TestTokenA.deployed()
         test_tokenB = await TestTokenB.deployed()
         test_tokenC = await TestTokenC.deployed()
+        qlf_tester = await QualificationTester.deployed()
 
         pool = await HappyTokenPool.deployed()
         fpp = {
@@ -68,7 +70,8 @@ contract("HappyTokenPool", accounts => {
             exchange_ratios: [1, 10000, 1, 2000, 4000, 1],
             token_address: test_tokenA.address,
             total_tokens: BigNumber('10000e18').toFixed(),
-            limit: BigNumber('1000e18').toFixed()
+            limit: BigNumber('1000e18').toFixed(),
+            qualification: qlf_tester.address
         }
     })
 
