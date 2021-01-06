@@ -1,4 +1,10 @@
-pragma solidity 0.6.2;
+/**
+ * @author          Yisi Liu
+ * @contact         yisiliu@gmail.com
+ * @author_time     01/06/2021
+**/
+
+pragma solidity >= 0.6.0;
 import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/SafeERC20.sol";
 import "openzeppelin-solidity/contracts/token/ERC721/IERC721.sol";
@@ -8,8 +14,9 @@ import "./IQLF.sol";
 contract HappyTokenPool {
 
     struct Pool {
-        uint256 packed1;            // exp(48) total_tokens(80) hash(64) id(64) BIG ENDIAN
-        uint256 packed2;            // total_number(16) swapped(16) creator(64) token_addr(160)
+        uint256 packed1;            // total_address(160) hash(48) start_time_delta(24) 
+                                    // expiration_time_delta(24) BIG ENDIAN
+        uint256 packed2;            // total_tokens(128) limit(128)
         address creator;
         address qualification;
         address[] exchange_addrs;
@@ -64,7 +71,7 @@ contract HappyTokenPool {
     constructor() public {
         contract_creator = msg.sender;
         seed = keccak256(abi.encodePacked(magic, now, contract_creator));
-        base_timestamp = 1606780800;                                    // 00:00:00 12/01/2020 UTC+0
+        base_timestamp = 1609372800;                                    // 00:00:00 01/01/2021 GMT(UTC+0)
     }
 
     function fill_pool (bytes32 _hash, uint256 _start, uint256 _end, string memory name, string memory message,
@@ -85,7 +92,7 @@ contract HappyTokenPool {
         pool.packed2 = wrap2(_total_tokens, _limit);                    // 256 bytes
         pool.creator = msg.sender;                                      // 160 bytes
         pool.exchange_addrs = _exchange_addrs;                          // 160 bytes
-        pool.qualification = _qualification;
+        pool.qualification = _qualification;                            // 160 bytes
         for (uint256 i = 0; i < _exchange_addrs.length; i++) {
             if (_exchange_addrs[i] != DEFAULT_ADDRESS) {
                 require(IERC20(_exchange_addrs[i]).totalSupply() > 0, "Not a valid ERC20");

@@ -11,7 +11,7 @@ const TestTokenC = artifacts.require("TestTokenC")
 const HappyTokenPool = artifacts.require("HappyTokenPool")
 const QualificationTester = artifacts.require("QLF");
 const InternalFunctions = artifacts.require("InternalFunctions")
-const base_timestamp = 1606780800
+const base_timestamp = 1609372800
 const eth_address = "0x0000000000000000000000000000000000000000"
 const fill_success_encode = 'FillSuccess(uint256,bytes32,address,uint256,address,string,string)'
 const fill_success_types = [
@@ -281,7 +281,7 @@ contract("HappyTokenPool", accounts => {
         it("Should throw error when pool is expired", async () => {
             this.clock = sinon.useFakeTimers(new Date().getTime() - 1000 * 1000)
             fpp.end_time = Math.ceil(this.clock.now / 1000) - base_timestamp
-            fpp.start_time = fpp.end_time - 100000 * 10
+            fpp.start_time = fpp.end_time - 10
             const approve_amount = BigNumber('1e10').toFixed()
             exchange_amount = approve_amount
             await test_tokenC.approve.sendTransaction(pool.address, approve_amount, { 'from': account })
@@ -435,7 +435,7 @@ contract("HappyTokenPool", accounts => {
             const creator = accounts[0]
             this.clock = sinon.useFakeTimers(new Date().getTime() + 1000 * 1000)
             fpp.end_time = Math.ceil(this.clock.now / 1000) - base_timestamp
-            fpp.start_time = fpp.end_time - 100000 * 10
+            fpp.start_time = fpp.end_time - 10
             const { id: pool_id } = await getResultFromPoolFill(pool, fpp)
 
             expect(pool.destruct.sendTransaction(pool_id, { from: creator })).to.be.rejectedWith(Error)

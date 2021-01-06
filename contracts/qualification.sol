@@ -1,3 +1,9 @@
+/**
+ * @author          Yisi Liu
+ * @contact         yisiliu@gmail.com
+ * @author_time     01/06/2021
+**/
+
 pragma solidity >= 0.6.0;
 
 import "./IQLF.sol";
