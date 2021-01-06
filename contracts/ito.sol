@@ -3,6 +3,7 @@ import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/SafeERC20.sol";
 import "openzeppelin-solidity/contracts/token/ERC721/IERC721.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import "./IQLF.sol";
 
 contract HappyTokenPool {
 
@@ -10,6 +11,7 @@ contract HappyTokenPool {
         uint256 packed1;            // exp(48) total_tokens(80) hash(64) id(64) BIG ENDIAN
         uint256 packed2;            // total_number(16) swapped(16) creator(64) token_addr(160)
         address creator;
+        address qualification;
         address[] exchange_addrs;
         uint256[] exchanged_tokens;
         uint256[] ratios;
@@ -67,7 +69,7 @@ contract HappyTokenPool {
 
     function fill_pool (bytes32 _hash, uint256 _start, uint256 _end, string memory name, string memory message,
                         address[] memory _exchange_addrs, uint256[] memory _ratios,
-                        address _token_addr, uint256 _total_tokens, uint256 _limit)
+                        address _token_addr, uint256 _total_tokens, uint256 _limit, address _qualification)
     public payable {
         nonce ++;
         require(_start < _end, "Start time should be earlier than end time.");
@@ -83,6 +85,7 @@ contract HappyTokenPool {
         pool.packed2 = wrap2(_total_tokens, _limit);                    // 256 bytes
         pool.creator = msg.sender;                                      // 160 bytes
         pool.exchange_addrs = _exchange_addrs;                          // 160 bytes
+        pool.qualification = _qualification;
         for (uint256 i = 0; i < _exchange_addrs.length; i++) {
             if (_exchange_addrs[i] != DEFAULT_ADDRESS) {
                 require(IERC20(_exchange_addrs[i]).totalSupply() > 0, "Not a valid ERC20");
@@ -116,6 +119,7 @@ contract HappyTokenPool {
 
         Pool storage pool = pool_by_id[id];
         address payable recipient = address(uint160(_recipient));
+        require (IQLF(pool.qualification).ifQualified(msg.sender) == true, "Not Qualified");
         require (unbox(pool.packed1, 208, 24) + base_timestamp < now, "Not started.");
         require (unbox(pool.packed1, 232, 24) + base_timestamp > now, "Expired.");
         require (verification == keccak256(abi.encodePacked(unbox(pool.packed1, 160, 48), msg.sender)), 
