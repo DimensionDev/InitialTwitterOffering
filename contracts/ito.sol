@@ -111,7 +111,7 @@ contract HappyTokenPool {
 
     // It takes the unhashed password and a hashed random seed generated from the user
     function swap (bytes32 id, bytes32 verification, address _recipient, 
-                   bytes32 validation, uint256 _exchange_addr_i, uint256 input_total) 
+                   bytes32 validation, uint256 exchange_addr_i, uint256 input_total) 
     public payable returns (uint256 swapped) {
 
         Pool storage pool = pool_by_id[id];
@@ -124,9 +124,9 @@ contract HappyTokenPool {
 
         uint256 total_tokens = unbox(pool.packed2, 0, 128);
 
-        address exchange_addr = pool.exchange_addrs[_exchange_addr_i];
-        uint256 ratioA = pool.ratios[_exchange_addr_i*2];
-        uint256 ratioB = pool.ratios[_exchange_addr_i*2 + 1];
+        address exchange_addr = pool.exchange_addrs[exchange_addr_i];
+        uint256 ratioA = pool.ratios[exchange_addr_i*2];
+        uint256 ratioB = pool.ratios[exchange_addr_i*2 + 1];
         if (exchange_addr == DEFAULT_ADDRESS) {
             require(msg.value == input_total, 'No enough ether.');
         } else {
@@ -147,7 +147,7 @@ contract HappyTokenPool {
             input_total = SafeMath.div(SafeMath.mul(swapped_tokens, ratioB), ratioA);   // same
         }
         require(swapped_tokens <= limit);                                               // make sure
-        pool.exchanged_tokens[_exchange_addr_i] = SafeMath.add(pool.exchanged_tokens[_exchange_addr_i], input_total);
+        pool.exchanged_tokens[exchange_addr_i] = SafeMath.add(pool.exchanged_tokens[exchange_addr_i], input_total);
 
         // Penalize greedy attackers by placing duplication check at the very last
         require (pool.swapped_map[_recipient] == 0, "Already swapped");
