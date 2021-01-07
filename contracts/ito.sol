@@ -20,8 +20,8 @@ contract HappyTokenPool {
         address creator;
         address qualification;
         address[] exchange_addrs;
-        uint256[] exchanged_tokens;
-        uint256[] ratios;
+        uint128[] exchanged_tokens;
+        uint128[] ratios;
         mapping(address => uint256) swapped_map;
     }
 
@@ -48,7 +48,7 @@ contract HappyTokenPool {
         bytes32 id,
         address token_address,
         uint256 remaining_balance,
-        uint256[] exchanged_values
+        uint128[] exchanged_values
     );
 
     event WithdrawSuccess (
@@ -75,7 +75,7 @@ contract HappyTokenPool {
     }
 
     function fill_pool (bytes32 _hash, uint256 _start, uint256 _end, string memory name, string memory message,
-                        address[] memory _exchange_addrs, uint256[] memory _ratios,
+                        address[] memory _exchange_addrs, uint128[] memory _ratios,
                         address _token_addr, uint256 _total_tokens, uint256 _limit, address _qualification)
     public payable {
         nonce ++;
@@ -121,7 +121,7 @@ contract HappyTokenPool {
 
     // It takes the unhashed password and a hashed random seed generated from the user
     function swap (bytes32 id, bytes32 verification, address _recipient, 
-                   bytes32 validation, uint256 exchange_addr_i, uint256 input_total) 
+                   bytes32 validation, uint256 exchange_addr_i, uint128 input_total) 
     public payable returns (uint256 swapped) {
 
         Pool storage pool = pool_by_id[id];
@@ -155,10 +155,10 @@ contract HappyTokenPool {
             swapped_tokens = limit;
         } else if (swapped_tokens > total_tokens) {
             swapped_tokens = total_tokens;
-            input_total = SafeMath.div(SafeMath.mul(swapped_tokens, ratioB), ratioA);   // same
+            input_total = uint128(SafeMath.div(SafeMath.mul(swapped_tokens, ratioB), ratioA));   // same
         }
         require(swapped_tokens <= limit);                                               // make sure
-        pool.exchanged_tokens[exchange_addr_i] = SafeMath.add(pool.exchanged_tokens[exchange_addr_i], input_total);
+        pool.exchanged_tokens[exchange_addr_i] = uint128(SafeMath.add(pool.exchanged_tokens[exchange_addr_i], input_total));
 
         // Penalize greedy attackers by placing duplication check at the very last
         require (pool.swapped_map[_recipient] == 0, "Already swapped");
@@ -181,7 +181,7 @@ contract HappyTokenPool {
     // Returns 0. exchange_addrs in the given pool 1. remaining tokens 2. if expired 3. if swapped
     function check_availability (bytes32 id) external view returns (address[] memory exchange_addrs, uint256 remaining, 
                                                                     bool started, bool expired, uint256 swapped,
-                                                                    uint256[] memory exchanged_tokens) {
+                                                                    uint128[] memory exchanged_tokens) {
         Pool storage pool = pool_by_id[id];
         return (
             pool.exchange_addrs,                                    // exchange_addrs if 0x0 then destructed
