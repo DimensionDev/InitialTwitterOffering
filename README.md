@@ -40,7 +40,7 @@ truffle debug [TX_ID]
 | Chain | Address |
 | ----- | ------- |
 | Mainnet | N/A |
-| Ropsten | [0xF4C36D2a5C991E323d32F7d8D7EFe27cE71FfbaB](ropsten.etherscan.io/address/0xF4C36D2a5C991E323d32F7d8D7EFe27cE71FfbaB) |
+| Ropsten | [0xF4C36D2a5C991E323d32F7d8D7EFe27cE71FfbaB](https://ropsten.etherscan.io/address/0xF4C36D2a5C991E323d32F7d8D7EFe27cE71FfbaB) |
 | Rinkeby | [0x62C7e68a14C3692fb26a13637d3b399A47c50107](https://rinkeby.etherscan.io/address/0x62C7e68a14C3692fb26a13637d3b399A47c50107) |
 | Kovan | N/A |
 | Görli | N/A |
@@ -50,7 +50,7 @@ truffle debug [TX_ID]
 | Chain | Address |
 | ----- | ------- |
 | Mainnet | N/A |
-| Ropsten | [0x0ac13391f146604a9d32521e536b97b2fe1c5f90](ropsten.etherscan.io/address/0x0ac13391f146604a9d32521e536b97b2fe1c5f90) |
+| Ropsten | [0x0ac13391f146604a9d32521e536b97b2fe1c5f90](https://ropsten.etherscan.io/address/0x0ac13391f146604a9d32521e536b97b2fe1c5f90) |
 | Rinkeby | [0x88AA0AB3B7cDE263073e1cBa1D06473adeC1b38E](https://rinkeby.etherscan.io/address/0x88AA0AB3B7cDE263073e1cBa1D06473adeC1b38E) |
 | Kovan | N/A |
 | Görli | N/A |
