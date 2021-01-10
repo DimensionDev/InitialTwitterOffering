@@ -127,6 +127,7 @@ contract HappyTokenPool {
         require (validation == keccak256(toBytes(msg.sender)), "Validation Failed");
 
         uint256 total_tokens = unbox(pool.packed2, 0, 128);
+        require (total_tokens > 0, "Out of Stock");
 
         address exchange_addr = pool.exchange_addrs[exchange_addr_i];
         uint256 ratioA = pool.ratios[exchange_addr_i*2];
