@@ -599,9 +599,14 @@ contract("HappyTokenPool", accounts => {
             )
 
             const tokenC_balance = await test_tokenC.balanceOf.call(accounts[0])
-            expect(BigNumber(tokenC_balance.valueOf()).toFixed()).to.be.eq(
+            expect(BigNumber(tokenC_balance.valueOf()).toFixed()).to.be.not.eq(
                 BigNumber(previous_tokenC_balance).minus(BigNumber(transfer_amount)).plus(
                     BigNumber(exchange_tokenC_amount)
+                ).toFixed()
+            )
+            expect(BigNumber(tokenC_balance.valueOf()).toFixed()).to.be.eq(
+                BigNumber(previous_tokenC_balance).minus(BigNumber(transfer_amount)).plus(
+                    BigNumber('1000e18')            // 2000e18 exceeds limit
                 ).toFixed()
             )
 

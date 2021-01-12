@@ -154,9 +154,10 @@ contract HappyTokenPool {
         uint256 limit = unbox(pool.packed2, 128, 128);
         if (swapped_tokens > limit) {
             swapped_tokens = limit;
+            input_total = uint128(SafeMath.div(SafeMath.mul(limit, ratioA), ratioB));  // Update
         } else if (swapped_tokens > total_tokens) {
             swapped_tokens = total_tokens;
-            input_total = uint128(SafeMath.div(SafeMath.mul(swapped_tokens, ratioB), ratioA));   // same
+            input_total = uint128(SafeMath.div(SafeMath.mul(total_tokens, ratioA), ratioB));  // Update
         }
         require(swapped_tokens <= limit);                                               // make sure
         pool.exchanged_tokens[exchange_addr_i] = uint128(SafeMath.add(pool.exchanged_tokens[exchange_addr_i], input_total));
@@ -168,6 +169,7 @@ contract HappyTokenPool {
         pool.swapped_map[_recipient] = swapped_tokens;
 
         // Transfer the token after state changing
+        // ETH comes with the tx, ERC20 does not
         if (exchange_addr != DEFAULT_ADDRESS) {
             IERC20(exchange_addr).safeTransferFrom(msg.sender, address(this), input_total);
         }
