@@ -25,7 +25,7 @@ truffle build
 To test the project:
 ```
 npm install chai ganache-cli
-truffle test
+truffle run coverage
 ```
 
 To debug:
