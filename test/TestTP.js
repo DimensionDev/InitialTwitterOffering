@@ -407,6 +407,56 @@ contract("HappyTokenPool", accounts => {
             expect(result_c).to.have.property('to_value').that.to.not.be.eq(fpp.limit)
             expect(result_c).to.have.property('to_value').that.to.be.eq(BigNumber('2e19').toFixed())
         })
+
+        it('Should swap the remaining token when the amount of swap token is greater than total token', async () => {
+            const ratio = 10 ** 10
+            fpp.exchange_ratios = [1, ratio]
+            fpp.exchange_addrs = [eth_address]
+            fpp.limit = BigNumber('10000e18').toFixed()
+            const { id: pool_id } = await getResultFromPoolFill(pool, fpp)
+
+            // first, swap to make total tokens less than limit
+            const swapperFirstETH = accounts[3]
+            const ETH_address_index = 0
+            let exchange_ETH_amount = BigNumber('5e11').toFixed()
+            const v1 = getVerification(PASSWORD, swapperFirstETH)
+            await pool.swap.sendTransaction(
+                pool_id,
+                v1.verification,
+                swapperFirstETH,
+                v1.validation,
+                ETH_address_index,
+                exchange_ETH_amount,
+                { 'from': swapperFirstETH, 'value': exchange_ETH_amount }
+            );   
+            
+            // then, swap amount greater than total token
+            const swapperETH = accounts[4]
+            let v2 = getVerification(PASSWORD, swapperETH)
+            const { remaining } = await getAvailability(pool, pool_id, swapperETH)
+            exchange_ETH_amount = BigNumber('1e12').toFixed()
+            await pool.swap.sendTransaction(
+                pool_id,
+                v2.verification,
+                swapperETH,
+                v2.validation,
+                ETH_address_index,
+                exchange_ETH_amount,
+                { 'from': swapperETH, 'value': exchange_ETH_amount }
+            );    
+            
+            const logs = await web3.eth.getPastLogs({address: pool.address, topics: [web3.utils.sha3(swap_success_encode)]})
+            const {from_value, to_value} = web3.eth.abi.decodeParameters(swap_success_types, logs[0].data)  
+            
+            expect(remaining.toString())
+                .to.be.eq(BigNumber('5e11').times(ratio).toFixed())
+            expect(from_value)
+                .to.be.eq(BigNumber(remaining.toString()).div(ratio).toFixed())
+                .and.to.not.be.eq(exchange_ETH_amount)
+            expect(to_value)
+                .to.be.eq(remaining.toString())
+                .and.to.not.be.eq(BigNumber(exchange_ETH_amount).times(ratio).toFixed())
+        })
     })
 
     describe("destruct()", async () => {
