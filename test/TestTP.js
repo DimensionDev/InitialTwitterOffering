@@ -1,6 +1,5 @@
 const BigNumber = require('bignumber.js')
 const chai = require('chai')
-const sinon = require('sinon')
 const helper = require('./helper')
 const expect = chai.expect
 chai.use(require('chai-as-promised'))
@@ -145,8 +144,8 @@ contract("HappyTokenPool", accounts => {
         })
 
         it("Should return status `started === true` when current time greater than start_time", async () => {
-            this.clock = sinon.useFakeTimers(new Date().getTime() - 1000 * 10)
-            fpp.start_time = Math.ceil(this.clock.now / 1000) - base_timestamp
+            const fakeTime = (new Date().getTime() - 1000 * 10) / 1000
+            fpp.start_time = Math.ceil(fakeTime) - base_timestamp
             const { id: pool_id } = await getResultFromPoolFill(pool, fpp)
             const result = await getAvailability(pool, pool_id, accounts[1])
 
@@ -154,39 +153,33 @@ contract("HappyTokenPool", accounts => {
         })
 
         it("Should return status `started === false` when current time less than start_time", async () => {
-            this.clock = sinon.useFakeTimers(new Date().getTime() + 1000 * 10)
-            fpp.start_time = Math.ceil(this.clock.now / 1000) - base_timestamp
+            const fakeTime = (new Date().getTime() + 1000 * 10) / 1000
+            fpp.start_time = Math.ceil(fakeTime) - base_timestamp
 
             const { id: pool_id } = await getResultFromPoolFill(pool, fpp)
             const result = await getAvailability(pool, pool_id, accounts[1])
 
             expect(result.started).to.be.false
-
-            this.clock.restore()
         })
 
         it("Should return status `expired === true` when current time less than end_time", async () => {
-            this.clock = sinon.useFakeTimers(new Date().getTime() - 1000 * 10)
-            fpp.end_time = Math.ceil(this.clock.now / 1000) - base_timestamp
+            const fakeTime = (new Date().getTime() - 1000 * 10) / 1000
+            fpp.end_time = Math.ceil(fakeTime) - base_timestamp
 
             const { id: pool_id } = await getResultFromPoolFill(pool, fpp)
             const result = await getAvailability(pool, pool_id, accounts[1])
 
             expect(result.expired).to.be.true
-
-            this.clock.restore()
         })
 
         it("Should return status `expired === false` when current time less than end_time", async () => {
-            this.clock = sinon.useFakeTimers(new Date().getTime() + 1000 * 10)
-            fpp.end_time = Math.ceil(this.clock.now / 1000) - base_timestamp
+            const fakeTime = (new Date().getTime() + 1000 * 10) / 1000
+            fpp.end_time = Math.ceil(fakeTime) - base_timestamp
 
             const { id: pool_id } = await getResultFromPoolFill(pool, fpp)
             const result = await getAvailability(pool, pool_id, accounts[1])
 
             expect(result.expired).to.be.false
-
-            this.clock.restore()
         })
 
         it("Should return the same exchange_addrs which fill the pool", async () => {
@@ -266,8 +259,8 @@ contract("HappyTokenPool", accounts => {
         })
 
         it("Should throw error when pool is waiting for start", async () => {
-            this.clock = sinon.useFakeTimers(new Date().getTime() + 1000 * 1000)
-            fpp.start_time = Math.ceil(this.clock.now / 1000) - base_timestamp
+            const fakeTime = (new Date().getTime() + 1000 * 1000) / 1000
+            fpp.start_time = Math.ceil(fakeTime) - base_timestamp
             fpp.end_time = fpp.start_time + 1000 * 1000
             const approve_amount = BigNumber('1e10').toFixed()
             exchange_amount = approve_amount
@@ -279,8 +272,8 @@ contract("HappyTokenPool", accounts => {
         })
 
         it("Should throw error when pool is expired", async () => {
-            this.clock = sinon.useFakeTimers(new Date().getTime() - 1000 * 1000)
-            fpp.end_time = Math.ceil(this.clock.now / 1000) - base_timestamp
+            const fakeTime = (new Date().getTime() - 1000 * 1000) / 1000
+            fpp.end_time = Math.ceil(fakeTime) - base_timestamp
             fpp.start_time = fpp.end_time - 10
             const approve_amount = BigNumber('1e10').toFixed()
             exchange_amount = approve_amount
@@ -423,34 +416,30 @@ contract("HappyTokenPool", accounts => {
 
         it("Should throw error when you're not the creator of the pool", async () => {
             const account_not_creator = accounts[5]
-            this.clock = sinon.useFakeTimers(new Date().getTime() - 100000 * 10)
-            fpp.end_time = Math.ceil(this.clock.now / 1000) - base_timestamp
+            const fakeTime = (new Date().getTime() - 100000 * 10) / 1000
+            fpp.end_time = Math.ceil(fakeTime) - base_timestamp
 
             const { id: pool_id } = await getResultFromPoolFill(pool, fpp)
             expect(pool.destruct.sendTransaction(pool_id, { from: account_not_creator })).to.be.rejectedWith(Error)
-            this.clock.restore()
         })
 
         it("Should throw error when pool is not expired", async () => {
             const creator = accounts[0]
-            this.clock = sinon.useFakeTimers(new Date().getTime() + 1000 * 1000)
-            fpp.end_time = Math.ceil(this.clock.now / 1000) - base_timestamp
+            const fakeTime = (new Date().getTime() + 1000 * 1000) / 1000
+            fpp.end_time = Math.ceil(fakeTime) - base_timestamp
             fpp.start_time = fpp.end_time - 10
             const { id: pool_id } = await getResultFromPoolFill(pool, fpp)
 
             expect(pool.destruct.sendTransaction(pool_id, { from: creator })).to.be.rejectedWith(Error)
-            this.clock.restore()
         })
 
         it("Should emit RefundSuccess event and withdraw the corresponding tokens correctly", async () => {
             const creator = accounts[0]
-            this.clock = sinon.useFakeTimers(new Date().getTime() + 1000 * 1000)
-            fpp.end_time = Math.ceil(this.clock.now / 1000) - base_timestamp
+            const fakeTime = (new Date().getTime() + 1000 * 1000) / 1000
+            fpp.end_time = Math.ceil(fakeTime) - base_timestamp
             const { id: pool_id } = await getResultFromPoolFill(pool, fpp)
-            let previous_eth_balance = await web3.eth.getBalance(accounts[0])
             const previous_tokenB_balance = await test_tokenB.balanceOf.call(accounts[0])
             const previous_tokenC_balance = await test_tokenC.balanceOf.call(accounts[0])
-
             const swapperETH = accounts[3]
             const ETH_address_index = 0
             const exchange_ETH_amount = BigNumber('1e15').toFixed()
@@ -498,17 +487,8 @@ contract("HappyTokenPool", accounts => {
             const result_remaining_tokens = Number(result.remaining_tokens)
 
             expect(result_remaining_tokens).to.be.eq(remaining_tokens)
-
-            /*
-            const eth_balance = await web3.eth.getBalance(accounts[0])
-            expect(
-                (eth_balance - previous_eth_balance) / Number(exchange_ETH_amount)
-            ).to.be.greaterThan(0.995).and.to.be.lessThan(1)
-            */
-
             const transfer_amount = BigNumber('1e26').toFixed()
             const tokenB_balance = await test_tokenB.balanceOf.call(accounts[0])
-
             expect(BigNumber(tokenB_balance.valueOf()).toFixed()).to.be.eq(
                 BigNumber(previous_tokenB_balance).minus(BigNumber(transfer_amount)).plus(BigNumber(exchange_tokenB_amount)).toFixed()
             ).and.to.be.eq(
@@ -521,14 +501,12 @@ contract("HappyTokenPool", accounts => {
             ).and.to.be.eq(
                 BigNumber("80001e22").toFixed()
             )
-
-            this.clock.restore()
         })
 
         it("Should emit RefundSuccess event and withdraw the corresponding tokens correctly", async () => {
             const creator = accounts[0]
-            this.clock = sinon.useFakeTimers(new Date().getTime() + 1000 * 1000)
-            fpp.end_time = Math.ceil(this.clock.now / 1000) - base_timestamp
+            const fakeTime = (new Date().getTime() + 1000 * 1000) / 1000
+            fpp.end_time = Math.ceil(fakeTime) - base_timestamp
             fpp.exchange_ratios = [1, 75000, 1, 100, 1, 100],
             fpp.limit = BigNumber('100000e18').toFixed()
             fpp.total_tokens = BigNumber('1000000e18').toFixed()
@@ -609,21 +587,16 @@ contract("HappyTokenPool", accounts => {
                     BigNumber('1000e18')            // 2000e18 exceeds limit
                 ).toFixed()
             )
-
-            this.clock.restore()
         })
 
         it("Should emit DestructSuccess event and withdraw the corresponding tokens correctly before expiry", async () => {
             const creator = accounts[0]
-            this.clock = sinon.useFakeTimers(new Date().getTime() + 1000 * 1000)
-            fpp.end_time = Math.ceil(this.clock.now / 1000) - base_timestamp
+            const fakeTime = (new Date().getTime() + 1000 * 1000) / 1000
+            fpp.end_time = Math.ceil(fakeTime) - base_timestamp
             fpp.exchange_ratios = [1, 75000, 1, 100, 1, 100],
             fpp.limit = BigNumber('50000e18').toFixed()
             fpp.total_tokens = BigNumber('50000e18').toFixed()
             const { id: pool_id } = await getResultFromPoolFill(pool, fpp)
-            let previous_eth_balance = await web3.eth.getBalance(accounts[0])
-            const previous_tokenB_balance = await test_tokenB.balanceOf.call(accounts[0])
-            const previous_tokenC_balance = await test_tokenC.balanceOf.call(accounts[0])
 
             const swapperB = accounts[4]
             const tokenB_address_index = 1
@@ -639,8 +612,6 @@ contract("HappyTokenPool", accounts => {
             expect(result).to.have.property('token_address').that.to.be.eq(test_tokenA.address)
             expect(result).to.have.property('remaining_tokens')
             expect(result).to.have.property('exchanged_values')
-
-            this.clock.restore()
         })
     })
 
