@@ -103,6 +103,15 @@ contract("HappyTokenPool", accounts => {
             await expect(pool.fill_pool.sendTransaction(...Object.values(fpp))).to.be.rejectedWith(Error)
         })
 
+        it("Should throw error when time is larger than 24 bits", async () => {
+            fpp.start_time = 2 ** 24 - 1
+            fpp.end_time = fpp.start_time + 100
+
+            await test_tokenA.approve.sendTransaction(pool.address, fpp.total_tokens, {'from': accounts[0]})
+            
+            await expect(pool.fill_pool.sendTransaction(...Object.values(fpp))).to.be.rejectedWith(Error)
+        })
+
         it("Should emit fillSuccess event correctly when a pool is filled", async () => {
             await test_tokenA.approve.sendTransaction(pool.address, fpp.total_tokens, {'from': accounts[0]})
             await pool.fill_pool.sendTransaction(...Object.values(fpp))
@@ -746,5 +755,15 @@ contract("InternalFunctions", () => {
     beforeEach(async () =>{
         internalFunctions = await InternalFunctions.deployed()
     })
-    it('unbox()', () =>{})
+    it('validRange()', async () =>{
+        const result = await internalFunctions._validRange(2, 4)
+        expect(result).to.be.false
+    })
+    it('unbox()', async () =>{
+        const base = 40
+        const position = 3
+        const size = 255
+        const result = await internalFunctions._unbox(base, position, size)
+        expect(result.toString()).to.be.eq('160')
+    })
 })
