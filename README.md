@@ -24,6 +24,7 @@ truffle build
 
 To test the project:
 ```
+npm install chai ganache-cli
 truffle run coverage
 ```
 
