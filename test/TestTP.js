@@ -126,6 +126,17 @@ contract("HappyTokenPool", accounts => {
             expect(result).to.have.property('name').that.to.be.eq('Cache Miss')
             expect(result).to.have.property('message').that.to.be.eq('Hello From the Outside')
         })
+
+        it("Should emit fillSuccess event when none of ratio gcd is not equal to 1 and fill token is very small", async () => {
+            fpp.exchange_ratios = [2, 7, 3, 2, 3, 11]
+            fpp.total_tokens = '1'
+            fpp.limit = '1'            
+            await test_tokenA.approve.sendTransaction(pool.address, fpp.total_tokens, {'from': accounts[0]})
+            await pool.fill_pool.sendTransaction(...Object.values(fpp))
+            const logs = await web3.eth.getPastLogs({address: pool.address, topics: [web3.utils.sha3(fill_success_encode)]})
+            const result = web3.eth.abi.decodeParameters(fill_success_types, logs[0].data)     
+            expect(result).to.have.property('id').that.to.not.be.null       
+        })        
     })
 
     describe("check_availability()", async () => {
@@ -216,6 +227,32 @@ contract("HappyTokenPool", accounts => {
             const ratio = fpp.exchange_ratios[3] / fpp.exchange_ratios[2] // tokenA <=> tokenB
             const exchange_tokenA_amount = weiToEther(approve_amount) * ratio
             expect(weiToEther(remaining_before) - weiToEther(remaining_now)).to.be.eq(exchange_tokenA_amount)
+        })
+
+        it("Should return remaining token correctly when none of ratio gcd is not equal to 1 and tokens are very small", async () => {
+            fpp.exchange_ratios = [2, 7, 3, 2, 3, 11]
+            fpp.total_tokens = '10'
+            fpp.limit = '10'    
+            const account = accounts[1]  
+            const { id: pool_id } = await getResultFromPoolFill(pool, fpp)
+            const { remaining: remaining_before } = await getAvailability(pool, pool_id, account)
+            expect(web3.utils.fromWei(remaining_before, 'wei')).to.be.eq(fpp.total_tokens)   
+
+            const transfer_amount = BigNumber('2').toFixed()
+            const approve_amount = BigNumber('2').toFixed()
+            const tokenB_address_index = 1
+
+            await test_tokenB.transfer.sendTransaction(account, transfer_amount)
+            await test_tokenB.approve.sendTransaction(pool.address, approve_amount, { 'from': account })
+            const { verification, validation } = getVerification(PASSWORD, account)
+            pool.swap.sendTransaction(pool_id, verification, account, validation, tokenB_address_index, approve_amount, {'from': account})
+            const { remaining: remaining_now } = await getAvailability(pool, pool_id, account)
+            const tokenB_balance = await test_tokenB.balanceOf.call(account)
+            const tokenA_balance = await test_tokenA.balanceOf.call(account)
+
+            expect(tokenA_balance.toString()).to.be.eq('1')            
+            expect(tokenB_balance.toString()).to.be.eq('0')            
+            expect(web3.utils.fromWei(remaining_now, 'wei')).to.be.eq('9')
         })
     })
 
