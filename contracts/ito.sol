@@ -233,7 +233,7 @@ contract HappyTokenPool {
 
     function withdraw (bytes32 id, uint256 addr_i) public {
         Pool storage pool = pool_by_id[id];
-        require(msg.sender == pool.creator, "Only the pool creator can destruct.");
+        require(msg.sender == pool.creator, "Only the pool creator can withdraw.");
 
         uint256 withdraw_balance = pool.exchanged_tokens[addr_i];
         require(withdraw_balance > 0, "None of this token left");

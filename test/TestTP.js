@@ -1,8 +1,21 @@
 const BigNumber = require('bignumber.js')
 const chai = require('chai')
-const helper = require('./helper')
 const expect = chai.expect
 chai.use(require('chai-as-promised'))
+const helper = require('./helper')
+const {
+    base_timestamp,
+    eth_address,
+    fill_success_encode,
+    fill_success_types,
+    swap_success_encode,
+    swap_success_types,
+    destruct_success_encode,
+    destruct_success_types,
+    withdraw_success_encode,
+    withdraw_success_types,
+    PASSWORD
+  } = require('./constants')
 
 const TestTokenA = artifacts.require("TestTokenA")
 const TestTokenB = artifacts.require("TestTokenB")
@@ -10,35 +23,7 @@ const TestTokenC = artifacts.require("TestTokenC")
 const HappyTokenPool = artifacts.require("HappyTokenPool")
 const QualificationTester = artifacts.require("QLF");
 const InternalFunctions = artifacts.require("InternalFunctions")
-const base_timestamp = 1609372800
-const eth_address = "0x0000000000000000000000000000000000000000"
-const fill_success_encode = 'FillSuccess(uint256,bytes32,address,uint256,address,string,string)'
-const fill_success_types = [
-    { type: 'uint256', name: 'total' },
-    { type: 'bytes32', name: 'id' },
-    { type: 'address', name: 'creator' },
-    { type: 'uint256', name: 'creation_time' },
-    { type: 'address', name: 'token_address' },
-    { type: 'string', name: 'name' },
-    { type: 'string', name: 'message' }
-]
-const swap_success_encode = 'SwapSuccess(bytes32,address,address,address,uint256,uint256)'
-const swap_success_types = [
-    { type: 'bytes32', name: 'id' },
-    { type: 'address', name: 'swapper' },
-    { type: 'address', name: 'from_address' },
-    { type: 'address', name: 'to_address' },
-    { type: 'uint256', name: 'from_value' },
-    { type: 'uint256', name: 'to_value' }
-]
-const destruct_success_encode = 'DestructSuccess(bytes32,address,uint256,uint128[])'
-const destruct_success_types = [
-    { type: 'bytes32', name: 'id' },
-    { type: 'address', name: 'token_address' },
-    { type: 'uint256', name: 'remaining_tokens' },
-    { type: 'uint128[]', name: 'exchanged_values' }
-]
-const PASSWORD = "password"
+
 let internalFunctions
 let test_tokenA
 let test_tokenB
@@ -483,7 +468,7 @@ contract("HappyTokenPool", accounts => {
             expect(pool.destruct.sendTransaction(pool_id, { from: creator })).to.be.rejectedWith(Error)
         })
 
-        it("Should emit RefundSuccess event and withdraw the corresponding tokens correctly", async () => {
+        it("Should emit DestructSuccess event and withdraw all tokens", async () => {
             const creator = accounts[0]
             const fakeTime = (new Date().getTime() + 1000 * 1000) / 1000
             fpp.end_time = Math.ceil(fakeTime) - base_timestamp
@@ -553,7 +538,7 @@ contract("HappyTokenPool", accounts => {
             )
         })
 
-        it("Should emit RefundSuccess event and withdraw the corresponding tokens correctly", async () => {
+        it("Should emit DestructSuccess event and withdraw all tokens", async () => {
             const creator = accounts[0]
             const fakeTime = (new Date().getTime() + 1000 * 1000) / 1000
             fpp.end_time = Math.ceil(fakeTime) - base_timestamp
@@ -639,7 +624,7 @@ contract("HappyTokenPool", accounts => {
             )
         })
 
-        it("Should emit DestructSuccess event and withdraw the corresponding tokens correctly before expiry", async () => {
+        it("Should emit DestructSuccess event and withdraw all tokens before expiry", async () => {
             const creator = accounts[0]
             const fakeTime = (new Date().getTime() + 1000 * 1000) / 1000
             fpp.end_time = Math.ceil(fakeTime) - base_timestamp
@@ -660,10 +645,64 @@ contract("HappyTokenPool", accounts => {
 
             expect(result).to.have.property('id').that.to.be.eq(pool_id)
             expect(result).to.have.property('token_address').that.to.be.eq(test_tokenA.address)
-            expect(result).to.have.property('remaining_tokens')
+            expect(result).to.have.property('remaining_tokens').that.to.be.eq('0')
             expect(result).to.have.property('exchanged_values')
         })
     })
+
+    describe("withdraw()", async () => {
+        beforeEach(async () => {
+            await test_tokenA.approve.sendTransaction(pool.address, BigNumber("1e27"), {'from': accounts[0]})
+        })
+
+        it("Should emit WithdrawSuccess event and withdraw the specified token", async () => {
+            const creator = accounts[0]
+            const fakeTime = (new Date().getTime() + 1000 * 1000) / 1000
+            fpp.end_time = Math.ceil(fakeTime) - base_timestamp
+            fpp.exchange_ratios = [1, 75000, 1, 100, 1, 100],
+            fpp.limit = BigNumber('50000e18').toFixed()
+            fpp.total_tokens = BigNumber('50000e18').toFixed()
+            const { id: pool_id } = await getResultFromPoolFill(pool, fpp)
+
+            const swapperETH = accounts[3]
+            const ETH_address_index = 0
+            const exchange_ETH_amount = BigNumber('3e14').toFixed()
+
+            const { verification, validation } = getVerification(PASSWORD, swapperETH)
+            await pool.swap.sendTransaction(
+                pool_id,
+                verification,
+                swapperETH,
+                validation,
+                ETH_address_index,
+                exchange_ETH_amount,
+                { 'from': swapperETH, 'value': exchange_ETH_amount }
+            );            
+
+            const swapperB = accounts[4]
+            const tokenB_address_index = 1
+            const exchange_tokenB_amount = BigNumber('200e18').toFixed()
+            await approveThenSwapToken(test_tokenB, swapperB, tokenB_address_index, pool_id, exchange_tokenB_amount)            
+
+            await helper.advanceTimeAndBlock(2000 * 1000);
+            await pool.withdraw.sendTransaction(pool_id, tokenB_address_index, { from: creator })            
+            await pool.withdraw.sendTransaction(pool_id, ETH_address_index, { from: creator })
+
+            const latestBlock = await web3.eth.getBlockNumber()
+            const logs = await web3.eth.getPastLogs({
+                address: pool.address, 
+                topics: [web3.utils.sha3(withdraw_success_encode)],
+                fromBlock: latestBlock - 1,
+                toBlock: latestBlock
+            })
+
+            const logWithdrawTokenB = web3.eth.abi.decodeParameters(withdraw_success_types, logs[0].data) 
+            const logWithdrawETH = web3.eth.abi.decodeParameters(withdraw_success_types, logs[1].data)
+
+            expect(logWithdrawTokenB).to.have.property('withdraw_balance').that.to.be.eq(BigNumber('200e18').toFixed())      
+            expect(logWithdrawETH).to.have.property('withdraw_balance').that.to.be.eq(BigNumber('3e14').toFixed())            
+        })
+    })    
 
     async function approveThenSwapToken (test_token, swapper, token_address_index, pool_id, exchange_amount) {
         const r = getVerification(PASSWORD, swapper)
