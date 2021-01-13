@@ -70,7 +70,7 @@ contract HappyTokenPool {
 
     constructor() public {
         contract_creator = msg.sender;
-        seed = keccak256(abi.encodePacked(magic, now, contract_creator));
+        seed = keccak256(abi.encodePacked(magic, block.timestamp, contract_creator));
         base_timestamp = 1609372800;                                    // 00:00:00 01/01/2021 GMT(UTC+0)
     }
 
@@ -86,7 +86,7 @@ contract HappyTokenPool {
         require(_exchange_addrs.length > 0, "Exchange token addresses need to be set");
         require(_ratios.length == 2 * _exchange_addrs.length, "Size of ratios = 2 * size of exchange_addrs");
 
-        bytes32 _id = keccak256(abi.encodePacked(msg.sender, now, nonce, seed));
+        bytes32 _id = keccak256(abi.encodePacked(msg.sender, block.timestamp, nonce, seed));
         Pool storage pool = pool_by_id[_id];
         pool.packed1 = wrap1(_token_addr, _hash, _start, _end);         // 256 bytes
         pool.packed2 = wrap2(_total_tokens, _limit);                    // 256 bytes
@@ -116,7 +116,7 @@ contract HappyTokenPool {
         pool.ratios = _ratios;                                          // 256 * k
         IERC20(_token_addr).safeTransferFrom(msg.sender, address(this), _total_tokens);
 
-        emit FillSuccess(_total_tokens, _id, msg.sender, now, _token_addr, name, message);
+        emit FillSuccess(_total_tokens, _id, msg.sender, block.timestamp, _token_addr, name, message);
     }
 
     // It takes the unhashed password and a hashed random seed generated from the user
@@ -127,8 +127,8 @@ contract HappyTokenPool {
         Pool storage pool = pool_by_id[id];
         address payable recipient = address(uint160(_recipient));
         require (IQLF(pool.qualification).ifQualified(msg.sender) == true, "Not Qualified");
-        require (unbox(pool.packed1, 208, 24) + base_timestamp < now, "Not started.");
-        require (unbox(pool.packed1, 232, 24) + base_timestamp > now, "Expired.");
+        require (unbox(pool.packed1, 208, 24) + base_timestamp < block.timestamp, "Not started.");
+        require (unbox(pool.packed1, 232, 24) + base_timestamp > block.timestamp, "Expired.");
         require (verification == keccak256(abi.encodePacked(unbox(pool.packed1, 160, 48), msg.sender)), 
                  'Wrong Password');
         require (validation == keccak256(toBytes(msg.sender)), "Validation Failed");
@@ -189,8 +189,8 @@ contract HappyTokenPool {
         return (
             pool.exchange_addrs,                                    // exchange_addrs if 0x0 then destructed
             unbox(pool.packed2, 0, 128),                            // remaining
-            now > unbox(pool.packed1, 208, 24) + base_timestamp,    // started
-            now > unbox(pool.packed1, 232, 24) + base_timestamp,    // expired
+            block.timestamp > unbox(pool.packed1, 208, 24) + base_timestamp,    // started
+            block.timestamp > unbox(pool.packed1, 232, 24) + base_timestamp,    // expired
             pool.swapped_map[msg.sender],                           // swapped number 
             pool.exchanged_tokens                                   // exchanged tokens
         );
@@ -203,7 +203,7 @@ contract HappyTokenPool {
         address token_address = address(unbox(pool.packed1, 0, 160));
         uint256 expiration = unbox(pool.packed1, 232, 24) + base_timestamp;
         uint256 remaining_tokens = unbox(pool.packed2, 0, 128);
-        require(expiration <= now || remaining_tokens == 0, "Not expired yet");
+        require(expiration <= block.timestamp || remaining_tokens == 0, "Not expired yet");
 
         if (remaining_tokens != 0) {
             transfer_token(token_address, address(this), msg.sender, remaining_tokens);
@@ -239,7 +239,7 @@ contract HappyTokenPool {
         require(withdraw_balance > 0, "None of this token left");
         uint256 expiration = unbox(pool.packed1, 232, 24) + base_timestamp;
         uint256 remaining_tokens = unbox(pool.packed2, 0, 128);
-        require(expiration <= now || remaining_tokens == 0, "Not expired yet");
+        require(expiration <= block.timestamp || remaining_tokens == 0, "Not expired yet");
         address token_address = pool.exchange_addrs[addr_i];
 
         if (token_address != DEFAULT_ADDRESS)
