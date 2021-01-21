@@ -98,7 +98,7 @@ contract HappyTokenPool {
      * _total_tokens        target token total swap amount
      * _limit               target token single swap limit
      * _qualification       the qualification contract address based on IQLF to determine qualification
-     * This functions take the above parameters and creates the pool. _total_tokens of the target token
+     * This function takes the above parameters and creates the pool. _total_tokens of the target token
      * will be successfully transferred to this contract securely on a successful run of this function.
     **/
     function fill_pool (bytes32 _hash, uint256 _start, uint256 _end, string memory name, string memory message,
@@ -158,11 +158,11 @@ contract HappyTokenPool {
      * verification         sha3-256(sha3-256(password)[:48]+swapper_address)
      * _recipient           swapped token recipient
      * validation           sha3-256(swapper_address)
-     * _exchange_addr_i     the index of the exchange address of the list
+     * exchange_addr_i     the index of the exchange address of the list
      * input_total          the input amount of the specific token
      * This function is called by the swapper who approves the specific ERC20 or directly transfer the ETH
      * first and wants to swap the desired amount of the target token. The swapped amount is calculated
-     * based on the pool ratio.
+     * based on the pool ratio. After swap successfully, the same account can not swap the same pool again.
     **/
 
     function swap (bytes32 id, bytes32 verification, address _recipient, 
@@ -263,11 +263,11 @@ contract HappyTokenPool {
     /**
      * destruct() destructs the given pool given the pool id
      * id                    swap pool id
-     * this function can only be called by the pool craetor. after validation, it transfers all the remaining token 
+     * this function can only be called by the pool creator. after validation, it transfers all the remaining token 
      * (if any) and all the swapped tokens to the pool creator. it will then destruct the pool by reseting almost 
      * all the variables to zero to get the gas refund.
      * note that this function may not work if a pool needs to transfer over ~200 tokens back to the address due to 
-     * the block gas limit. we have another function withdraw() to help the pool creator to withdraw a single token
+     * the block gas limit. we have another function withdraw() to help the pool creator to withdraw a single token 
     **/
 
     function destruct (bytes32 id) public {
@@ -286,7 +286,7 @@ contract HappyTokenPool {
         }
         
         // transfer the swapped tokens accordingly
-        // note this loop may exceed the block gas limit so if >200 exchange_addrs this may not work
+        // HACK: this loop may exceed the block gas limit so if >200 exchange_addrs this may not work
         for (uint256 i = 0; i < pool.exchange_addrs.length; i++) {
             if (pool.exchanged_tokens[i] > 0) {
                 // ERC20
@@ -315,7 +315,7 @@ contract HappyTokenPool {
      * withdraw() transfers out a single token after a pool is expired or empty 
      * id                    swap pool id
      * addr_i                withdraw token index
-     * this function can only be called by the pool craetor. after validation, it transfers the addr_i th token 
+     * this function can only be called by the pool creator. after validation, it transfers the addr_i th token 
      * out to the pool creator address.
     **/
 
@@ -363,7 +363,7 @@ contract HappyTokenPool {
     }
 
     /**
-     * _total_token    target remaining         128
+     * _total_tokens   target remaining         128
      * _limit          single swap limit        128
      * wrap2() inserts the above variables into a 32-word block
     **/
@@ -392,8 +392,8 @@ contract HappyTokenPool {
      * position      position in a memory block
      * size          data size
      * base          base data
-     * box() extract the data in a 256bit word with the given position and returns it
-     * data is checked by validRange() to make sure the base is not over size 
+     * unbox() extracts the data out of a 256bit word with the given position and returns it
+     * base is checked by validRange() to make sure it is not over size 
     **/
 
     function unbox (uint256 base, uint16 position, uint16 size) internal pure returns (uint256 unboxed) {
@@ -404,7 +404,7 @@ contract HappyTokenPool {
     /**
      * size          data size
      * data          data
-     * validRange() checks if the given data is over the specified data size
+     * validRange()  checks if the given data is over the specified data size
     **/
 
     function validRange (uint16 size, uint256 data) internal pure returns(bool) { 
@@ -445,7 +445,7 @@ contract HappyTokenPool {
     }
     
     /**
-     * a                  address to be converted
+     * a         address to be converted
      * toBytes() converts an address into a byte
     **/
 
