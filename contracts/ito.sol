@@ -286,7 +286,7 @@ contract HappyTokenPool {
         }
         
         // transfer the swapped tokens accordingly
-        // HACK: this loop may exceed the block gas limit so if >200 exchange_addrs this may not work
+        // note this loop may exceed the block gas limit so if >200 exchange_addrs this may not work
         for (uint256 i = 0; i < pool.exchange_addrs.length; i++) {
             if (pool.exchanged_tokens[i] > 0) {
                 // ERC20
