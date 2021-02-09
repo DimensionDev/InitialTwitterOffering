@@ -386,6 +386,7 @@ contract HappyTokenPool {
     function box (uint16 position, uint16 size, uint256 data) internal pure returns (uint256 boxed) {
         require(validRange(size, data), "Value out of range BOX");
         assembly {
+            // data << position
             boxed := shl(position, data)
         }
     }
@@ -401,6 +402,7 @@ contract HappyTokenPool {
     function unbox (uint256 base, uint16 position, uint16 size) internal pure returns (uint256 unboxed) {
         require(validRange(256, base), "Value out of range UNBOX");
         assembly {
+            // ((1 << size - 1) & base >> position)
             unboxed := and(sub(shl(size, 1), 1), shr(position, base))
 
         }
@@ -414,6 +416,7 @@ contract HappyTokenPool {
 
     function validRange (uint16 size, uint256 data) internal pure returns(bool ifValid) { 
         assembly {
+            // 2^size > data or size ==256
             ifValid := or(eq(size, 256), gt(shl(size, 1), data))
         }
     }
