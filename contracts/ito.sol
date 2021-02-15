@@ -14,8 +14,8 @@ import "./IQLF.sol";
 contract HappyTokenPool {
 
     struct Pool {
-        uint256 packed1;            // total_address(160) hash(48) start_time_delta(24) 
-                                    // expiration_time_delta(24) BIG ENDIAN
+        uint256 packed1;            // total_address(160) hash(39) delayed(1)
+                                    // start_time_delta(28) expiration_time_delta(28) BIG ENDIAN
         uint256 packed2;            // total_tokens(128) limit(128)
         address creator;
         address qualification;      // the smart contract address to verify qualification
@@ -102,7 +102,7 @@ contract HappyTokenPool {
      * will be successfully transferred to this contract securely on a successful run of this function.
     **/
     function fill_pool (bytes32 _hash, uint256 _start, uint256 _end, string memory name, string memory message,
-                        address[] memory _exchange_addrs, uint128[] memory _ratios,
+                        address[] memory _exchange_addrs, uint128[] memory _ratios, bool _delayed,
                         address _token_addr, uint256 _total_tokens, uint256 _limit, address _qualification)
     public payable {
         nonce ++;
@@ -115,7 +115,7 @@ contract HappyTokenPool {
 
         bytes32 _id = keccak256(abi.encodePacked(msg.sender, block.timestamp, nonce, seed));
         Pool storage pool = pool_by_id[_id];
-        pool.packed1 = wrap1(_token_addr, _hash, _start, _end);         // 256 bytes    detail in wrap1()
+        pool.packed1 = wrap1(_token_addr, _hash, _delayed, _start, _end);         // 256 bytes    detail in wrap1()
         pool.packed2 = wrap2(_total_tokens, _limit);                    // 256 bytes    detail in wrap2()
         pool.creator = msg.sender;                                      // 160 bytes    pool creator
         pool.exchange_addrs = _exchange_addrs;                          // 160 bytes    target token
@@ -172,10 +172,10 @@ contract HappyTokenPool {
         Pool storage pool = pool_by_id[id];
         address payable recipient = address(uint160(_recipient));
         require (IQLF(pool.qualification).ifQualified(msg.sender) == true, "Not Qualified");
-        require (unbox(pool.packed1, 208, 24) + base_timestamp < block.timestamp, "Not started.");
-        require (unbox(pool.packed1, 232, 24) + base_timestamp > block.timestamp, "Expired.");
+        require (unbox(pool.packed1, 200, 28) + base_timestamp < block.timestamp, "Not started.");
+        require (unbox(pool.packed1, 228, 28) + base_timestamp > block.timestamp, "Expired.");
         // sha3(sha3(passowrd)[:48] + msg.sender) so that the raw password will never appear in the contract
-        require (verification == keccak256(abi.encodePacked(unbox(pool.packed1, 160, 48), msg.sender)), 
+        require (verification == keccak256(abi.encodePacked(unbox(pool.packed1, 160, 39), msg.sender)), 
                  'Wrong Password');
         // sha3(msg.sender) to protect from front runs (but this is kinda naive since the contract is open sourced)
         require (validation == keccak256(toBytes(msg.sender)), "Validation Failed");
@@ -253,8 +253,8 @@ contract HappyTokenPool {
         return (
             pool.exchange_addrs,                                                // exchange_addrs 0x0 means destructed
             unbox(pool.packed2, 0, 128),                                        // remaining
-            block.timestamp > unbox(pool.packed1, 208, 24) + base_timestamp,    // started
-            block.timestamp > unbox(pool.packed1, 232, 24) + base_timestamp,    // expired
+            block.timestamp > unbox(pool.packed1, 200, 28) + base_timestamp,    // started
+            block.timestamp > unbox(pool.packed1, 228, 28) + base_timestamp,    // expired
             pool.swapped_map[msg.sender],                                       // swapped number 
             pool.exchanged_tokens                                               // exchanged tokens
         );
@@ -275,7 +275,7 @@ contract HappyTokenPool {
         require(msg.sender == pool.creator, "Only the pool creator can destruct.");
 
         address token_address = address(unbox(pool.packed1, 0, 160));
-        uint256 expiration = unbox(pool.packed1, 232, 24) + base_timestamp;
+        uint256 expiration = unbox(pool.packed1, 228, 28) + base_timestamp;
         uint256 remaining_tokens = unbox(pool.packed2, 0, 128);
         // only after expiration or the pool is empty
         require(expiration <= block.timestamp || remaining_tokens == 0, "Not expired yet");
@@ -325,7 +325,7 @@ contract HappyTokenPool {
 
         uint256 withdraw_balance = pool.exchanged_tokens[addr_i];
         require(withdraw_balance > 0, "None of this token left");
-        uint256 expiration = unbox(pool.packed1, 232, 24) + base_timestamp;
+        uint256 expiration = unbox(pool.packed1, 228, 28) + base_timestamp;
         uint256 remaining_tokens = unbox(pool.packed2, 0, 128);
         // only after expiration or the pool is empty
         require(expiration <= block.timestamp || remaining_tokens == 0, "Not expired yet");
@@ -352,13 +352,14 @@ contract HappyTokenPool {
      * wrap1() inserts the above variables into a 32-word block
     **/
 
-    function wrap1 (address _token_addr, bytes32 _hash, uint256 _start, uint256 _end) internal pure 
-                    returns (uint256 packed1) {
+    function wrap1 (address _token_addr, bytes32 _hash, bool _delayed, uint256 _start, uint256 _end) 
+                    internal pure returns (uint256 packed1) {
         uint256 _packed1 = 0;
         _packed1 |= box(0, 160,  uint256(_token_addr));     // token_addr = 160 bits
-        _packed1 |= box(160, 48, uint256(_hash) >> 208);    // hash = 48 bits (safe?)
-        _packed1 |= box(208, 24, _start);                   // start_time = 24 bits 
-        _packed1 |= box(232, 24, _end);                     // expiration_time = 24 bits
+        _packed1 |= box(160, 39, uint256(_hash) >> 217);    // hash = 39 bits
+        _packed1 |= box(199, 1, _delayed);                  // delayed = 1 bits
+        _packed1 |= box(200, 28, _start);                   // start_time = 28 bits (3106 days) 
+        _packed1 |= box(228, 28, _end);                     // expiration_time = 28 bits
         return _packed1;
     }
 
