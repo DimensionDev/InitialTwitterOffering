@@ -402,7 +402,7 @@ contract HappyTokenPool {
     function unbox (uint256 base, uint16 position, uint16 size) internal pure returns (uint256 unboxed) {
         require(validRange(256, base), "Value out of range UNBOX");
         assembly {
-            // ((1 << size - 1) & base >> position)
+            // (((1 << size) - 1) & base >> position)
             unboxed := and(sub(shl(size, 1), 1), shr(position, base))
 
         }
