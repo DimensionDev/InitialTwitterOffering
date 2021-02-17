@@ -10,6 +10,8 @@ const {
     fill_success_types,
     swap_success_encode,
     swap_success_types,
+    claim_success_encode,
+    claim_success_types,
     destruct_success_encode,
     destruct_success_types,
     withdraw_success_encode,
@@ -390,6 +392,21 @@ contract("HappyTokenPool", accounts => {
 
             expect(result).to.have.property('to_value').that.to.be.eq(fpp.limit)
             expect(result).to.have.property('to_value').that.to.not.be.eq(String(exchange_amount * ratio))
+
+            expect(
+                pool.claim.sendTransaction({'from': account})
+            ).to.be.rejectedWith(Error)
+
+            await pool.setUnlockTime.sendTransaction(0)
+            await pool.claim.sendTransaction({'from': account})
+
+            const log = await web3.eth.getPastLogs({address: pool.address, topics: [web3.utils.sha3(claim_success_encode)]})
+            const result_claim = web3.eth.abi.decodeParameters(claim_success_types, log[0].data)
+            expect(result_claim).to.have.property('to_value').that.to.be.eq(fpp.limit)
+
+            let balance = await test_tokenA.balanceOf.call(account)
+            expect(balance.toString()).to.be.eq(fpp.limit)
+
         })
 
         it("Should swap various numbers of token", async () => {
@@ -408,6 +425,20 @@ contract("HappyTokenPool", accounts => {
 
             expect(result_eth).to.have.property('to_value').that.to.be.eq(String(exchange_amount * ratio_eth))
 
+            expect(
+                pool.claim.sendTransaction({'from': accounts[5]})
+            ).to.be.rejectedWith(Error)
+
+            await pool.setUnlockTime.sendTransaction(0)
+            await pool.claim.sendTransaction({'from': accounts[5]})
+
+            let log = await web3.eth.getPastLogs({address: pool.address, topics: [web3.utils.sha3(claim_success_encode)]})
+            let result_claim = web3.eth.abi.decodeParameters(claim_success_types, log[0].data)
+            expect(result_claim).to.have.property('to_value').that.to.be.eq(String(exchange_amount * ratio_eth))
+
+            let balance = await test_tokenA.balanceOf.call(accounts[5])
+            expect(balance.toString()).to.be.eq(String(exchange_amount * ratio_eth))
+
             // 0.02 TESTB => 40 TESTA
             _transfer_amount = BigNumber('1e26').toFixed()
             await test_tokenB.transfer.sendTransaction(accounts[4], _transfer_amount)
@@ -424,6 +455,15 @@ contract("HappyTokenPool", accounts => {
 
             expect(result_b).to.have.property('to_value').that.to.be.eq(String(exchange_amount * ratio_b))
 
+            await pool.claim.sendTransaction({'from': accounts[4]})
+
+            log = await web3.eth.getPastLogs({address: pool.address, topics: [web3.utils.sha3(claim_success_encode)]})
+            result_claim = web3.eth.abi.decodeParameters(claim_success_types, log[0].data)
+            expect(result_claim).to.have.property('to_value').that.to.be.eq(String(exchange_amount * ratio_b))
+
+            balance = await test_tokenA.balanceOf.call(accounts[4])
+            expect(balance.toString()).to.be.eq(String(exchange_amount * ratio_b))
+
             // 80000 TESTC => 20 TESTA
             approve_amount = BigNumber('1.6e23').toFixed()
             exchange_amount = approve_amount
@@ -437,6 +477,14 @@ contract("HappyTokenPool", accounts => {
             expect(result_c).to.have.property('to_value').that.to.not.be.eq(String(exchange_amount * ratio_c))
             expect(result_c).to.have.property('to_value').that.to.not.be.eq(fpp.limit)
             expect(result_c).to.have.property('to_value').that.to.be.eq(BigNumber('2e19').toFixed())
+
+            await pool.claim.sendTransaction({'from': account})
+            log = await web3.eth.getPastLogs({address: pool.address, topics: [web3.utils.sha3(claim_success_encode)]})
+            result_claim = web3.eth.abi.decodeParameters(claim_success_types, log[0].data)
+            expect(result_claim).to.have.property('to_value').that.to.be.eq(BigNumber('2e19').toFixed())
+
+            balance = await test_tokenA.balanceOf.call(account)
+            expect(balance.toString()).to.be.eq(BigNumber('2e19').toFixed())
         })
 
         it('Should swap the remaining token when the amount of swap token is greater than total token', async () => {

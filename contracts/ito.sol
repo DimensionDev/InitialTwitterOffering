@@ -56,7 +56,7 @@ contract HappyTokenPool {
 
     // claim success event
     event ClaimSuccess (
-        address swapper,
+        address claimer,
         uint256 timestamp,
         uint256 to_value
     );
@@ -257,17 +257,17 @@ contract HappyTokenPool {
     }
 
     function claim() public returns (uint256 claimed_amount) {
-        require(unlock_time <= block.timestamp, "Not released yet");
+        require(unlock_time < block.timestamp, "Not released yet");
         
         claimed_amount = 0;
-        for (uint i = 0; i < 3; i++) {
+        for (uint i = 0; i < ito_list.length; i++) {
             Pool storage pool = pool_by_id[ito_list[i]];
             uint256 swapped = pool.swapped_map[msg.sender];
-            if (swapped == 0)
-                continue;
+            if (swapped == 0) continue;
             claimed_amount = SafeMath.add(claimed_amount, swapped);
             pool.swapped_map[msg.sender] = 0;
         }
+
         require(claimed_amount > 0, "Nothing to claim");
         Pool storage pool = pool_by_id[ito_list[0]];
         address token_address = address(unbox(pool.packed1, 0, 160));
@@ -401,7 +401,7 @@ contract HappyTokenPool {
         unlock_time = _unlock_time;
     }
 
-    function getUnlockTime () public return (uint256){
+    function getUnlockTime () public view returns (uint256) {
         return unlock_time;
     }
 
