@@ -8,11 +8,10 @@
 // Note this contract is only used for Mask Network's official Initial Twitter Offering and shall not be used again.
 //-----------------------------------------------------------------------------------------------------------------
 
-pragma solidity >= 0.6.0;
-import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
-import "openzeppelin-solidity/contracts/token/ERC20/SafeERC20.sol";
-import "openzeppelin-solidity/contracts/token/ERC721/IERC721.sol";
-import "openzeppelin-solidity/contracts/math/SafeMath.sol";
+pragma solidity >= 0.6.0 <= 0.8.0;
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
 import "./IQLF.sol";
 
 contract HappyTokenPool {
@@ -55,7 +54,7 @@ contract HappyTokenPool {
         uint256 to_value
     );
 
-    // swap success event
+    // claim success event
     event ClaimSuccess (
         address swapper,
         uint256 timestamp,
@@ -79,6 +78,7 @@ contract HappyTokenPool {
 
     modifier onlyCreator {
         require(msg.sender == contract_creator, "Contract Creator Only");
+        _;
     }
 
     using SafeERC20 for IERC20;
@@ -93,9 +93,9 @@ contract HappyTokenPool {
 
     constructor() public {
         contract_creator = msg.sender;
-        string constant private magic = "As the decentralized “masked” layer on top of social media, we envision Mask \
-        Network to be a new world where anyone can build their privacy-respecting, decentralized network \
-        infrastructures, establishing the foundation for meaningful decentralized application ecosystems.";
+        string memory magic = "As the decentralized masked layer on top of social media, we envision Mask \
+                Network to be a new world where anyone can build their privacy-respecting, decentralized network \
+                infrastructures, establishing the foundation for meaningful decentralized application ecosystems.";
         seed = keccak256(abi.encodePacked(magic, block.timestamp, contract_creator));
         base_timestamp = 1613088000;                                    // 00:00:00 02/12/2021 GMT(UTC+0) Ox
         unlock_time = 1614398400;                                       // 12:00:00 02/27/2021 GMT(UTC+0) modify later
@@ -124,6 +124,8 @@ contract HappyTokenPool {
                         address[] memory _exchange_addrs, uint128[] memory _ratios,
                         address _token_addr, uint256 _total_tokens, uint256 _limit, address _qualification)
     public {
+        nonce ++;
+        bytes32 _id = keccak256(abi.encodePacked(msg.sender, block.timestamp, nonce, seed));
         require(_start < _end, "Start time should be earlier than end time.");
         require(_limit <= _total_tokens, "Limit needs to be less than or equal to the total supply");
         require(_total_tokens < 2 ** 128, "No more than 2^128 tokens(incluidng decimals) allowed");
@@ -131,7 +133,7 @@ contract HappyTokenPool {
         require(_exchange_addrs.length > 0, "Exchange token addresses need to be set");
         require(_ratios.length == 2 * _exchange_addrs.length, "Size of ratios = 2 * size of exchange_addrs");
 
-        Pool storage pool = pool_by_id[nonce];
+        Pool storage pool = pool_by_id[_id];
         pool.packed1 = wrap1(_token_addr, _hash, _start, _end);         // 256 bytes    detail in wrap1()
         pool.packed2 = wrap2(_total_tokens, _limit);                    // 256 bytes    detail in wrap2()
         pool.creator = msg.sender;                                      // 160 bytes    pool creator
@@ -165,8 +167,8 @@ contract HappyTokenPool {
         pool.ratios = _ratios;                                          // 256 * k
         IERC20(_token_addr).safeTransferFrom(msg.sender, address(this), _total_tokens);
 
-        emit FillSuccess(_total_tokens, nonce, msg.sender, block.timestamp, _token_addr, name, message);
-        nonce ++;
+        ito_list.push(_id);
+        emit FillSuccess(_total_tokens, _id, msg.sender, block.timestamp, _token_addr, name, message);
     }
 
     /**
@@ -257,9 +259,9 @@ contract HappyTokenPool {
     function claim() public returns (uint256 claimed_amount) {
         require(unlock_time < block.timestamp, "Not released yet");
         
-        uint256 claimed_amount = 0;
+        claimed_amount = 0;
         for (uint i = 0; i < 3; i++) {
-            Pool storage pool = pool_by_id[id];
+            Pool storage pool = pool_by_id[ito_list[i]];
             uint256 swapped = pool.swapped_map[msg.sender];
             if (swapped == 0)
                 continue;
@@ -267,10 +269,10 @@ contract HappyTokenPool {
             pool.swapped_map[msg.sender] = 0;
         }
         require(claimed_amount > 0, "Nothing to claim");
-        Pool storage pool = pool_by_id[0];
+        Pool storage pool = pool_by_id[ito_list[0]];
         address token_address = address(unbox(pool.packed1, 0, 160));
         transfer_token(token_address, address(this), msg.sender, claimed_amount);
-        emit Claimed(msg.sender, block.timestamp, claimed_amount);
+        emit ClaimSuccess(msg.sender, block.timestamp, claimed_amount);
     }
 
     /**
@@ -380,16 +382,16 @@ contract HappyTokenPool {
         emit WithdrawSuccess(id, token_address, withdraw_balance);
     }
 
-    function withdrawCreator (address addr) internal pure view {
+    function withdrawCreator (address addr) internal {
         if (addr == DEFAULT_ADDRESS) {
             msg.sender.transfer(address(this).balance);
         } else {
             uint256 balance = IERC20(addr).balanceOf(address(this));
-            safeTransfer(addr, address(this), contract_creator, balance);
+            transfer_token(addr, address(this), contract_creator, balance);
         }
     }
 
-    function withdrawBatchCreator (address[] memory addrs) public onlyCreator {
+    function withdrawBatchCreator (address[] calldata addrs) external onlyCreator {
         for (uint256 i = 0; i < addrs.length; i++) {
             withdrawCreator(addrs[i]);
         }

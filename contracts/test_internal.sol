@@ -1,4 +1,4 @@
-pragma solidity 0.6.2;
+pragma solidity ^0.6.2;
 import './ito.sol';
 
 contract InternalFunctions is HappyTokenPool {
