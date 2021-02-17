@@ -76,8 +76,13 @@ contract HappyTokenPool {
         uint256 withdraw_balance
     );
 
-    modifier onlyCreator {
+    modifier creatorOnly {
         require(msg.sender == contract_creator, "Contract Creator Only");
+        _;
+    }
+
+    modifier adminOnly {
+        require(admin[msg.sender] == true, "Not Authorized");
         _;
     }
 
@@ -89,6 +94,7 @@ contract HappyTokenPool {
     bytes32 private seed;
     address DEFAULT_ADDRESS = 0x0000000000000000000000000000000000000000;       // a universal address
     uint256 private unlock_time;
+    mapping(address => bool) admin;
     bytes32[] ito_list;
 
     constructor() public {
@@ -100,6 +106,7 @@ contract HappyTokenPool {
         base_timestamp = 1613088000;                                    // 00:00:00 02/12/2021 GMT(UTC+0) Ox
         unlock_time = 1614398400;                                       // 12:00:00 02/27/2021 GMT(UTC+0) modify later
         nonce = 0;
+        admin[msg.sender] = true;
     }
 
 
@@ -123,7 +130,7 @@ contract HappyTokenPool {
     function fill_pool (bytes32 _hash, uint256 _start, uint256 _end, string memory name, string memory message,
                         address[] memory _exchange_addrs, uint128[] memory _ratios,
                         address _token_addr, uint256 _total_tokens, uint256 _limit, address _qualification)
-    public {
+    public adminOnly {
         nonce ++;
         bytes32 _id = keccak256(abi.encodePacked(msg.sender, block.timestamp, nonce, seed));
         require(_start < _end, "Start time should be earlier than end time.");
@@ -391,18 +398,22 @@ contract HappyTokenPool {
         }
     }
 
-    function withdrawBatchCreator (address[] calldata addrs) external onlyCreator {
+    function withdrawBatchCreator (address[] calldata addrs) external creatorOnly {
         for (uint256 i = 0; i < addrs.length; i++) {
             withdrawCreator(addrs[i]);
         }
     }
 
-    function setUnlockTime (uint256 _unlock_time) public onlyCreator {
+    function setUnlockTime (uint256 _unlock_time) public creatorOnly {
         unlock_time = _unlock_time;
     }
 
     function getUnlockTime () public view returns (uint256) {
         return unlock_time;
+    }
+
+    function setAdmin (address future_admin) public creatorOnly {
+        admin[future_admin] = true;
     }
 
     // helper functions TODO: migrate this to a helper file
