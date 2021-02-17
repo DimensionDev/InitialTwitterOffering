@@ -257,7 +257,7 @@ contract HappyTokenPool {
     }
 
     function claim() public returns (uint256 claimed_amount) {
-        require(unlock_time < block.timestamp, "Not released yet");
+        require(unlock_time <= block.timestamp, "Not released yet");
         
         claimed_amount = 0;
         for (uint i = 0; i < 3; i++) {
@@ -399,6 +399,10 @@ contract HappyTokenPool {
 
     function setUnlockTime (uint256 _unlock_time) public onlyCreator {
         unlock_time = _unlock_time;
+    }
+
+    function getUnlockTime () public return (uint256){
+        return unlock_time;
     }
 
     // helper functions TODO: migrate this to a helper file
