@@ -103,12 +103,12 @@ contract("HappyTokenPool", accounts => {
             await expect(pool.fill_pool.sendTransaction(...Object.values(fpp))).to.be.rejectedWith(Error)
         })
 
-        it("Should throw error when time is larger than 24 bits", async () => {
-            fpp.start_time = 2 ** 24 - 1
+        it("Should throw error when time is larger than 28 bits", async () => {
+            fpp.start_time = 2 ** 28 - 1
             fpp.end_time = fpp.start_time + 100
 
             await test_tokenA.approve.sendTransaction(pool.address, fpp.total_tokens, {'from': accounts[0]})
-            
+
             await expect(pool.fill_pool.sendTransaction(...Object.values(fpp))).to.be.rejectedWith(Error)
         })
 
@@ -130,13 +130,13 @@ contract("HappyTokenPool", accounts => {
         it("Should emit fillSuccess event when none of ratio gcd is not equal to 1 and fill token is very small", async () => {
             fpp.exchange_ratios = [2, 7, 3, 2, 3, 11]
             fpp.total_tokens = '1'
-            fpp.limit = '1'            
+            fpp.limit = '1'
             await test_tokenA.approve.sendTransaction(pool.address, fpp.total_tokens, {'from': accounts[0]})
             await pool.fill_pool.sendTransaction(...Object.values(fpp))
             const logs = await web3.eth.getPastLogs({address: pool.address, topics: [web3.utils.sha3(fill_success_encode)]})
-            const result = web3.eth.abi.decodeParameters(fill_success_types, logs[0].data)     
-            expect(result).to.have.property('id').that.to.not.be.null       
-        })        
+            const result = web3.eth.abi.decodeParameters(fill_success_types, logs[0].data)
+            expect(result).to.have.property('id').that.to.not.be.null
+        })
     })
 
     describe("check_availability()", async () => {
@@ -232,11 +232,11 @@ contract("HappyTokenPool", accounts => {
         it("Should return remaining token correctly when none of ratio gcd is not equal to 1 and tokens are very small", async () => {
             fpp.exchange_ratios = [2, 7, 3, 2, 3, 11]
             fpp.total_tokens = '10'
-            fpp.limit = '10'    
-            const account = accounts[1]  
+            fpp.limit = '10'
+            const account = accounts[1]
             const { id: pool_id } = await getResultFromPoolFill(pool, fpp)
             const { remaining: remaining_before } = await getAvailability(pool, pool_id, account)
-            expect(web3.utils.fromWei(remaining_before, 'wei')).to.be.eq(fpp.total_tokens)   
+            expect(web3.utils.fromWei(remaining_before, 'wei')).to.be.eq(fpp.total_tokens)
 
             const transfer_amount = BigNumber('2').toFixed()
             const approve_amount = BigNumber('2').toFixed()
@@ -250,8 +250,8 @@ contract("HappyTokenPool", accounts => {
             const tokenB_balance = await test_tokenB.balanceOf.call(account)
             const tokenA_balance = await test_tokenA.balanceOf.call(account)
 
-            expect(tokenA_balance.toString()).to.be.eq('1')            
-            expect(tokenB_balance.toString()).to.be.eq('0')            
+            expect(tokenA_balance.toString()).to.be.eq('0')
+            expect(tokenB_balance.toString()).to.be.eq('0')
             expect(web3.utils.fromWei(remaining_now, 'wei')).to.be.eq('9')
         })
     })
@@ -459,8 +459,8 @@ contract("HappyTokenPool", accounts => {
                 ETH_address_index,
                 exchange_ETH_amount,
                 { 'from': swapperFirstETH, 'value': exchange_ETH_amount }
-            );   
-            
+            );
+
             // then, swap amount greater than total token
             const swapperETH = accounts[4]
             let v2 = getVerification(PASSWORD, swapperETH)
@@ -474,11 +474,11 @@ contract("HappyTokenPool", accounts => {
                 ETH_address_index,
                 exchange_ETH_amount,
                 { 'from': swapperETH, 'value': exchange_ETH_amount }
-            );    
-            
+            );
+
             const logs = await web3.eth.getPastLogs({address: pool.address, topics: [web3.utils.sha3(swap_success_encode)]})
-            const {from_value, to_value} = web3.eth.abi.decodeParameters(swap_success_types, logs[0].data)  
-            
+            const {from_value, to_value} = web3.eth.abi.decodeParameters(swap_success_types, logs[0].data)
+
             expect(remaining.toString())
                 .to.be.eq(BigNumber('5e11').times(ratio).toFixed())
             expect(from_value)
@@ -723,32 +723,32 @@ contract("HappyTokenPool", accounts => {
                 ETH_address_index,
                 exchange_ETH_amount,
                 { 'from': swapperETH, 'value': exchange_ETH_amount }
-            );            
+            );
 
             const swapperB = accounts[4]
             const tokenB_address_index = 1
             const exchange_tokenB_amount = BigNumber('200e18').toFixed()
-            await approveThenSwapToken(test_tokenB, swapperB, tokenB_address_index, pool_id, exchange_tokenB_amount)            
+            await approveThenSwapToken(test_tokenB, swapperB, tokenB_address_index, pool_id, exchange_tokenB_amount)
 
             await helper.advanceTimeAndBlock(2000 * 1000);
-            await pool.withdraw.sendTransaction(pool_id, tokenB_address_index, { from: creator })            
+            await pool.withdraw.sendTransaction(pool_id, tokenB_address_index, { from: creator })
             await pool.withdraw.sendTransaction(pool_id, ETH_address_index, { from: creator })
 
             const latestBlock = await web3.eth.getBlockNumber()
             const logs = await web3.eth.getPastLogs({
-                address: pool.address, 
+                address: pool.address,
                 topics: [web3.utils.sha3(withdraw_success_encode)],
                 fromBlock: latestBlock - 1,
                 toBlock: latestBlock
             })
 
-            const logWithdrawTokenB = web3.eth.abi.decodeParameters(withdraw_success_types, logs[0].data) 
+            const logWithdrawTokenB = web3.eth.abi.decodeParameters(withdraw_success_types, logs[0].data)
             const logWithdrawETH = web3.eth.abi.decodeParameters(withdraw_success_types, logs[1].data)
 
-            expect(logWithdrawTokenB).to.have.property('withdraw_balance').that.to.be.eq(BigNumber('200e18').toFixed())      
-            expect(logWithdrawETH).to.have.property('withdraw_balance').that.to.be.eq(BigNumber('3e14').toFixed())            
+            expect(logWithdrawTokenB).to.have.property('withdraw_balance').that.to.be.eq(BigNumber('200e18').toFixed())
+            expect(logWithdrawETH).to.have.property('withdraw_balance').that.to.be.eq(BigNumber('3e14').toFixed())
         })
-    })    
+    })
 
     async function approveThenSwapToken (test_token, swapper, token_address_index, pool_id, exchange_amount) {
         const r = getVerification(PASSWORD, swapper)
@@ -769,7 +769,7 @@ contract("HappyTokenPool", accounts => {
     function getVerification (password, account) {
         var hash = web3.utils.sha3(password)
         var hash_bytes = Uint8Array.from(Buffer.from(hash.slice(2,), 'hex'))
-        hash = hash_bytes.slice(0, 6)
+        hash = hash_bytes.slice(0, 5)
         hash = '0x' + Buffer.from(hash).toString('hex')
         return {
             verification: web3.utils.soliditySha3(web3.utils.hexToNumber(hash), account),

@@ -192,10 +192,10 @@ contract HappyTokenPool {
         Pool storage pool = pool_by_id[id];
         address payable recipient = address(uint160(_recipient));
         require (IQLF(pool.qualification).ifQualified(msg.sender) == true, "Not Qualified");
-        require (unbox(pool.packed1, 208, 24) + base_timestamp < block.timestamp, "Not started.");
-        require (unbox(pool.packed1, 232, 24) + base_timestamp > block.timestamp, "Expired.");
+        require (unbox(pool.packed1, 200, 28) + base_timestamp < block.timestamp, "Not started.");
+        require (unbox(pool.packed1, 228, 28) + base_timestamp > block.timestamp, "Expired.");
         // sha3(sha3(passowrd)[:48] + msg.sender) so that the raw password will never appear in the contract
-        require (verification == keccak256(abi.encodePacked(unbox(pool.packed1, 160, 48), msg.sender)), 
+        require (verification == keccak256(abi.encodePacked(unbox(pool.packed1, 160, 40), msg.sender)), 
                  'Wrong Password');
         // sha3(msg.sender) to protect from front runs (but this is kinda naive since the contract is open sourced)
         require (validation == keccak256(toBytes(msg.sender)), "Validation Failed");
@@ -293,8 +293,8 @@ contract HappyTokenPool {
         return (
             pool.exchange_addrs,                                                // exchange_addrs 0x0 means destructed
             unbox(pool.packed2, 0, 128),                                        // remaining
-            block.timestamp > unbox(pool.packed1, 208, 24) + base_timestamp,    // started
-            block.timestamp > unbox(pool.packed1, 232, 24) + base_timestamp,    // expired
+            block.timestamp > unbox(pool.packed1, 200, 28) + base_timestamp,    // started
+            block.timestamp > unbox(pool.packed1, 228, 28) + base_timestamp,    // expired
             pool.swapped_map[msg.sender],                                       // swapped number 
             pool.exchanged_tokens                                               // exchanged tokens
         );
@@ -315,7 +315,7 @@ contract HappyTokenPool {
         require(msg.sender == pool.creator, "Only the pool creator can destruct.");
 
         address token_address = address(unbox(pool.packed1, 0, 160));
-        uint256 expiration = unbox(pool.packed1, 232, 24) + base_timestamp;
+        uint256 expiration = unbox(pool.packed1, 228, 28) + base_timestamp;
         uint256 remaining_tokens = unbox(pool.packed2, 0, 128);
         // only after expiration or the pool is empty
         require(expiration <= block.timestamp || remaining_tokens == 0, "Not expired yet");
@@ -365,7 +365,7 @@ contract HappyTokenPool {
 
         uint256 withdraw_balance = pool.exchanged_tokens[addr_i];
         require(withdraw_balance > 0, "None of this token left");
-        uint256 expiration = unbox(pool.packed1, 232, 24) + base_timestamp;
+        uint256 expiration = unbox(pool.packed1, 228, 28) + base_timestamp;
         uint256 remaining_tokens = unbox(pool.packed2, 0, 128);
         // only after expiration or the pool is empty
         require(expiration <= block.timestamp || remaining_tokens == 0, "Not expired yet");
@@ -415,9 +415,9 @@ contract HappyTokenPool {
                     returns (uint256 packed1) {
         uint256 _packed1 = 0;
         _packed1 |= box(0, 160,  uint256(_token_addr));     // token_addr = 160 bits
-        _packed1 |= box(160, 48, uint256(_hash) >> 208);    // hash = 48 bits (safe?)
-        _packed1 |= box(208, 24, _start);                   // start_time = 24 bits 
-        _packed1 |= box(232, 24, _end);                     // expiration_time = 24 bits
+        _packed1 |= box(160, 40, uint256(_hash) >> 216);    // hash = 48 bits (safe?)
+        _packed1 |= box(200, 28, _start);                   // start_time = 24 bits 
+        _packed1 |= box(228, 28, _end);                     // expiration_time = 24 bits
         return _packed1;
     }
 
