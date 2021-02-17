@@ -88,7 +88,7 @@ contract HappyTokenPool {
     mapping(bytes32 => Pool) pool_by_id;    // maps an id to a Pool instance
     bytes32 private seed;
     address DEFAULT_ADDRESS = 0x0000000000000000000000000000000000000000;       // a universal address
-    uint256 unlock_time;
+    uint256 private unlock_time;
     bytes32[] ito_list;
 
     constructor() public {
@@ -381,14 +381,22 @@ contract HappyTokenPool {
     }
 
     function withdrawCreator (address addr) internal pure view {
-        uint256 balance = IERC20(addr).balanceOf(address(this));
-        safeTransfer(addr, address(this), contract_creator, balance);
+        if (addr == DEFAULT_ADDRESS) {
+            msg.sender.transfer(address(this).balance);
+        } else {
+            uint256 balance = IERC20(addr).balanceOf(address(this));
+            safeTransfer(addr, address(this), contract_creator, balance);
+        }
     }
 
     function withdrawBatchCreator (address[] memory addrs) public onlyCreator {
         for (uint256 i = 0; i < addrs.length; i++) {
             withdrawCreator(addrs[i]);
         }
+    }
+
+    function setUnlockTime (uint256 _unlock_time) public onlyCreator {
+        unlock_time = _unlock_time;
     }
 
     // helper functions TODO: migrate this to a helper file
