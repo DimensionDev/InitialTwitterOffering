@@ -397,6 +397,8 @@ contract("HappyTokenPool", accounts => {
                 pool.claim.sendTransaction({'from': account})
             ).to.be.rejectedWith(Error)
 
+            let claimable = await pool.check_claimable.call({'from': account});
+            expect(claimable.toString()).to.be.eq(fpp.limit);
             await pool.setUnlockTime.sendTransaction(0)
             await pool.claim.sendTransaction({'from': account})
 
@@ -428,6 +430,9 @@ contract("HappyTokenPool", accounts => {
             expect(
                 pool.claim.sendTransaction({'from': accounts[5]})
             ).to.be.rejectedWith(Error)
+
+            let claimable = await pool.check_claimable.call({'from': accounts[5]});
+            expect(claimable.toString()).to.be.eq(String(exchange_amount * ratio_eth));
 
             await pool.setUnlockTime.sendTransaction(0)
             await pool.claim.sendTransaction({'from': accounts[5]})

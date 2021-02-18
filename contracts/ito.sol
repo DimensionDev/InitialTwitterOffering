@@ -282,6 +282,14 @@ contract HappyTokenPool {
         emit ClaimSuccess(msg.sender, block.timestamp, claimed_amount);
     }
 
+    function check_claimable() public view returns (uint256 claimable_amount) {
+        claimable_amount = 0;
+        for (uint i = 0; i < ito_list.length; i++) {
+            Pool storage pool = pool_by_id[ito_list[i]];
+            claimable_amount = SafeMath.add(claimable_amount, pool.swapped_map[msg.sender]);
+        }
+    }
+
     /**
      * check_availability() returns a bunch of pool info given a pool id
      * id                    swap pool id
