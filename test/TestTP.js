@@ -801,6 +801,6 @@ contract("InternalFunctions", () => {
         const position = 3
         const size = 255
         const result = await internalFunctions._unbox(base, position, size)
-        expect(result.toString()).to.be.eq('160')
+        expect(result.toString()).to.be.eq('5')
     })
 })

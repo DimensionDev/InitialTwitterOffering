@@ -385,7 +385,10 @@ contract HappyTokenPool {
 
     function box (uint16 position, uint16 size, uint256 data) internal pure returns (uint256 boxed) {
         require(validRange(size, data), "Value out of range BOX");
-        return data << (256 - size - position);
+        assembly {
+            // data << position
+            boxed := shl(position, data)
+        }
     }
 
     /**
@@ -398,7 +401,11 @@ contract HappyTokenPool {
 
     function unbox (uint256 base, uint16 position, uint16 size) internal pure returns (uint256 unboxed) {
         require(validRange(256, base), "Value out of range UNBOX");
-        return (base << position) >> (256 - size);
+        assembly {
+            // (((1 << size) - 1) & base >> position)
+            unboxed := and(sub(shl(size, 1), 1), shr(position, base))
+
+        }
     }
 
     /**
@@ -407,11 +414,11 @@ contract HappyTokenPool {
      * validRange()  checks if the given data is over the specified data size
     **/
 
-    function validRange (uint16 size, uint256 data) internal pure returns(bool) { 
-        if (data > 2 ** uint256(size) - 1) {
-            return false;
+    function validRange (uint16 size, uint256 data) internal pure returns(bool ifValid) { 
+        assembly {
+            // 2^size > data or size ==256
+            ifValid := or(eq(size, 256), gt(shl(size, 1), data))
         }
-        return true;
     }
 
     /**
@@ -423,11 +430,12 @@ contract HappyTokenPool {
     **/
 
     function rewriteBox (uint256 _box, uint16 position, uint16 size, uint256 data) 
-    internal pure returns (uint256 boxed) {
-        uint256 _boxData = box(position, size, data);
-        uint256 _mask = box(position, size, uint256(-1) >> (256 - size));
-        _box = (_box & ~_mask) | _boxData;
-        return _box;
+                        internal pure returns (uint256 boxed) {
+        assembly {
+            // mask = ~((1 << size - 1) << position)
+            // _box = (mask & _box) | ()data << position)
+            boxed := or( and(_box, not(shl(position, sub(shl(size, 1), 1)))), shl(position, data))
+        }
     }
 
     /**
