@@ -6,7 +6,7 @@
     "devDependencies": {
         "bignumber.js": "2.0.0",
         "chai-as-promised": "^7.1.1",
-        "openzeppelin-solidity": "^3.2.0",
+        "@openzeppelin/contracts": "^3.2.0",
         "solhint": "^2.3.0",
         "solidity-coverage": "^0.7.13"
     }

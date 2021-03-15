@@ -1,4 +1,4 @@
-const base_timestamp = 1609372800
+const base_timestamp = 1613088000
 const eth_address = "0x0000000000000000000000000000000000000000"
 const fill_success_encode = 'FillSuccess(uint256,bytes32,address,uint256,address,string,string)'
 const fill_success_types = [
@@ -17,6 +17,12 @@ const swap_success_types = [
     { type: 'address', name: 'from_address' },
     { type: 'address', name: 'to_address' },
     { type: 'uint256', name: 'from_value' },
+    { type: 'uint256', name: 'to_value' }
+]
+const claim_success_encode = 'ClaimSuccess(address,uint256,uint256)'
+const claim_success_types = [
+    { type: 'address', name: 'claimer' },
+    { type: 'uint256', name: 'timestamp' },
     { type: 'uint256', name: 'to_value' }
 ]
 const destruct_success_encode = 'DestructSuccess(bytes32,address,uint256,uint128[])'
@@ -41,6 +47,8 @@ module.exports = {
     fill_success_types,
     swap_success_encode,
     swap_success_types,
+    claim_success_encode,
+    claim_success_types,
     destruct_success_encode,
     destruct_success_types,
     withdraw_success_encode,
