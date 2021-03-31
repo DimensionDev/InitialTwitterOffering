@@ -10,6 +10,7 @@ import "openzeppelin-solidity/contracts/token/ERC20/SafeERC20.sol";
 import "openzeppelin-solidity/contracts/token/ERC721/IERC721.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "./IQLF.sol";
+import "hardhat/console.sol";
 
 contract HappyTokenPool {
 
@@ -80,10 +81,13 @@ contract HappyTokenPool {
     constructor() public {
         contract_creator = msg.sender;
         seed = keccak256(abi.encodePacked(magic, block.timestamp, contract_creator));
-        base_timestamp = 1609372800;                                    // 00:00:00 01/01/2021 GMT(UTC+0)
+        base_timestamp = 1616976000;                                    // 00:00:00 03/30/2021 GMT(UTC+0)
     }
 
 
+    function test_allowance (address _token_addr) public {
+        console.log('allowance', IERC20(_token_addr).allowance(msg.sender, address(this)));
+    }
     /**
      * @dev 
      * fill_pool() creates a swap pool with specific parameters from input
