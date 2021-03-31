@@ -178,7 +178,9 @@ contract HappyTokenPool {
     public payable returns (uint256 swapped) {
 
         Pool storage pool = pool_by_id[id];
-        require (IQLF(pool.qualification).ifQualified(msg.sender) == true, "Not Qualified");
+        if (pool.qualification != DEFAULT_ADDRESS) {
+            require (IQLF(pool.qualification).logQualified(msg.sender) == true, "Not Qualified");
+        }
         require (unbox(pool.packed1, 208, 24) + base_timestamp < block.timestamp, "Not started.");
         require (unbox(pool.packed1, 232, 24) + base_timestamp > block.timestamp, "Expired.");
         // sha3(sha3(passowrd)[:48] + msg.sender) so that the raw password will never appear in the contract
