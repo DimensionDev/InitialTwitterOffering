@@ -1,10 +1,12 @@
+// SPDX-License-Identifier: MIT
+
 /**
  * @author          Yisi Liu
  * @contact         yisiliu@gmail.com
  * @author_time     01/06/2021
 **/
 
-pragma solidity >= 0.6.0;
+pragma solidity ^0.8.0;
 
 interface IQLF {
     /**

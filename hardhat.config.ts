@@ -4,5 +4,9 @@ import "@nomiclabs/hardhat-ethers"
 /**
  * @type import('hardhat/config').HardhatUserConfig
  */
-module.exports = {};
 
+module.exports = {
+  solidity: {
+      version: "0.8.0"
+  }
+};
