@@ -1,69 +1,29 @@
-const advanceTime = (time) => {
-  return new Promise((resolve, reject) => {
-    web3.currentProvider.send({
-      jsonrpc: '2.0',
-      method: 'evm_increaseTime',
-      params: [time],
-      id: new Date().getTime()
-    }, (err, result) => {
-      if (err) { return reject(err) }
-      return resolve(result)
-    })
-  })
+async function advanceTime(time) {
+  await network.provider.send('evm_increaseTime', [time])
 }
 
-const advanceBlock = () => {
-  return new Promise((resolve, reject) => {
-    web3.currentProvider.send({
-      jsonrpc: '2.0',
-      method: 'evm_mine',
-      id: new Date().getTime()
-    }, (err, result) => {
-      if (err) { return reject(err) }
-      const newBlockHash = web3.eth.getBlock('latest').hash
-
-      return resolve(newBlockHash)
-    })
-  })
+async function advanceBlock() {
+  await network.provider.send('evm_mine', [])
 }
 
-const takeSnapshot = () => {
-  return new Promise((resolve, reject) => {
-    web3.currentProvider.send({
-      jsonrpc: '2.0',
-      method: 'evm_snapshot',
-      id: new Date().getTime()
-    }, (err, snapshotId) => {
-      if (err) { return reject(err) }
-      return resolve(snapshotId)
-    })
-  })
+async function takeSnapshot() {
+  return network.provider.send('evm_snapshot', [])
 }
 
-const revertToSnapShot = (id) => {
-  return new Promise((resolve, reject) => {
-    web3.currentProvider.send({
-      jsonrpc: '2.0',
-      method: 'evm_revert',
-      params: [id],
-      id: new Date().getTime()
-    }, (err, result) => {
-      if (err) { return reject(err) }
-      return resolve(result)
-    })
-  })
+async function revertToSnapShot(id) {
+  await network.provider.send('evm_revert', [id])
 }
 
-const advanceTimeAndBlock = async (time) => {
+async function advanceTimeAndBlock(time) {
   await advanceTime(time)
   await advanceBlock()
-  return Promise.resolve(web3.eth.getBlock('latest'))
+  return Promise.resolve(ethers.provider.getBlock())
 }
-  
+
 module.exports = {
   advanceTime,
   advanceBlock,
   advanceTimeAndBlock,
   takeSnapshot,
-  revertToSnapShot
+  revertToSnapShot,
 }

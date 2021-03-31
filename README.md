@@ -19,18 +19,22 @@ npm i
 ```
 To build the project:
 ```
-truffle build
+npm run compile
 ```
 
 To test the project:
 ```
-npm install chai ganache-cli
-truffle run coverage
+npm test
 ```
 
 To debug:
-```
-truffle debug [TX_ID]
+```solidity
+//...
+import "hardhat/console.sol";
+
+function debug_param (address _token_addr) public {
+    console.log('_token_addr', _token_addr);
+}
 ```
 
 ## Contract Address
