@@ -19,11 +19,11 @@ async function advanceTimeAndBlock(time) {
   await advanceBlock()
   return Promise.resolve(ethers.provider.getBlock())
 }
-  
+
 module.exports = {
   advanceTime,
   advanceBlock,
   advanceTimeAndBlock,
   takeSnapshot,
-  revertToSnapShot
+  revertToSnapShot,
 }
