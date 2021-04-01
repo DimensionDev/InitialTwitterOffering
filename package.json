@@ -10,7 +10,7 @@
         "format": "prettier --write './test/*.js'"
     },
     "dependencies": {
-        "openzeppelin-solidity": "^3.2.0"
+        "@openzeppelin/contracts": "^4.0.0"
     },
     "devDependencies": {
         "@nomiclabs/hardhat-ethers": "^2.0.2",
@@ -23,6 +23,7 @@
         "chai-as-promised": "^7.1.1",
         "ethers": "^5.0.32",
         "hardhat": "^2.1.2",
+        "hardhat-gas-reporter": "^1.0.4",
         "mocha": "^8.3.0",
         "prettier": "^1.19.1",
         "solhint": "^2.3.0",

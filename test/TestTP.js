@@ -18,12 +18,6 @@ const {
   PASSWORD,
 } = require('./constants')
 
-// const TestTokenA = artifacts.require("TestTokenA")
-// const TestTokenB = artifacts.require("TestTokenB")
-// const TestTokenC = artifacts.require("TestTokenC")
-// const HappyTokenPool = artifacts.require("HappyTokenPool")
-// const QualificationTester = artifacts.require("QLF");
-// const InternalFunctions = artifacts.require("InternalFunctions")
 const amount = new BigNumber('1e27').toFixed()
 const abiCoder = new ethers.utils.AbiCoder()
 const ETH_address_index = 0
@@ -31,12 +25,13 @@ const tokenB_address_index = 1
 const tokenC_address_index = 2
 let fpp // fill happyTokenPoolDeployed parameters
 let snapshotId
+let testVaultDeployed
 let testTokenADeployed
 let testTokenBDeployed
 let testTokenCDeployed
 let happyTokenPoolDeployed
-let qualificationTesterDeployed
 let internalFunctionsDeployed
+let qualificationTesterDeployed
 let creator
 let signers
 
@@ -927,6 +922,27 @@ describe('HappyTokenPool', () => {
     happyTokenPoolDeployed = happyTokenPoolDeployed.connect(signer)
     return happyTokenPoolDeployed.check_availability(pool_id)
   }
+})
+
+describe('HappyTokenVault', () => {
+  before(async () => {
+    signers = await ethers.getSigners()
+    creator = signers[0]
+
+    const TestVault = await ethers.getContractFactory('HappyTokenVault')
+    const testVault = await TestVault.deploy(signers[0].address)
+    testVaultDeployed = await testVault.deployed()
+
+  })
+
+  it('Should do nothing', async () => {
+    let a = true;
+    expect(a).to.be.true;
+  })
+
+  it('Should refund the gas', async () => {
+    testVaultDeployed.retrieve([]);
+  })
 })
 
 describe('InternalFunctions', () => {

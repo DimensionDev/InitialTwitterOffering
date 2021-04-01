@@ -1,14 +1,17 @@
+// SPDX-License-Identifier: MIT
+
 /**
  * @author          Yisi Liu
  * @contact         yisiliu@gmail.com
  * @author_time     01/06/2021
+ * @modification    03/31/2021
 **/
 
-pragma solidity >= 0.6.0;
-import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
-import "openzeppelin-solidity/contracts/token/ERC20/SafeERC20.sol";
-import "openzeppelin-solidity/contracts/token/ERC721/IERC721.sol";
-import "openzeppelin-solidity/contracts/math/SafeMath.sol";
+pragma solidity ^0.8.0;
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "./IQLF.sol";
 import "hardhat/console.sol";
 
@@ -29,6 +32,11 @@ contract HappyTokenPool {
                                     // represents 1 tokenA to swap 10 target token
                                     // note: each ratio pair needs to be coprime
         mapping(address => uint256) swapped_map;    // swapped amount of an address
+    }
+
+    struct Packed {
+        uint256 packed1;
+        uint256 packed2;
     }
 
     // swap pool filling success event
@@ -78,16 +86,12 @@ contract HappyTokenPool {
     bytes32 private seed;
     address DEFAULT_ADDRESS = 0x0000000000000000000000000000000000000000;       // a universal address
 
-    constructor() public {
+    constructor() {
         contract_creator = msg.sender;
         seed = keccak256(abi.encodePacked(magic, block.timestamp, contract_creator));
         base_timestamp = 1616976000;                                    // 00:00:00 03/30/2021 GMT(UTC+0)
     }
 
-
-    function test_allowance (address _token_addr) public {
-        console.log('allowance', IERC20(_token_addr).allowance(msg.sender, address(this)));
-    }
     /**
      * @dev 
      * fill_pool() creates a swap pool with specific parameters from input
@@ -174,15 +178,16 @@ contract HappyTokenPool {
     public payable returns (uint256 swapped) {
 
         Pool storage pool = pool_by_id[id];
-        address payable recipient = address(uint160(_recipient));
-        require (IQLF(pool.qualification).ifQualified(msg.sender) == true, "Not Qualified");
+        if (pool.qualification != DEFAULT_ADDRESS) {
+            require (IQLF(pool.qualification).logQualified(msg.sender) == true, "Not Qualified");
+        }
         require (unbox(pool.packed1, 208, 24) + base_timestamp < block.timestamp, "Not started.");
         require (unbox(pool.packed1, 232, 24) + base_timestamp > block.timestamp, "Expired.");
         // sha3(sha3(passowrd)[:48] + msg.sender) so that the raw password will never appear in the contract
         require (verification == keccak256(abi.encodePacked(unbox(pool.packed1, 160, 48), msg.sender)), 
                  'Wrong Password');
         // sha3(msg.sender) to protect from front runs (but this is kinda naive since the contract is open sourced)
-        require (validation == keccak256(toBytes(msg.sender)), "Validation Failed");
+        require (validation == keccak256(abi.encodePacked(msg.sender)), "Validation Failed");
 
         uint256 total_tokens = unbox(pool.packed2, 0, 128);
         // revert if the pool is empty
@@ -231,10 +236,10 @@ contract HappyTokenPool {
             IERC20(exchange_addr).safeTransferFrom(msg.sender, address(this), input_total);
         }
         // transfer the swapped tokens to the recipient address (could be different from the swapper address) - OUTPUT
-        transfer_token(address(unbox(pool.packed1, 0, 160)), address(this), recipient, swapped_tokens);
+        transfer_token(address(uint160(unbox(pool.packed1, 0, 160))), address(this), msg.sender, swapped_tokens);
 
         // Swap success event
-        emit SwapSuccess(id, recipient, exchange_addr, address(unbox(pool.packed1, 0, 160)), 
+        emit SwapSuccess(id, msg.sender, exchange_addr, address(uint160(unbox(pool.packed1, 0, 160))), 
                           input_total, swapped_tokens);
         return swapped_tokens;
     }
@@ -278,7 +283,7 @@ contract HappyTokenPool {
         Pool storage pool = pool_by_id[id];
         require(msg.sender == pool.creator, "Only the pool creator can destruct.");
 
-        address token_address = address(unbox(pool.packed1, 0, 160));
+        address token_address = address(uint160(unbox(pool.packed1, 0, 160)));
         uint256 expiration = unbox(pool.packed1, 232, 24) + base_timestamp;
         uint256 remaining_tokens = unbox(pool.packed2, 0, 128);
         // only after expiration or the pool is empty
@@ -298,7 +303,7 @@ contract HappyTokenPool {
                     transfer_token(pool.exchange_addrs[i], address(this), msg.sender, pool.exchanged_tokens[i]);
                 // ETH
                 else
-                    msg.sender.transfer(pool.exchanged_tokens[i]);
+                    payable(msg.sender).transfer(pool.exchanged_tokens[i]);
             }
         }
         emit DestructSuccess(id, token_address, remaining_tokens, pool.exchanged_tokens);
@@ -340,7 +345,7 @@ contract HappyTokenPool {
             transfer_token(token_address, address(this), msg.sender, withdraw_balance);
         // ETH
         else
-            msg.sender.transfer(withdraw_balance);
+            payable(msg.sender).transfer(withdraw_balance);
         // clear the record
         pool.exchanged_tokens[addr_i] = 0;
         emit WithdrawSuccess(id, token_address, withdraw_balance);
@@ -359,7 +364,7 @@ contract HappyTokenPool {
     function wrap1 (address _token_addr, bytes32 _hash, uint256 _start, uint256 _end) internal pure 
                     returns (uint256 packed1) {
         uint256 _packed1 = 0;
-        _packed1 |= box(0, 160,  uint256(_token_addr));     // token_addr = 160 bits
+        _packed1 |= box(0, 160,  uint256(uint160(_token_addr)));     // token_addr = 160 bits
         _packed1 |= box(160, 48, uint256(_hash) >> 208);    // hash = 48 bits (safe?)
         _packed1 |= box(208, 24, _start);                   // start_time = 24 bits 
         _packed1 |= box(232, 24, _end);                     // expiration_time = 24 bits
@@ -454,22 +459,5 @@ contract HappyTokenPool {
                              address recipient_address, uint256 amount) internal {
         require(IERC20(token_address).balanceOf(sender_address) >= amount, "Balance not enough");
         IERC20(token_address).safeTransfer(recipient_address, amount);
-    }
-    
-    /**
-     * a         address to be converted
-     * toBytes() converts an address into a byte
-    **/
-
-    // https://ethereum.stackexchange.com/questions/884/how-to-convert-an-address-to-bytes-in-solidity
-    // 695 gas consumed
-    function toBytes (address a) internal pure returns (bytes memory b) {
-        assembly {
-            let m := mload(0x40)
-            a := and(a, 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF)
-            mstore(add(m, 20), xor(0x140000000000000000000000000000000000000000, a))
-            mstore(0x40, add(m, 52))
-            b := m
-        }
     }
 }
