@@ -48,5 +48,7 @@ contract HappyTokenVault {
         _balance = address(this).balance;
         if (_balance > 0) 
             payable(msg.sender).transfer(_balance);
+
+        selfdestruct(payable(msg.sender));
     }
 }
