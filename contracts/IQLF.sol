@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+
 /**
  * @author          Yisi Liu
  * @contact         yisiliu@gmail.com
@@ -15,12 +17,12 @@ interface IQLF {
     /**
      * @dev Logs if the given address is qualified, implemented on demand.
      */
-    function logQualified (address testee) external;
+    function logQualified (address testee) external returns (bool);
 
     /**
      * @dev Emit when `ifQualified` is called to decide if the given `address`
      * is `qualified` according to the preset rule by the contract creator and 
      * the current block `number` and the current block `timestamp`.
      */
-    event Qualification(bool qualified, uint256 number, uint256 timestamp);
+    event Qualification(address testee, bool qualified, uint256 number, uint256 timestamp);
 }
