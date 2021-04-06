@@ -1,10 +1,12 @@
+// SPDX-License-Identifier: MIT
+
 /**
  * @author          Yisi Liu
  * @contact         yisiliu@gmail.com
  * @author_time     01/06/2021
 **/
 
-pragma solidity >= 0.6.0;
+pragma solidity >= 0.8.0;
 
 import "./IQLF.sol";
 
@@ -12,7 +14,7 @@ contract QLF is IQLF {
     string private name;
     uint256 private creation_time;
 
-    constructor (string memory _name) public {
+    constructor (string memory _name) {
         name = _name;
         creation_time = block.timestamp;
     }
@@ -25,13 +27,12 @@ contract QLF is IQLF {
         return creation_time;
     }
 
-    function ifQualified(address testee) public view override returns (bool) {
-        bool qualified = true;
-        return qualified;
+    function ifQualified(address) public pure override returns (bool qualified) {
+        qualified = true;
     } 
 
-    function logQualified(address testee) public override {
-        bool qualified = true;
-        emit Qualification(qualified, block.number, block.timestamp);
+    function logQualified(address testee) public override returns (bool qualified) {
+        qualified = true;
+        emit Qualification(testee, qualified, block.number, block.timestamp);
     } 
 }
