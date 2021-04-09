@@ -290,7 +290,7 @@ contract HappyTokenPool {
         uint256 claimed_amount;
         for (uint256 i = 0; i < ito_ids.length; i++) {
             Pool storage pool = pool_by_id[ito_ids[i]];
-            if (pool.unlock_time < block.timestamp)
+            if (pool.unlock_time > block.timestamp)
                 continue;
             claimed_amount = pool.swapped_map[msg.sender];
             if (claimed_amount == 0)
