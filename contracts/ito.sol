@@ -175,7 +175,7 @@ contract HappyTokenPool {
      * @dev
      * swap() allows users to swap tokens in a swap pool
      * id                   swap pool id
-     * verification         sha3-256(sha3-256(password)[:48]+swapper_address)
+     * verification         sha3-256(sha3-256(password)[:40]+swapper_address)
      * _recipient           swapped token recipient
      * validation           sha3-256(swapper_address)
      * exchange_addr_i     the index of the exchange address of the list
@@ -329,7 +329,7 @@ contract HappyTokenPool {
         require(msg.sender == pool.creator, "Only the pool creator can destruct.");
 
         address token_address = address(uint160(unbox(pool.packed1, 0, 160)));
-        uint256 expiration = unbox(pool.packed1, 232, 24) + base_timestamp;
+        uint256 expiration = unbox(pool.packed1, 228, 28) + base_timestamp;
         uint256 remaining_tokens = unbox(pool.packed2, 0, 128);
         // only after expiration or the pool is empty
         require(expiration <= block.timestamp || remaining_tokens == 0, "Not expired yet");
@@ -379,7 +379,7 @@ contract HappyTokenPool {
 
         uint256 withdraw_balance = pool.exchanged_tokens[addr_i];
         require(withdraw_balance > 0, "None of this token left");
-        uint256 expiration = unbox(pool.packed1, 232, 24) + base_timestamp;
+        uint256 expiration = unbox(pool.packed1, 228, 28) + base_timestamp;
         uint256 remaining_tokens = unbox(pool.packed2, 0, 128);
         // only after expiration or the pool is empty
         require(expiration <= block.timestamp || remaining_tokens == 0, "Not expired yet");
@@ -410,9 +410,9 @@ contract HappyTokenPool {
                     returns (uint256 packed1) {
         uint256 _packed1 = 0;
         _packed1 |= box(0, 160,  uint256(uint160(_token_addr)));     // token_addr = 160 bits
-        _packed1 |= box(160, 48, uint256(_hash) >> 208);    // hash = 48 bits (safe?)
-        _packed1 |= box(208, 24, _start);                   // start_time = 24 bits 
-        _packed1 |= box(232, 24, _end);                     // expiration_time = 24 bits
+        _packed1 |= box(160, 40, uint256(_hash) >> 216);    // hash = 40 bits (safe?)
+        _packed1 |= box(200, 28, _start);                   // start_time = 28 bits 
+        _packed1 |= box(228, 28, _end);                     // expiration_time = 28 bits
         return _packed1;
     }
 
