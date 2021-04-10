@@ -354,7 +354,6 @@ contract HappyTokenPool {
         emit DestructSuccess(id, token_address, remaining_tokens, pool.exchanged_tokens);
 
         // Gas Refund
-        pool.packed1 = 0;
         pool.packed2 = 0;
         pool.creator = DEFAULT_ADDRESS;
         for (uint256 i = 0; i < pool.exchange_addrs.length; i++) {
