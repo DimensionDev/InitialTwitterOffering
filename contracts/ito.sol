@@ -16,12 +16,13 @@ import "./IQLF.sol";
 contract HappyTokenPool {
 
     struct Pool {
-        uint256 packed1;            // total_address(160) hash(48) start_time_delta(24) 
-                                    // expiration_time_delta(24) BIG ENDIAN
+        uint256 packed1;            // qualification_address(160) the smart contract address to verify qualification
+                                    // hash(40) start_time_delta(28) 
+                                    // expiration_time_delta(28) BIG ENDIAN
         uint256 packed2;            // total_tokens(128) limit(128)
         uint48  unlock_time;        // unlock_time + base_timestamp = real_time
         address creator;
-        address qualification;      // the smart contract address to verify qualification
+        address token_address;      // the target token address
         address[] exchange_addrs;   // a list of ERC20 addresses for swapping
         uint128[] exchanged_tokens; // a list of amounts of swapped tokens
         uint128[] ratios;           // a list of swap ratios
@@ -134,12 +135,12 @@ contract HappyTokenPool {
 
         bytes32 _id = keccak256(abi.encodePacked(msg.sender, block.timestamp, nonce, seed));
         Pool storage pool = pool_by_id[_id];
-        pool.packed1 = wrap1(_token_addr, _hash, _start, _end);         // 256 bytes    detail in wrap1()
+        pool.packed1 = wrap1(_qualification, _hash, _start, _end);      // 256 bytes    detail in wrap1()
         pool.packed2 = wrap2(_total_tokens, _limit);                    // 256 bytes    detail in wrap2()
         pool.unlock_time = uint48(_unlock_time);                        // 48  bytes    unlock_time 0 -> unlocked
         pool.creator = msg.sender;                                      // 160 bytes    pool creator
         pool.exchange_addrs = _exchange_addrs;                          // 160 bytes    target token
-        pool.qualification = _qualification;                            // 160 bytes    qualification address
+        pool.token_address = _token_addr;                               // 160 bytes    target token address
 
         // Init each token swapped amount to 0
         for (uint256 i = 0; i < _exchange_addrs.length; i++) {
@@ -191,7 +192,9 @@ contract HappyTokenPool {
 
         Pool storage pool = pool_by_id[id];
         Packed memory packed = Packed(pool.packed1, pool.packed2);
-        require (IQLF(pool.qualification).logQualified(msg.sender) == true, "Not Qualified");
+        require (
+            IQLF(address(uint160(unbox(packed.packed1, 0, 160)))).logQualified(msg.sender) == true, "Not Qualified"
+        );
         require (unbox(packed.packed1, 200, 28) + base_timestamp < block.timestamp, "Not started.");
         require (unbox(packed.packed1, 228, 28) + base_timestamp > block.timestamp, "Expired.");
         // sha3(sha3(passowrd)[:48] + msg.sender) so that the raw password will never appear in the contract
@@ -252,11 +255,10 @@ contract HappyTokenPool {
         // if unlock_time == 0, transfer the swapped tokens to the recipient address (msg.sender) - OUTPUT
         // if not, claim() needs to be called to get the token
         if (pool.unlock_time == 0)
-            transfer_token(address(uint160(unbox(packed.packed1, 0, 160))), address(this), msg.sender, swapped_tokens);
+            transfer_token(pool.token_address, address(this), msg.sender, swapped_tokens);
 
         // Swap success event
-        emit SwapSuccess(id, msg.sender, exchange_addr, address(uint160(unbox(packed.packed1, 0, 160))),
-                          input_total, swapped_tokens);
+        emit SwapSuccess(id, msg.sender, exchange_addr, pool.token_address, input_total, swapped_tokens);
         return swapped_tokens;
     }
 
@@ -295,11 +297,10 @@ contract HappyTokenPool {
             claimed_amount = pool.swapped_map[msg.sender];
             if (claimed_amount == 0)
                 continue;
-            address token_address = address(uint160(unbox(pool.packed1, 0, 160)));
-            transfer_token(token_address, address(this), msg.sender, claimed_amount);
+            transfer_token(pool.token_address, address(this), msg.sender, claimed_amount);
             pool.swapped_map[msg.sender] = 0;
 
-            emit ClaimSuccess(msg.sender, block.timestamp, claimed_amount, token_address);
+            emit ClaimSuccess(msg.sender, block.timestamp, claimed_amount, pool.token_address);
         }
     }
 
@@ -328,7 +329,6 @@ contract HappyTokenPool {
         Pool storage pool = pool_by_id[id];
         require(msg.sender == pool.creator, "Only the pool creator can destruct.");
 
-        address token_address = address(uint160(unbox(pool.packed1, 0, 160)));
         uint256 expiration = unbox(pool.packed1, 228, 28) + base_timestamp;
         uint256 remaining_tokens = unbox(pool.packed2, 0, 128);
         // only after expiration or the pool is empty
@@ -336,7 +336,7 @@ contract HappyTokenPool {
 
         // if any left in the pool
         if (remaining_tokens != 0) {
-            transfer_token(token_address, address(this), msg.sender, remaining_tokens);
+            transfer_token(pool.token_address, address(this), msg.sender, remaining_tokens);
         }
         
         // transfer the swapped tokens accordingly
@@ -351,9 +351,10 @@ contract HappyTokenPool {
                     payable(msg.sender).transfer(pool.exchanged_tokens[i]);
             }
         }
-        emit DestructSuccess(id, token_address, remaining_tokens, pool.exchanged_tokens);
+        emit DestructSuccess(id, pool.token_address, remaining_tokens, pool.exchanged_tokens);
 
         // Gas Refund
+        pool.packed1 = 0;
         pool.packed2 = 0;
         pool.creator = DEFAULT_ADDRESS;
         for (uint256 i = 0; i < pool.exchange_addrs.length; i++) {
@@ -398,20 +399,20 @@ contract HappyTokenPool {
     // helper functions TODO: migrate this to a helper file
 
     /**
-     * _token_addr    target token address      160
-     * _hash          sha3-256(password)        48
-     * _start         start time delta          24
-     * _end           end time  delta           24
+     * _qualification the smart contract address to verify qualification      160
+     * _hash          sha3-256(password)                                      48
+     * _start         start time delta                                        24
+     * _end           end time  delta                                         24
      * wrap1() inserts the above variables into a 32-word block
     **/
 
-    function wrap1 (address _token_addr, bytes32 _hash, uint256 _start, uint256 _end) internal pure 
+    function wrap1 (address _qualification, bytes32 _hash, uint256 _start, uint256 _end) internal pure 
                     returns (uint256 packed1) {
         uint256 _packed1 = 0;
-        _packed1 |= box(0, 160,  uint256(uint160(_token_addr)));     // token_addr = 160 bits
-        _packed1 |= box(160, 40, uint256(_hash) >> 216);    // hash = 40 bits (safe?)
-        _packed1 |= box(200, 28, _start);                   // start_time = 28 bits 
-        _packed1 |= box(228, 28, _end);                     // expiration_time = 28 bits
+        _packed1 |= box(0, 160,  uint256(uint160(_qualification)));     // _qualification = 160 bits
+        _packed1 |= box(160, 40, uint256(_hash) >> 216);                // hash = 40 bits (safe?)
+        _packed1 |= box(200, 28, _start);                               // start_time = 28 bits 
+        _packed1 |= box(228, 28, _end);                                 // expiration_time = 28 bits
         return _packed1;
     }
 
