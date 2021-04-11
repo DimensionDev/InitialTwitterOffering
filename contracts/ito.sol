@@ -62,6 +62,7 @@ contract HappyTokenPool {
 
     // claim success event
     event ClaimSuccess (
+        bytes32 id,
         address claimer,
         uint256 timestamp,
         uint256 to_value,
@@ -265,7 +266,7 @@ contract HappyTokenPool {
         if (pool.unlock_time == 0) {
             pool.claimable_map[msg.sender] = 0;
             transfer_token(pool.token_address, address(this), msg.sender, swapped_tokens);
-            emit ClaimSuccess(msg.sender, block.timestamp, swapped_tokens, pool.token_address);
+            emit ClaimSuccess(id, msg.sender, block.timestamp, swapped_tokens, pool.token_address);
         }
             
         return swapped_tokens;
@@ -304,7 +305,7 @@ contract HappyTokenPool {
         uint256 claimed_amount;
         for (uint256 i = 0; i < ito_ids.length; i++) {
             Pool storage pool = pool_by_id[ito_ids[i]];
-            if (pool.unlock_time > block.timestamp)
+            if (pool.unlock_time + base_timestamp > block.timestamp)
                 continue;
             claimed_amount = pool.claimable_map[msg.sender];
             if (claimed_amount == 0)
@@ -312,7 +313,7 @@ contract HappyTokenPool {
             pool.claimable_map[msg.sender] = 0;
             transfer_token(pool.token_address, address(this), msg.sender, claimed_amount);
 
-            emit ClaimSuccess(msg.sender, block.timestamp, claimed_amount, pool.token_address);
+            emit ClaimSuccess(ito_ids[i], msg.sender, block.timestamp, claimed_amount, pool.token_address);
         }
     }
 

@@ -18,6 +18,14 @@ const swap_success_types = [
   { type: 'uint256', name: 'from_value' },
   { type: 'uint256', name: 'to_value' },
 ]
+const claim_success_encode = 'ClaimSuccess(bytes32,address,uint256,uint256,address)'
+const claim_success_types = [
+  { type: 'bytes32', name: 'id' },
+  { type: 'address', name: 'claimer' },
+  { type: 'uint256', name: 'timestamp' },
+  { type: 'uint256', name: 'to_value' },
+  { type: 'address', name: 'token_address' },
+]
 const destruct_success_encode = 'DestructSuccess(bytes32,address,uint256,uint128[])'
 const destruct_success_types = [
   { type: 'bytes32', name: 'id' },
@@ -40,6 +48,8 @@ module.exports = {
   fill_success_types,
   swap_success_encode,
   swap_success_types,
+  claim_success_encode,
+  claim_success_types,
   destruct_success_encode,
   destruct_success_types,
   withdraw_success_encode,
