@@ -309,8 +309,8 @@ contract HappyTokenPool {
             claimed_amount = pool.claimable_map[msg.sender];
             if (claimed_amount == 0)
                 continue;
-            transfer_token(pool.token_address, address(this), msg.sender, claimed_amount);
             pool.claimable_map[msg.sender] = 0;
+            transfer_token(pool.token_address, address(this), msg.sender, claimed_amount);
 
             emit ClaimSuccess(msg.sender, block.timestamp, claimed_amount, pool.token_address);
         }
