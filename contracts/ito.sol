@@ -248,6 +248,9 @@ contract HappyTokenPool {
         pool.packed2 = rewriteBox(packed.packed2, 0, 128, SafeMath.sub(total_tokens, swapped_tokens));
         pool.swapped_map[msg.sender] = swapped_tokens;
 
+        // update claimable token mapping
+        pool.claimable_map[msg.sender] = swapped_tokens;
+
         // transfer the token after state changing
         // ETH comes with the tx, but ERC20 does not - INPUT
         if (exchange_addr != DEFAULT_ADDRESS) {
@@ -260,7 +263,7 @@ contract HappyTokenPool {
         // if unlock_time == 0, transfer the swapped tokens to the recipient address (msg.sender) - OUTPUT
         // if not, claim() needs to be called to get the token
         if (pool.unlock_time == 0) {
-            pool.swapped_map[msg.sender] = 0;
+            pool.claimable_map[msg.sender] = 0;
             transfer_token(pool.token_address, address(this), msg.sender, swapped_tokens);
             emit ClaimSuccess(msg.sender, block.timestamp, swapped_tokens, pool.token_address);
         }
@@ -282,7 +285,7 @@ contract HappyTokenPool {
     function check_availability (bytes32 id) external view 
         returns (address[] memory exchange_addrs, uint256 remaining, 
                  bool started, bool expired, bool unlocked, uint256 unlock_time,
-                 uint256 swapped, uint128[] memory exchanged_tokens) {
+                 uint256 swapped, uint256 claimable, uint128[] memory exchanged_tokens) {
         Pool storage pool = pool_by_id[id];
         return (
             pool.exchange_addrs,                                                // exchange_addrs 0x0 means destructed
@@ -292,6 +295,7 @@ contract HappyTokenPool {
             block.timestamp > pool.unlock_time + base_timestamp,                // unlocked
             pool.unlock_time + base_timestamp,                                  // unlock_time
             pool.swapped_map[msg.sender],                                       // swapped number 
+            pool.claimable_map[msg.sender],                                     // claimable number
             pool.exchanged_tokens                                               // exchanged tokens
         );
     }
@@ -302,11 +306,11 @@ contract HappyTokenPool {
             Pool storage pool = pool_by_id[ito_ids[i]];
             if (pool.unlock_time > block.timestamp)
                 continue;
-            claimed_amount = pool.swapped_map[msg.sender];
+            claimed_amount = pool.claimable_map[msg.sender];
             if (claimed_amount == 0)
                 continue;
             transfer_token(pool.token_address, address(this), msg.sender, claimed_amount);
-            pool.swapped_map[msg.sender] = 0;
+            pool.claimable_map[msg.sender] = 0;
 
             emit ClaimSuccess(msg.sender, block.timestamp, claimed_amount, pool.token_address);
         }
