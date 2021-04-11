@@ -31,7 +31,8 @@ contract HappyTokenPool {
                                     // e.g. [1, 10]
                                     // represents 1 tokenA to swap 10 target token
                                     // note: each ratio pair needs to be coprime
-        mapping(address => uint256) swapped_map;    // swapped amount of an address
+        mapping(address => uint256) swapped_map;      // swapped amount of an address
+        mapping(address => uint256) claimable_map;    // claimable amount of an address
     }
 
     struct Packed {
@@ -110,10 +111,10 @@ contract HappyTokenPool {
      * _hash                sha3-256(password)
      * _start               start time delta, real start time = base_timestamp + _start
      * _end                 end time delta, real end time = base_timestamp + _end
-     * name                 swap pool creator name, only stored in FillSuccess event
      * message              swap pool creation message, only stored in FillSuccess event
      * _exchange_addrs      swap token list (0x0 for ETH, only supports ETH and ERC20 now)
      * _ratios              swap pair ratio list
+     * _unlock_time         unlock time delta real unlock time = base_timestamp + _unlock_time
      * _token_addr          swap target token address
      * _total_tokens        target token total swap amount
      * _limit               target token single swap limit
@@ -278,16 +279,18 @@ contract HappyTokenPool {
      *                       5. exchanged amount of each token
     **/
 
-    function check_availability (bytes32 id) external view returns (address[] memory exchange_addrs, uint256 remaining, 
-                                                                   bool started, bool expired, uint256 unlock_time,
-                                                                   uint256 swapped, uint128[] memory exchanged_tokens) {
+    function check_availability (bytes32 id) external view 
+        returns (address[] memory exchange_addrs, uint256 remaining, 
+                 bool started, bool expired, bool unlocked, uint256 unlock_time,
+                 uint256 swapped, uint128[] memory exchanged_tokens) {
         Pool storage pool = pool_by_id[id];
         return (
             pool.exchange_addrs,                                                // exchange_addrs 0x0 means destructed
             unbox(pool.packed2, 0, 128),                                        // remaining
             block.timestamp > unbox(pool.packed1, 200, 28) + base_timestamp,    // started
             block.timestamp > unbox(pool.packed1, 228, 28) + base_timestamp,    // expired
-            pool.unlock_time,                                                   // unlock_time
+            block.timestamp > pool.unlock_time + base_timestamp,                // unlocked
+            pool.unlock_time + base_timestamp,                                  // unlock_time
             pool.swapped_map[msg.sender],                                       // swapped number 
             pool.exchanged_tokens                                               // exchanged tokens
         );
@@ -307,11 +310,6 @@ contract HappyTokenPool {
 
             emit ClaimSuccess(msg.sender, block.timestamp, claimed_amount, pool.token_address);
         }
-    }
-
-    function check_claimable(bytes32 ito_id) public view returns (uint256 claimable_amount) {
-        Pool storage pool = pool_by_id[ito_id];
-        claimable_amount = pool.swapped_map[msg.sender];
     }
 
     function setUnlockTime(bytes32 id, uint256 _unlock_time) public {
