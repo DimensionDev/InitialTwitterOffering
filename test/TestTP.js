@@ -18,12 +18,6 @@ const {
   PASSWORD,
 } = require('./constants')
 
-// const TestTokenA = artifacts.require("TestTokenA")
-// const TestTokenB = artifacts.require("TestTokenB")
-// const TestTokenC = artifacts.require("TestTokenC")
-// const HappyTokenPool = artifacts.require("HappyTokenPool")
-// const QualificationTester = artifacts.require("QLF");
-// const InternalFunctions = artifacts.require("InternalFunctions")
 const amount = new BigNumber('1e27').toFixed()
 const abiCoder = new ethers.utils.AbiCoder()
 const ETH_address_index = 0
@@ -70,10 +64,10 @@ describe('HappyTokenPool', () => {
       hash: ethers.utils.keccak256(ethers.utils.toUtf8Bytes(PASSWORD)),
       start_time: 0,
       end_time: 5184000, // duration 60 days
-      poor_name: 'Cache Miss',
-      message: 'Hello From the Outside',
+      message: [...'Hello From the Outside Hello From the Outside'].map(s => ethers.utils.formatBytes32String(s)),
       exchange_addrs: [eth_address, testTokenBDeployed.address, testTokenCDeployed.address],
       exchange_ratios: [1, 10000, 1, 2000, 4000, 1],
+      lock_time: 2592000, // duration 30 days
       token_address: testTokenADeployed.address,
       total_tokens: BigNumber('1e22').toFixed(),
       limit: BigNumber('1e21').toFixed(),
@@ -125,8 +119,8 @@ describe('HappyTokenPool', () => {
       await expect(happyTokenPoolDeployed.fill_pool(...Object.values(fpp))).to.be.rejectedWith(Error)
     })
 
-    it('Should throw error when time is larger than 24 bits', async () => {
-      fpp.start_time = 2 ** 24 - 1
+    it('Should throw error when time is larger than 28 bits', async () => {
+      fpp.start_time = 2 ** 28 - 1
       fpp.end_time = fpp.start_time + 100
 
       await testTokenADeployed.approve(happyTokenPoolDeployed.address, fpp.total_tokens)
@@ -152,12 +146,8 @@ describe('HappyTokenPool', () => {
       expect(result)
         .to.have.property('token_address')
         .that.to.be.eq(testTokenADeployed.address)
-      expect(result)
-        .to.have.property('name')
-        .that.to.be.eq('Cache Miss')
-      expect(result)
-        .to.have.property('message')
-        .that.to.be.eq('Hello From the Outside')
+      expect(result.message.map(b => ethers.utils.parseBytes32String(b)).join(''))
+        .to.be.eq('Hello From the Outside Hello From the Outside')
     })
 
     it('Should emit fillSuccess event when none of ratio gcd is not equal to 1 and fill token is very small', async () => {
@@ -277,6 +267,7 @@ describe('HappyTokenPool', () => {
       fpp.exchange_ratios = [2, 7, 3, 2, 3, 11]
       fpp.total_tokens = '10'
       fpp.limit = '10'
+      fpp.lock_time = 0
       const signer = signers[1]
       const { id: pool_id } = await getResultFromPoolFill(happyTokenPoolDeployed, fpp)
       const { remaining: remaining_before } = await getAvailability(happyTokenPoolDeployed, pool_id, signer.address)
@@ -906,9 +897,8 @@ describe('HappyTokenPool', () => {
     var hash_bytes = Uint8Array.from(Buffer.from(hash.slice(2), 'hex'))
     hash = hash_bytes.slice(0, 6)
     hash = '0x' + Buffer.from(hash).toString('hex')
-
     return {
-      verification: soliditySha3(hexToNumber(hash), account),
+      verification: soliditySha3(parseInt(hexToNumber(hash).toString(2).slice(0, 40), 2), account),
       validation: sha3(account),
     }
   }

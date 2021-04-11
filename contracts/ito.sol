@@ -198,7 +198,7 @@ contract HappyTokenPool {
         );
         require (unbox(packed.packed1, 200, 28) + base_timestamp < block.timestamp, "Not started.");
         require (unbox(packed.packed1, 228, 28) + base_timestamp > block.timestamp, "Expired.");
-        // sha3(sha3(passowrd)[:48] + msg.sender) so that the raw password will never appear in the contract
+        // sha3(sha3(passowrd)[:40] + msg.sender) so that the raw password will never appear in the contract
         require (verification == keccak256(abi.encodePacked(unbox(packed.packed1, 160, 40), msg.sender)), 
                  'Wrong Password');
         // sha3(msg.sender) to protect from front runs (but this is kinda naive since the contract is open sourced)
@@ -407,9 +407,9 @@ contract HappyTokenPool {
 
     /**
      * _qualification the smart contract address to verify qualification      160
-     * _hash          sha3-256(password)                                      48
-     * _start         start time delta                                        24
-     * _end           end time  delta                                         24
+     * _hash          sha3-256(password)                                      40
+     * _start         start time delta                                        28
+     * _end           end time  delta                                         28
      * wrap1() inserts the above variables into a 32-word block
     **/
 
