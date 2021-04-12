@@ -21,6 +21,9 @@ abstract contract IQLF is IERC165{
      */
     function logQualified (address testee) virtual external returns (bool);
 
+    /**
+     * @dev Ensure that custom contract implements `ifQualified` amd `logQualified` correctly.
+     */
     function supportsInterface(bytes4 interfaceId) external override pure returns (bool) {
         return interfaceId == this.supportsInterface.selector || 
             interfaceId == (this.ifQualified.selector ^ this.logQualified.selector);
