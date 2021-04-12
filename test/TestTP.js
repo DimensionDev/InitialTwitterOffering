@@ -17,6 +17,8 @@ const {
   destruct_success_types,
   withdraw_success_encode,
   withdraw_success_types,
+  erc165_interface_id,
+  qualification_interface_id,
   PASSWORD,
 } = require('./constants')
 
@@ -999,6 +1001,22 @@ describe('HappyTokenPool', () => {
     happyTokenPoolDeployed = happyTokenPoolDeployed.connect(signer)
     return happyTokenPoolDeployed.check_availability(pool_id)
   }
+})
+
+describe('qualification', () => {
+  it('check is qualification contract', async () => {
+    const isERC165 = await qualificationTesterDeployed.supportsInterface(erc165_interface_id)
+    const isQualification = await qualificationTesterDeployed.supportsInterface(qualification_interface_id)
+    expect(isERC165).to.be.true
+    expect(isQualification).to.be.true
+
+    const unknown_interface_id = '0x87ab3aaa'
+    const invalid_interface_id = '0xffffffff'
+    const isok_1 = await qualificationTesterDeployed.supportsInterface(unknown_interface_id)
+    const isok_2 = await qualificationTesterDeployed.supportsInterface(invalid_interface_id)
+    expect(isok_1).to.be.false
+    expect(isok_2).to.be.false
+  })
 })
 
 describe('InternalFunctions', () => {

@@ -8,16 +8,23 @@
 
 pragma solidity >= 0.8.0;
 
-interface IQLF {
+import "@openzeppelin/contracts/utils/introspection/IERC165.sol";
+
+abstract contract IQLF is IERC165{
     /**
      * @dev Returns if the given address is qualified, implemented on demand.
      */
-    function ifQualified (address testee) external view returns (bool);
+    function ifQualified (address testee) virtual external view returns (bool);
 
     /**
      * @dev Logs if the given address is qualified, implemented on demand.
      */
-    function logQualified (address testee) external returns (bool);
+    function logQualified (address testee) virtual external returns (bool);
+
+    function supportsInterface(bytes4 interfaceId) external override pure returns (bool) {
+        return interfaceId == this.supportsInterface.selector || 
+            interfaceId == (this.ifQualified.selector ^ this.logQualified.selector);
+    }
 
     /**
      * @dev Emit when `ifQualified` is called to decide if the given `address`

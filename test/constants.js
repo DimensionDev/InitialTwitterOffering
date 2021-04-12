@@ -40,6 +40,8 @@ const withdraw_success_types = [
   { type: 'uint256', name: 'withdraw_balance' },
 ]
 const PASSWORD = 'password'
+const erc165_interface_id = '0x01ffc9a7'
+const qualification_interface_id = '0xa497ab4b'
 
 module.exports = {
   base_timestamp,
@@ -54,5 +56,7 @@ module.exports = {
   destruct_success_types,
   withdraw_success_encode,
   withdraw_success_types,
+  erc165_interface_id,
+  qualification_interface_id,
   PASSWORD,
 }
