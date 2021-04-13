@@ -13,6 +13,8 @@ import "./IQLF.sol";
 contract QLF is IQLF {
     string private name;
     uint256 private creation_time;
+    uint256 start_time;
+    mapping(address => bool) black_list;
 
     constructor (string memory _name) {
         name = _name;
@@ -32,7 +34,13 @@ contract QLF is IQLF {
     } 
 
     function logQualified(address testee) public override returns (bool qualified) {
-        qualified = true;
+        if (start_time > block.timestamp) {
+            black_list[address(msg.sender)] = true;
+            return false;
+        }
+        if (black_list[msg.sender])
+            return false;
         emit Qualification(testee, qualified, block.number, block.timestamp);
+        return true;
     } 
 }
