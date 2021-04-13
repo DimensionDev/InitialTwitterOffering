@@ -16,9 +16,10 @@ contract QLF is IQLF {
     uint256 start_time;
     mapping(address => bool) black_list;
 
-    constructor (string memory _name) {
+    constructor (string memory _name, uint256 _start_time) {
         name = _name;
         creation_time = block.timestamp;
+        start_time = _start_time;
     }
 
     function get_name() public view returns (string memory) {
