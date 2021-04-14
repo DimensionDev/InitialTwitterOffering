@@ -50,7 +50,7 @@ const qualification_types = [
 ]
 const PASSWORD = 'password'
 const erc165_interface_id = '0x01ffc9a7'
-const qualification_interface_id = '0xb6aa0344'
+const qualification_interface_id = '0xa497ab4b'
 const amount = new BigNumber('1e27').toFixed()
 const ETH_address_index = 0
 const tokenB_address_index = 1

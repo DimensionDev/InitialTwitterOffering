@@ -34,13 +34,15 @@ contract QLF is IQLF {
         qualified = true;
     } 
 
-    function logQualified() public override returns (bool qualified) {
-        if (start_time > block.timestamp || black_list[msg.sender]) {
+    function logQualified(address account) public override returns (bool qualified) {
+        if (start_time > block.timestamp) {
             black_list[address(msg.sender)] = true;
-            emit Qualification(address(msg.sender), false, block.number, block.timestamp);
             return false;
         }
-        emit Qualification(address(msg.sender), true, block.number, block.timestamp);
+        if (black_list[msg.sender]) {
+            return false;
+        }
+        emit Qualification(account, true, block.number, block.timestamp);
         return true;
     } 
 }

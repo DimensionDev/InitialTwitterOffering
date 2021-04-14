@@ -195,7 +195,7 @@ contract HappyTokenPool {
         Pool storage pool = pool_by_id[id];
         Packed memory packed = Packed(pool.packed1, pool.packed2);
         require (
-            IQLF(address(uint160(unbox(packed.packed1, 0, 160)))).logQualified() == true, "Not Qualified"
+            IQLF(address(uint160(unbox(packed.packed1, 0, 160)))).logQualified(msg.sender) == true, "Not Qualified"
         );
         require (unbox(packed.packed1, 200, 28) + base_timestamp < block.timestamp, "Not started.");
         require (unbox(packed.packed1, 228, 28) + base_timestamp > block.timestamp, "Expired.");

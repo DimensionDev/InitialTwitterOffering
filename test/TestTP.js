@@ -1049,18 +1049,18 @@ describe('qualification', () => {
 
   describe('logQualified()', () => {
     it('should always return false once swap before start_time', async () => {
-      await qualificationTesterDeployed2.connect(signers[10]).logQualified()
+      await qualificationTesterDeployed2.connect(signers[10]).logQualified(signers[10].address)
       let result = await getLogResult()
-      expect(result.qualified).to.be.false
+      expect(result).to.be.null
 
       await helper.advanceTimeAndBlock(pending_qualification_timestamp + 1000)
-      await qualificationTesterDeployed2.connect(signers[11]).logQualified()
+      await qualificationTesterDeployed2.connect(signers[11]).logQualified(signers[11].address)
       result = await getLogResult()
       expect(result.qualified).to.be.true
 
-      await qualificationTesterDeployed2.connect(signers[10]).logQualified()
+      await qualificationTesterDeployed2.connect(signers[10]).logQualified(signers[10].address)
       result = await getLogResult()
-      expect(result.qualified).to.be.false
+      expect(result).to.be.null
     })
 
     async function getLogResult() {
@@ -1068,6 +1068,7 @@ describe('qualification', () => {
         address: qualificationTesterDeployed2.address,
         topics: [ethers.utils.keccak256(ethers.utils.toUtf8Bytes(qualification_encode))],
       })
+      if (logs.length === 0) return null
       return abiCoder.decode(qualification_types, logs[0].data)
     }
   })
