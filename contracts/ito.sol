@@ -32,7 +32,6 @@ contract HappyTokenPool {
                                     // represents 1 tokenA to swap 10 target token
                                     // note: each ratio pair needs to be coprime
         mapping(address => uint256) swapped_map;      // swapped amount of an address
-        mapping(address => uint256) claimable_map;    // claimable amount of an address
     }
 
     struct Packed {
@@ -129,6 +128,7 @@ contract HappyTokenPool {
     public payable {
         nonce ++;
         require(_start < _end, "Start time should be earlier than end time.");
+        require(_end < _unlock_time || _unlock_time == 0, "End time should be earlier than unlock time");
         require(_limit <= _total_tokens, "Limit needs to be less than or equal to the total supply");
         require(_total_tokens < 2 ** 128, "No more than 2^128 tokens(incluidng decimals) allowed");
         require(IERC20(_token_addr).allowance(msg.sender, address(this)) >= _total_tokens, "Insuffcient allowance");
@@ -249,9 +249,6 @@ contract HappyTokenPool {
         pool.packed2 = rewriteBox(packed.packed2, 0, 128, SafeMath.sub(total_tokens, swapped_tokens));
         pool.swapped_map[msg.sender] = swapped_tokens;
 
-        // update claimable token mapping
-        pool.claimable_map[msg.sender] = swapped_tokens;
-
         // transfer the token after state changing
         // ETH comes with the tx, but ERC20 does not - INPUT
         if (exchange_addr != DEFAULT_ADDRESS) {
@@ -264,7 +261,6 @@ contract HappyTokenPool {
         // if unlock_time == 0, transfer the swapped tokens to the recipient address (msg.sender) - OUTPUT
         // if not, claim() needs to be called to get the token
         if (pool.unlock_time == 0) {
-            pool.claimable_map[msg.sender] = 0;
             transfer_token(pool.token_address, address(this), msg.sender, swapped_tokens);
             emit ClaimSuccess(id, msg.sender, block.timestamp, swapped_tokens, pool.token_address);
         }
@@ -286,7 +282,7 @@ contract HappyTokenPool {
     function check_availability (bytes32 id) external view 
         returns (address[] memory exchange_addrs, uint256 remaining, 
                  bool started, bool expired, bool unlocked, uint256 unlock_time,
-                 uint256 swapped, uint256 claimable, uint128[] memory exchanged_tokens) {
+                 uint256 swapped, uint128[] memory exchanged_tokens) {
         Pool storage pool = pool_by_id[id];
         return (
             pool.exchange_addrs,                                                // exchange_addrs 0x0 means destructed
@@ -296,7 +292,6 @@ contract HappyTokenPool {
             block.timestamp > pool.unlock_time + base_timestamp,                // unlocked
             pool.unlock_time + base_timestamp,                                  // unlock_time
             pool.swapped_map[msg.sender],                                       // swapped number 
-            pool.claimable_map[msg.sender],                                     // claimable number
             pool.exchanged_tokens                                               // exchanged tokens
         );
     }
@@ -307,10 +302,10 @@ contract HappyTokenPool {
             Pool storage pool = pool_by_id[ito_ids[i]];
             if (pool.unlock_time + base_timestamp > block.timestamp)
                 continue;
-            claimed_amount = pool.claimable_map[msg.sender];
+            claimed_amount = pool.swapped_map[msg.sender];
             if (claimed_amount == 0)
                 continue;
-            pool.claimable_map[msg.sender] = 0;
+            pool.swapped_map[msg.sender] = 0;
             transfer_token(pool.token_address, address(this), msg.sender, claimed_amount);
 
             emit ClaimSuccess(ito_ids[i], msg.sender, block.timestamp, claimed_amount, pool.token_address);

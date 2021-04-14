@@ -77,7 +77,7 @@ describe('HappyTokenPool', () => {
       message: [...'Hello From the Outside Hello From the Outside'].map(s => ethers.utils.formatBytes32String(s)),
       exchange_addrs: [eth_address, testTokenBDeployed.address, testTokenCDeployed.address],
       exchange_ratios: [1, 10000, 1, 2000, 4000, 1],
-      lock_time: 2592000, // duration 30 days
+      lock_time: 7776000, // duration 90 days
       token_address: testTokenADeployed.address,
       total_tokens: BigNumber('1e22').toFixed(),
       limit: BigNumber('1e21').toFixed(),
@@ -651,19 +651,19 @@ describe('HappyTokenPool', () => {
         await testTokenCDeployed.connect(signers[2]).approve(happyTokenPoolDeployed.address, approve_amount.toFixed())
 
         const { id: pool_id } = await getResultFromPoolFill(happyTokenPoolDeployed, fpp)
-        await happyTokenPoolDeployed.connect(creator).setUnlockTime(pool_id, 2592000)
+        await happyTokenPoolDeployed.connect(creator).setUnlockTime(pool_id, fpp.lock_time)
         await happyTokenPoolDeployed
           .connect(signers[2])
           .swap(pool_id, verification, signers[2].address, validation, tokenC_address_index, approve_amount.toFixed())
 
-        const { claimable: claimablePrevious } = await getAvailability(
+        const { swapped: claimablePrevious } = await getAvailability(
           happyTokenPoolDeployed,
           pool_id,
           signers[2].address,
         )
 
         await happyTokenPoolDeployed.connect(signers[2]).claim([pool_id])
-        const { claimable: claimableNow } = await getAvailability(happyTokenPoolDeployed, pool_id, signers[2].address)
+        const { swapped: claimableNow } = await getAvailability(happyTokenPoolDeployed, pool_id, signers[2].address)
 
         expect(claimablePrevious.toString())
           .to.be.eq(claimableNow.toString())
@@ -697,7 +697,7 @@ describe('HappyTokenPool', () => {
 
         const { id: pool_id } = await getResultFromPoolFill(happyTokenPoolDeployed, fpp)
         const { id: pool_id2 } = await getResultFromPoolFill(happyTokenPoolDeployed, fpp)
-        await happyTokenPoolDeployed.connect(creator).setUnlockTime(pool_id, 2592000)
+        await happyTokenPoolDeployed.connect(creator).setUnlockTime(pool_id, fpp.lock_time)
         await happyTokenPoolDeployed
           .connect(signers[2])
           .swap(pool_id, verification, signers[2].address, validation, tokenC_address_index, approve_amount.toFixed())
@@ -706,7 +706,7 @@ describe('HappyTokenPool', () => {
           .connect(signers[2])
           .swap(pool_id2, verification, signers[2].address, validation, tokenB_address_index, approve_amount.toFixed())
 
-        const { claimable: claimablePrevious } = await getAvailability(
+        const { swapped: claimablePrevious } = await getAvailability(
           happyTokenPoolDeployed,
           pool_id,
           signers[2].address,
@@ -716,7 +716,7 @@ describe('HappyTokenPool', () => {
           .to.be.eq(approve_amount.div(fpp.exchange_ratios[tokenC_address_index * 2]).toString())
           .and.to.be.eq('2500000')
 
-        const { claimable: claimablePrevious2 } = await getAvailability(
+        const { swapped: claimablePrevious2 } = await getAvailability(
           happyTokenPoolDeployed,
           pool_id2,
           signers[2].address,
@@ -726,11 +726,11 @@ describe('HappyTokenPool', () => {
           .to.be.eq(approve_amount.multipliedBy(fpp.exchange_ratios[tokenB_address_index * 2 + 1]).toString())
           .and.to.be.eq('20000000000000')
 
-        await helper.advanceTimeAndBlock(3000000)
+        await helper.advanceTimeAndBlock(fpp.lock_time)
 
         await happyTokenPoolDeployed.connect(signers[2]).claim([pool_id, pool_id2])
-        const { claimable: claimableNow } = await getAvailability(happyTokenPoolDeployed, pool_id, signers[2].address)
-        const { claimable: claimableNow2 } = await getAvailability(happyTokenPoolDeployed, pool_id2, signers[2].address)
+        const { swapped: claimableNow } = await getAvailability(happyTokenPoolDeployed, pool_id, signers[2].address)
+        const { swapped: claimableNow2 } = await getAvailability(happyTokenPoolDeployed, pool_id2, signers[2].address)
 
         expect(claimableNow.toString())
           .to.be.eq('0')
@@ -760,23 +760,23 @@ describe('HappyTokenPool', () => {
         await testTokenCDeployed.connect(signers[2]).approve(happyTokenPoolDeployed.address, approve_amount.toFixed())
 
         const { id: pool_id } = await getResultFromPoolFill(happyTokenPoolDeployed, fpp)
-        await happyTokenPoolDeployed.connect(creator).setUnlockTime(pool_id, 2592000)
+        await happyTokenPoolDeployed.connect(creator).setUnlockTime(pool_id, fpp.lock_time)
         await happyTokenPoolDeployed
           .connect(signers[2])
           .swap(pool_id, verification, signers[2].address, validation, tokenC_address_index, approve_amount.toFixed())
 
-        const { claimable: claimablePrevious } = await getAvailability(
+        const { swapped: claimablePrevious } = await getAvailability(
           happyTokenPoolDeployed,
           pool_id,
           signers[2].address,
         )
 
-        await helper.advanceTimeAndBlock(6000000)
+        await helper.advanceTimeAndBlock(fpp.lock_time)
 
         await happyTokenPoolDeployed.connect(creator).destruct(pool_id)
 
         await happyTokenPoolDeployed.connect(signers[2]).claim([pool_id])
-        const { claimable: claimableNow } = await getAvailability(happyTokenPoolDeployed, pool_id, signers[2].address)
+        const { swapped: claimableNow } = await getAvailability(happyTokenPoolDeployed, pool_id, signers[2].address)
 
         expect(claimableNow.toString())
           .to.be.eq('0')
