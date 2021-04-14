@@ -17,16 +17,20 @@ const {
   destruct_success_types,
   withdraw_success_encode,
   withdraw_success_types,
+  qualification_encode,
+  qualification_types,
   erc165_interface_id,
   qualification_interface_id,
   PASSWORD,
+  amount,
+  ETH_address_index,
+  tokenB_address_index,
+  tokenC_address_index,
+  pending_qualification_timestamp,
 } = require('./constants')
 
-const amount = new BigNumber('1e27').toFixed()
 const abiCoder = new ethers.utils.AbiCoder()
-const ETH_address_index = 0
-const tokenB_address_index = 1
-const tokenC_address_index = 2
+
 let fpp // fill happyTokenPoolDeployed parameters
 let snapshotId
 let testTokenADeployed
@@ -53,13 +57,15 @@ describe('HappyTokenPool', () => {
     const testTokenB = await TestTokenB.deploy(amount)
     const testTokenC = await TestTokenC.deploy(amount)
     const happyTokenPool = await HappyTokenPool.deploy()
-    const qualificationTester = await QualificationTester.deploy('NeverSayNo')
+    const qualificationTester = await QualificationTester.deploy('NeverSayNo', 0)
+    const qualificationTester2 = await QualificationTester.deploy('NeverSayYes', pending_qualification_timestamp)
 
     testTokenADeployed = await testTokenA.deployed()
     testTokenBDeployed = await testTokenB.deployed()
     testTokenCDeployed = await testTokenC.deployed()
     happyTokenPoolDeployed = await happyTokenPool.deployed()
     qualificationTesterDeployed = await qualificationTester.deployed()
+    qualificationTesterDeployed2 = await qualificationTester2.deployed()
   })
 
   beforeEach(async () => {
@@ -361,6 +367,29 @@ describe('HappyTokenPool', () => {
           exchange_amount,
         ),
       ).to.be.rejectedWith(Error)
+    })
+
+    it('Should throw error when swapped by a blocked account', async () => {
+      fpp.qualification = qualificationTesterDeployed2.address
+      const badGuy = signers[9]
+
+      const { verification, validation } = await prepare(badGuy)
+      const { id: pool_id } = await getResultFromPoolFill(happyTokenPoolDeployed, fpp)
+
+      expect(
+        happyTokenPoolDeployed
+          .connect(badGuy)
+          .swap(pool_id, verification, badGuy.address, validation, tokenC_address_index, exchange_amount),
+      ).to.be.rejectedWith(Error)
+
+      async function prepare(signer) {
+        const transfer_amount = BigNumber('1e26').toFixed()
+        await testTokenCDeployed.connect(creator).transfer(signer.address, transfer_amount)
+        const approve_amount = BigNumber('1e10').toFixed()
+        exchange_amount = approve_amount
+        await testTokenCDeployed.connect(signer).approve(happyTokenPoolDeployed.address, approve_amount)
+        return getVerification(PASSWORD, signer.address)
+      }
     })
 
     it('Should throw error when happyTokenPoolDeployed is expired', async () => {
@@ -1004,7 +1033,7 @@ describe('HappyTokenPool', () => {
 })
 
 describe('qualification', () => {
-  it('check is qualification contract', async () => {
+  it('should check the integrity of qualification contract', async () => {
     const isERC165 = await qualificationTesterDeployed.supportsInterface(erc165_interface_id)
     const isQualification = await qualificationTesterDeployed.supportsInterface(qualification_interface_id)
     expect(isERC165).to.be.true
@@ -1016,6 +1045,31 @@ describe('qualification', () => {
     const isok_2 = await qualificationTesterDeployed.supportsInterface(invalid_interface_id)
     expect(isok_1).to.be.false
     expect(isok_2).to.be.false
+  })
+
+  describe('logQualified()', () => {
+    it('should always return false once swap before start_time', async () => {
+      await qualificationTesterDeployed2.connect(signers[10]).logQualified()
+      let result = await getLogResult()
+      expect(result.qualified).to.be.false
+
+      await helper.advanceTimeAndBlock(pending_qualification_timestamp + 1000)
+      await qualificationTesterDeployed2.connect(signers[11]).logQualified()
+      result = await getLogResult()
+      expect(result.qualified).to.be.true
+
+      await qualificationTesterDeployed2.connect(signers[10]).logQualified()
+      result = await getLogResult()
+      expect(result.qualified).to.be.false
+    })
+
+    async function getLogResult() {
+      const logs = await ethers.provider.getLogs({
+        address: qualificationTesterDeployed2.address,
+        topics: [ethers.utils.keccak256(ethers.utils.toUtf8Bytes(qualification_encode))],
+      })
+      return abiCoder.decode(qualification_types, logs[0].data)
+    }
   })
 })
 

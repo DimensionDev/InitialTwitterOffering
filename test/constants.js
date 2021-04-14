@@ -1,3 +1,5 @@
+const BigNumber = require('bignumber.js')
+
 const base_timestamp = 1616976000
 const eth_address = '0x0000000000000000000000000000000000000000'
 const fill_success_encode = 'FillSuccess(uint256,bytes32,address,uint256,address,bytes32[])'
@@ -39,9 +41,21 @@ const withdraw_success_types = [
   { type: 'address', name: 'token_address' },
   { type: 'uint256', name: 'withdraw_balance' },
 ]
+const qualification_encode = 'Qualification(address,bool,uint256,uint256)'
+const qualification_types = [
+  { type: 'address', name: 'account' },
+  { type: 'bool', name: 'qualified' },
+  { type: 'uint256', name: 'blockNumber' },
+  { type: 'uint256', name: 'timestamp' },
+]
 const PASSWORD = 'password'
 const erc165_interface_id = '0x01ffc9a7'
-const qualification_interface_id = '0xa497ab4b'
+const qualification_interface_id = '0xb6aa0344'
+const amount = new BigNumber('1e27').toFixed()
+const ETH_address_index = 0
+const tokenB_address_index = 1
+const tokenC_address_index = 2
+const pending_qualification_timestamp = 1718374426 // Jun 14 2024
 
 module.exports = {
   base_timestamp,
@@ -56,7 +70,14 @@ module.exports = {
   destruct_success_types,
   withdraw_success_encode,
   withdraw_success_types,
+  qualification_encode,
+  qualification_types,
   erc165_interface_id,
   qualification_interface_id,
   PASSWORD,
+  amount,
+  ETH_address_index,
+  tokenB_address_index,
+  tokenC_address_index,
+  pending_qualification_timestamp,
 }

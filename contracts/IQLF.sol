@@ -14,12 +14,12 @@ abstract contract IQLF is IERC165{
     /**
      * @dev Returns if the given address is qualified, implemented on demand.
      */
-    function ifQualified (address testee) virtual external view returns (bool);
+    function ifQualified (address account) virtual external view returns (bool);
 
     /**
      * @dev Logs if the given address is qualified, implemented on demand.
      */
-    function logQualified (address testee) virtual external returns (bool);
+    function logQualified () virtual external returns (bool);
 
     /**
      * @dev Ensure that custom contract implements `ifQualified` amd `logQualified` correctly.
@@ -34,5 +34,5 @@ abstract contract IQLF is IERC165{
      * is `qualified` according to the preset rule by the contract creator and 
      * the current block `number` and the current block `timestamp`.
      */
-    event Qualification(address testee, bool qualified, uint256 number, uint256 timestamp);
+    event Qualification(address account, bool qualified, uint256 number, uint256 timestamp);
 }
