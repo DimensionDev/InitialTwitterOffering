@@ -45,4 +45,10 @@ contract QLF is IQLF {
         emit Qualification(account, true, block.number, block.timestamp);
         return true;
     } 
+
+    function supportsInterface(bytes4 interfaceId) external override pure returns (bool) {
+        return interfaceId == this.supportsInterface.selector || 
+            interfaceId == (this.ifQualified.selector ^ this.logQualified.selector) ||
+            interfaceId == this.get_creation_time.selector;
+    }    
 }
