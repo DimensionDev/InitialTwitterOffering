@@ -30,6 +30,10 @@ contract QLF is IQLF {
         return creation_time;
     }
 
+    function get_start_time() public view returns (uint256) {
+        return start_time;
+    }    
+
     function ifQualified(address) public pure override returns (bool qualified) {
         qualified = true;
     } 
@@ -49,6 +53,6 @@ contract QLF is IQLF {
     function supportsInterface(bytes4 interfaceId) external override pure returns (bool) {
         return interfaceId == this.supportsInterface.selector || 
             interfaceId == (this.ifQualified.selector ^ this.logQualified.selector) ||
-            interfaceId == this.get_creation_time.selector;
+            interfaceId == this.get_start_time.selector;
     }    
 }
