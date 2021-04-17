@@ -179,7 +179,6 @@ contract HappyTokenPool {
      * swap() allows users to swap tokens in a swap pool
      * id                   swap pool id
      * verification         sha3-256(sha3-256(password)[:40]+swapper_address)
-     * _recipient           swapped token recipient
      * validation           sha3-256(swapper_address)
      * exchange_addr_i     the index of the exchange address of the list
      * input_total          the input amount of the specific token
@@ -188,7 +187,7 @@ contract HappyTokenPool {
      * based on the pool ratio. After swap successfully, the same account can not swap the same pool again.
     **/
 
-    function swap (bytes32 id, bytes32 verification, address, 
+    function swap (bytes32 id, bytes32 verification, 
                    bytes32 validation, uint256 exchange_addr_i, uint128 input_total) 
     public payable returns (uint256 swapped) {
 
