@@ -48,7 +48,7 @@ const qualification_types = [
   { type: 'uint256', name: 'blockNumber' },
   { type: 'uint256', name: 'timestamp' },
 ]
-const PASSWORD = 'password'
+const PASSWORD = '0x57d0aceec4e308e9af1dd11b09f45bce3fbc92d30ffda7b64f1aaa4005318e92'
 const erc165_interface_id = '0x01ffc9a7'
 const qualification_interface_id = '0xa497ab4b'
 const amount = new BigNumber('1e27').toFixed()
