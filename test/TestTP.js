@@ -147,8 +147,7 @@ describe('HappyTokenPool', () => {
       })
       const result = abiCoder.decode(fill_success_types, logs[0].data)
 
-      expect(result)
-        .to.have.property('total')
+      expect(result.total.toString())
         .that.to.be.eq(fpp.total_tokens)
       expect(result).to.have.property('id').that.to.not.be.null
       expect(result).to.have.property('creator').that.to.not.be.null
@@ -479,11 +478,9 @@ describe('HappyTokenPool', () => {
 
       expect(result).to.have.property('id').that.to.not.be.null
       expect(result).to.have.property('swapper').that.to.not.be.null
-      expect(result)
-        .to.have.property('from_value')
+      expect(result.from_value.toString())
         .that.to.be.eq(String(exchange_amount))
-      expect(result)
-        .to.have.property('to_value')
+      expect(result.to_value.toString())
         .that.to.be.eq(String(exchange_amount * ratio))
       expect(result)
         .to.have.property('from_address')
@@ -534,8 +531,7 @@ describe('HappyTokenPool', () => {
       })
       const result_eth = abiCoder.decode(swap_success_types, logs_eth[0].data)
       const ratio_eth = fpp.exchange_ratios[1] / fpp.exchange_ratios[0] // tokenA <=> tokenC
-      expect(result_eth)
-        .to.have.property('to_value')
+      expect(result_eth.to_value.toString())
         .that.to.be.eq(String(exchange_amount * ratio_eth))
 
       // 0.02 TESTB => 40 TESTA
@@ -557,8 +553,7 @@ describe('HappyTokenPool', () => {
       const result_b = abiCoder.decode(swap_success_types, logs_b[0].data)
       const ratio_b = fpp.exchange_ratios[3] / fpp.exchange_ratios[2] // tokenA <=> tokenC
 
-      expect(result_b)
-        .to.have.property('to_value')
+      expect(result_b.to_value.toString())
         .that.to.be.eq(String(exchange_amount * ratio_b))
 
       // 80000 TESTC => 20 TESTA
@@ -576,14 +571,11 @@ describe('HappyTokenPool', () => {
       const result_c = abiCoder.decode(swap_success_types, logs_c[0].data)
       const ratio_c = fpp.exchange_ratios[5] / fpp.exchange_ratios[4] // tokenA <=> tokenC
 
-      expect(result_c)
-        .to.have.property('to_value')
+      expect(result_c.to_value.toString())
         .that.to.not.be.eq(String(exchange_amount * ratio_c))
-      expect(result_c)
-        .to.have.property('to_value')
+      expect(result_c.to_value.toString())
         .that.to.not.be.eq(fpp.limit)
-      expect(result_c)
-        .to.have.property('to_value')
+      expect(result_c.to_value.toString())
         .that.to.be.eq(BigNumber('2e19').toFixed())
     })
 
@@ -625,14 +617,14 @@ describe('HappyTokenPool', () => {
           .times(ratio)
           .toFixed(),
       )
-      expect(from_value)
+      expect(from_value.toString())
         .to.be.eq(
           BigNumber(remaining.toString())
             .div(ratio)
             .toFixed(),
         )
         .and.to.not.be.eq(exchange_ETH_amount)
-      expect(to_value)
+      expect(to_value.toString())
         .to.be.eq(remaining.toString())
         .and.to.not.be.eq(
           BigNumber(exchange_ETH_amount)
@@ -872,7 +864,7 @@ describe('HappyTokenPool', () => {
 
       const transfer_amount = BigNumber('1e26').toFixed()
       const tokenB_balance = await testTokenBDeployed.balanceOf(creator.address)
-      expect(tokenB_balance).to.be.eq(
+      expect(tokenB_balance.toString()).to.be.eq(
         BigNumber(previous_tokenB_balance.toString())
           .minus(BigNumber(transfer_amount))
           .plus(BigNumber(exchange_tokenB_amount))
@@ -880,13 +872,13 @@ describe('HappyTokenPool', () => {
       )
 
       const tokenC_balance = await testTokenCDeployed.balanceOf(creator.address)
-      expect(tokenC_balance).to.be.not.eq(
+      expect(tokenC_balance.toString()).to.be.not.eq(
         BigNumber(previous_tokenC_balance.toString())
           .minus(BigNumber(transfer_amount))
           .plus(BigNumber(exchange_tokenC_amount))
           .toFixed(),
       )
-      expect(tokenC_balance).to.be.eq(
+      expect(tokenC_balance.toString()).to.be.eq(
         BigNumber(previous_tokenC_balance.toString())
           .minus(BigNumber(transfer_amount))
           .plus(
@@ -922,8 +914,7 @@ describe('HappyTokenPool', () => {
       expect(result)
         .to.have.property('token_address')
         .that.to.be.eq(testTokenADeployed.address)
-      expect(result)
-        .to.have.property('remaining_tokens')
+      expect(result.remaining_tokens.toString())
         .that.to.be.eq('0')
       expect(result).to.have.property('exchanged_values')
     })
@@ -970,11 +961,9 @@ describe('HappyTokenPool', () => {
       const logWithdrawTokenB = abiCoder.decode(withdraw_success_types, logs[0].data)
       const logWithdrawETH = abiCoder.decode(withdraw_success_types, logs[1].data)
 
-      expect(logWithdrawTokenB)
-        .to.have.property('withdraw_balance')
+      expect(logWithdrawTokenB.withdraw_balance.toString())
         .that.to.be.eq(BigNumber('200e18').toFixed())
-      expect(logWithdrawETH)
-        .to.have.property('withdraw_balance')
+      expect(logWithdrawETH.withdraw_balance.toString())
         .that.to.be.eq(BigNumber('3e14').toFixed())
     })
   })
