@@ -14,12 +14,19 @@ contract QLF is IQLF {
     string private name;
     uint256 private creation_time;
     uint256 start_time;
+    address creator;
     mapping(address => bool) black_list;
+
+    modifier creatorOnly {
+        require(msg.sender == creator, "Not Authorized");
+        _;
+    }
 
     constructor (string memory _name, uint256 _start_time) {
         name = _name;
         creation_time = block.timestamp;
         start_time = _start_time;
+        creator = msg.sender;
     }
 
     function get_name() public view returns (string memory) {
@@ -32,7 +39,11 @@ contract QLF is IQLF {
 
     function get_start_time() public view returns (uint256) {
         return start_time;
-    }    
+    }
+
+    function set_start_time(uint256 _start_time) public creatorOnly {
+        start_time = _start_time;
+    }
 
     function ifQualified(address) public pure override returns (bool qualified) {
         qualified = true;

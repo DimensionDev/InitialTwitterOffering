@@ -4,12 +4,13 @@
  * @author          Yisi Liu
  * @contact         yisiliu@gmail.com
  * @author_time     01/06/2021
+ * @maintainer      Hancheng Zhou, Yisi Liu
+ * @maintain_time   04/15/2021
 **/
 
 pragma solidity >= 0.8.0;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "./IQLF.sol";
 
@@ -20,7 +21,7 @@ contract HappyTokenPool {
                                     // hash(40) start_time_delta(28) 
                                     // expiration_time_delta(28) BIG ENDIAN
         uint256 packed2;            // total_tokens(128) limit(128)
-        uint48  unlock_time;        // unlock_time + base_timestamp = real_time
+        uint48  unlock_time;        // unlock_time + base_time = real_time
         address creator;
         address token_address;      // the target token address
         address[] exchange_addrs;   // a list of ERC20 addresses for swapping
@@ -90,31 +91,31 @@ contract HappyTokenPool {
 
     using SafeERC20 for IERC20;
     uint32 nonce;
-    uint224 base_timestamp;                 // timestamp = base_timestamp + delta to save gas
+    uint224 base_time;                 // timestamp = base_time + delta to save gas
     address public contract_creator;
     mapping(bytes32 => Pool) pool_by_id;    // maps an id to a Pool instance
-    string constant private magic = "Anthony Quinn Warner, 63, was identified as the bomber. Warner, \
-    a 63-year-old described by one neighbor as a loner, died when his recreational vehicle exploded \
-    on 2nd Avenue North in the city's downtown. The blast injured at least eight people and damaged-";
+    string constant private magic = "Prince Philip, Queen Elizabeth II's husband, has died aged 99, \
+    Buckingham Palace has announced. A statement issued by the palace just after midday spoke of the \
+    Queen's deep sorrow following his death at Windsor Castle on Friday morning. The Duke of Edinbur";
     bytes32 private seed;
     address DEFAULT_ADDRESS = 0x0000000000000000000000000000000000000000;       // a universal address
 
     constructor() {
         contract_creator = msg.sender;
         seed = keccak256(abi.encodePacked(magic, block.timestamp, contract_creator));
-        base_timestamp = 1616976000;                                    // 00:00:00 03/30/2021 GMT(UTC+0)
+        base_time = 1616976000;                                    // 00:00:00 03/30/2021 GMT(UTC+0)
     }
 
     /**
      * @dev 
      * fill_pool() creates a swap pool with specific parameters from input
      * _hash                sha3-256(password)
-     * _start               start time delta, real start time = base_timestamp + _start
-     * _end                 end time delta, real end time = base_timestamp + _end
+     * _start               start time delta, real start time = base_time + _start
+     * _end                 end time delta, real end time = base_time + _end
      * message              swap pool creation message, only stored in FillSuccess event
      * _exchange_addrs      swap token list (0x0 for ETH, only supports ETH and ERC20 now)
      * _ratios              swap pair ratio list
-     * _unlock_time         unlock time delta real unlock time = base_timestamp + _unlock_time
+     * _unlock_time         unlock time delta real unlock time = base_time + _unlock_time
      * _token_addr          swap target token address
      * _total_tokens        target token total swap amount
      * _limit               target token single swap limit
@@ -196,8 +197,8 @@ contract HappyTokenPool {
         require (
             IQLF(address(uint160(unbox(packed.packed1, 0, 160)))).logQualified(msg.sender) == true, "Not Qualified"
         );
-        require (unbox(packed.packed1, 200, 28) + base_timestamp < block.timestamp, "Not started.");
-        require (unbox(packed.packed1, 228, 28) + base_timestamp > block.timestamp, "Expired.");
+        require (unbox(packed.packed1, 200, 28) + base_time < block.timestamp, "Not started.");
+        require (unbox(packed.packed1, 228, 28) + base_time > block.timestamp, "Expired.");
         // sha3(sha3(passowrd)[:40] + msg.sender) so that the raw password will never appear in the contract
         require (verification == keccak256(abi.encodePacked(unbox(packed.packed1, 160, 40), msg.sender)), 
                  'Wrong Password');
@@ -286,10 +287,10 @@ contract HappyTokenPool {
         return (
             pool.exchange_addrs,                                                // exchange_addrs 0x0 means destructed
             unbox(pool.packed2, 0, 128),                                        // remaining
-            block.timestamp > unbox(pool.packed1, 200, 28) + base_timestamp,    // started
-            block.timestamp > unbox(pool.packed1, 228, 28) + base_timestamp,    // expired
-            block.timestamp > pool.unlock_time + base_timestamp,                // unlocked
-            pool.unlock_time + base_timestamp,                                  // unlock_time
+            block.timestamp > unbox(pool.packed1, 200, 28) + base_time,    // started
+            block.timestamp > unbox(pool.packed1, 228, 28) + base_time,    // expired
+            block.timestamp > pool.unlock_time + base_time,                // unlocked
+            pool.unlock_time + base_time,                                  // unlock_time
             pool.swapped_map[msg.sender],                                       // swapped number 
             pool.exchanged_tokens                                               // exchanged tokens
         );
@@ -299,7 +300,7 @@ contract HappyTokenPool {
         uint256 claimed_amount;
         for (uint256 i = 0; i < ito_ids.length; i++) {
             Pool storage pool = pool_by_id[ito_ids[i]];
-            if (pool.unlock_time + base_timestamp > block.timestamp)
+            if (pool.unlock_time + base_time > block.timestamp)
                 continue;
             claimed_amount = pool.swapped_map[msg.sender];
             if (claimed_amount == 0)
@@ -331,7 +332,7 @@ contract HappyTokenPool {
         Pool storage pool = pool_by_id[id];
         require(msg.sender == pool.creator, "Only the pool creator can destruct.");
 
-        uint256 expiration = unbox(pool.packed1, 228, 28) + base_timestamp;
+        uint256 expiration = unbox(pool.packed1, 228, 28) + base_time;
         uint256 remaining_tokens = unbox(pool.packed2, 0, 128);
         // only after expiration or the pool is empty
         require(expiration <= block.timestamp || remaining_tokens == 0, "Not expired yet");
@@ -381,7 +382,7 @@ contract HappyTokenPool {
 
         uint256 withdraw_balance = pool.exchanged_tokens[addr_i];
         require(withdraw_balance > 0, "None of this token left");
-        uint256 expiration = unbox(pool.packed1, 228, 28) + base_timestamp;
+        uint256 expiration = unbox(pool.packed1, 228, 28) + base_time;
         uint256 remaining_tokens = unbox(pool.packed2, 0, 128);
         // only after expiration or the pool is empty
         require(expiration <= block.timestamp || remaining_tokens == 0, "Not expired yet");
