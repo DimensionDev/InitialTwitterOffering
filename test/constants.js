@@ -2,14 +2,14 @@ const BigNumber = require('bignumber.js')
 
 const base_timestamp = 1616976000
 const eth_address = '0x0000000000000000000000000000000000000000'
-const fill_success_encode = 'FillSuccess(uint256,bytes32,address,uint256,address,bytes32[])'
+const fill_success_encode = 'FillSuccess(uint256,bytes32,address,uint256,address,string)'
 const fill_success_types = [
   { type: 'uint256', name: 'total' },
   { type: 'bytes32', name: 'id' },
   { type: 'address', name: 'creator' },
   { type: 'uint256', name: 'creation_time' },
   { type: 'address', name: 'token_address' },
-  { type: 'bytes32[]', name: 'message' },
+  { type: 'string', name: 'message' },
 ]
 const swap_success_encode = 'SwapSuccess(bytes32,address,address,address,uint256,uint256)'
 const swap_success_types = [

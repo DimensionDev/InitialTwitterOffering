@@ -47,7 +47,7 @@ contract HappyTokenPool {
         address creator,
         uint256 creation_time,
         address token_address,
-        bytes32[] message
+        string message
     );
 
     // swap success event
@@ -123,7 +123,7 @@ contract HappyTokenPool {
      * This function takes the above parameters and creates the pool. _total_tokens of the target token
      * will be successfully transferred to this contract securely on a successful run of this function.
     **/
-    function fill_pool (bytes32 _hash, uint256 _start, uint256 _end, bytes32[] memory message,
+    function fill_pool (bytes32 _hash, uint256 _start, uint256 _end, string memory message,
                         address[] memory _exchange_addrs, uint128[] memory _ratios, uint256 _unlock_time,
                         address _token_addr, uint256 _total_tokens, uint256 _limit, address _qualification)
     public payable {

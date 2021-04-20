@@ -74,7 +74,7 @@ describe('HappyTokenPool', () => {
       hash: ethers.utils.keccak256(ethers.utils.toUtf8Bytes(PASSWORD)),
       start_time: 0,
       end_time: 5184000, // duration 60 days
-      message: [...'Hello From the Outside Hello From the Outside'].map(s => ethers.utils.formatBytes32String(s)),
+      message: 'Hello From the Outside Hello From the Outside',
       exchange_addrs: [eth_address, testTokenBDeployed.address, testTokenCDeployed.address],
       exchange_ratios: [1, 10000, 1, 2000, 4000, 1],
       lock_time: 7776000, // duration 90 days
@@ -155,7 +155,7 @@ describe('HappyTokenPool', () => {
       expect(result)
         .to.have.property('token_address')
         .that.to.be.eq(testTokenADeployed.address)
-      expect(result.message.map(b => ethers.utils.parseBytes32String(b)).join('')).to.be.eq(
+      expect(result.message).to.be.eq(
         'Hello From the Outside Hello From the Outside',
       )
     })
