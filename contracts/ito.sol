@@ -195,7 +195,12 @@ contract HappyTokenPool {
         Pool storage pool = pool_by_id[id];
         Packed memory packed = Packed(pool.packed1, pool.packed2);
         require (
-            IQLF(address(uint160(unbox(packed.packed1, 0, 160)))).logQualified(msg.sender) == true, "Not Qualified"
+            IQLF(
+                address(
+                    uint160(unbox(packed.packed1, 0, 160)))
+                ).logQualified(msg.sender, uint256(unbox(packed.packed1, 200, 28) + base_time)
+            ) == true, 
+            "Not Qualified"
         );
         require (unbox(packed.packed1, 200, 28) + base_time < block.timestamp, "Not started.");
         require (unbox(packed.packed1, 228, 28) + base_time > block.timestamp, "Expired.");
@@ -287,10 +292,10 @@ contract HappyTokenPool {
         return (
             pool.exchange_addrs,                                                // exchange_addrs 0x0 means destructed
             unbox(pool.packed2, 0, 128),                                        // remaining
-            block.timestamp > unbox(pool.packed1, 200, 28) + base_time,    // started
-            block.timestamp > unbox(pool.packed1, 228, 28) + base_time,    // expired
-            block.timestamp > pool.unlock_time + base_time,                // unlocked
-            pool.unlock_time + base_time,                                  // unlock_time
+            block.timestamp > unbox(pool.packed1, 200, 28) + base_time,         // started
+            block.timestamp > unbox(pool.packed1, 228, 28) + base_time,         // expired
+            block.timestamp > pool.unlock_time + base_time,                     // unlocked
+            pool.unlock_time + base_time,                                       // unlock_time
             pool.swapped_map[msg.sender],                                       // swapped number 
             pool.exchanged_tokens                                               // exchanged tokens
         );

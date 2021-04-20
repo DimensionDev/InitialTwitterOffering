@@ -1026,16 +1026,16 @@ describe('qualification', () => {
 
   describe('logQualified()', () => {
     it('should always return false once swap before start_time', async () => {
-      await qualificationTesterDeployed2.connect(signers[10]).logQualified(signers[10].address)
+      await qualificationTesterDeployed2.connect(signers[10]).logQualified(signers[10].address, pending_qualification_timestamp)
       let result = await getLogResult()
       expect(result).to.be.null
 
       await helper.advanceTimeAndBlock(pending_qualification_timestamp + 1000)
-      await qualificationTesterDeployed2.connect(signers[11]).logQualified(signers[11].address)
+      await qualificationTesterDeployed2.connect(signers[11]).logQualified(signers[11].address, pending_qualification_timestamp)
       result = await getLogResult()
       expect(result.qualified).to.be.true
 
-      await qualificationTesterDeployed2.connect(signers[10]).logQualified(signers[10].address)
+      await qualificationTesterDeployed2.connect(signers[10]).logQualified(signers[10].address, pending_qualification_timestamp)
       result = await getLogResult()
       expect(result).to.be.null
     })
