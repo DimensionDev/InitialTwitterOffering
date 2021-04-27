@@ -11,24 +11,26 @@ const {
   fill_success_types,
   swap_success_encode,
   swap_success_types,
+  claim_success_encode,
+  claim_success_types,
   destruct_success_encode,
   destruct_success_types,
   withdraw_success_encode,
   withdraw_success_types,
+  qualification_encode,
+  qualification_types,
+  erc165_interface_id,
+  qualification_interface_id,
   PASSWORD,
+  amount,
+  ETH_address_index,
+  tokenB_address_index,
+  tokenC_address_index,
+  pending_qualification_timestamp,
 } = require('./constants')
 
-// const TestTokenA = artifacts.require("TestTokenA")
-// const TestTokenB = artifacts.require("TestTokenB")
-// const TestTokenC = artifacts.require("TestTokenC")
-// const HappyTokenPool = artifacts.require("HappyTokenPool")
-// const QualificationTester = artifacts.require("QLF");
-// const InternalFunctions = artifacts.require("InternalFunctions")
-const amount = new BigNumber('1e27').toFixed()
 const abiCoder = new ethers.utils.AbiCoder()
-const ETH_address_index = 0
-const tokenB_address_index = 1
-const tokenC_address_index = 2
+
 let fpp // fill happyTokenPoolDeployed parameters
 let snapshotId
 let testTokenADeployed
@@ -55,13 +57,15 @@ describe('HappyTokenPool', () => {
     const testTokenB = await TestTokenB.deploy(amount)
     const testTokenC = await TestTokenC.deploy(amount)
     const happyTokenPool = await HappyTokenPool.deploy()
-    const qualificationTester = await QualificationTester.deploy('NeverSayNo')
+    const qualificationTester = await QualificationTester.deploy('NeverSayNo', 0)
+    const qualificationTester2 = await QualificationTester.deploy('NeverSayYes', pending_qualification_timestamp)
 
     testTokenADeployed = await testTokenA.deployed()
     testTokenBDeployed = await testTokenB.deployed()
     testTokenCDeployed = await testTokenC.deployed()
     happyTokenPoolDeployed = await happyTokenPool.deployed()
     qualificationTesterDeployed = await qualificationTester.deployed()
+    qualificationTesterDeployed2 = await qualificationTester2.deployed()
   })
 
   beforeEach(async () => {
@@ -70,10 +74,10 @@ describe('HappyTokenPool', () => {
       hash: ethers.utils.keccak256(ethers.utils.toUtf8Bytes(PASSWORD)),
       start_time: 0,
       end_time: 5184000, // duration 60 days
-      poor_name: 'Cache Miss',
-      message: 'Hello From the Outside',
+      message: 'Hello From the Outside Hello From the Outside',
       exchange_addrs: [eth_address, testTokenBDeployed.address, testTokenCDeployed.address],
       exchange_ratios: [1, 10000, 1, 2000, 4000, 1],
+      lock_time: 7776000, // duration 90 days
       token_address: testTokenADeployed.address,
       total_tokens: BigNumber('1e22').toFixed(),
       limit: BigNumber('1e21').toFixed(),
@@ -125,8 +129,8 @@ describe('HappyTokenPool', () => {
       await expect(happyTokenPoolDeployed.fill_pool(...Object.values(fpp))).to.be.rejectedWith(Error)
     })
 
-    it('Should throw error when time is larger than 24 bits', async () => {
-      fpp.start_time = 2 ** 24 - 1
+    it('Should throw error when time is larger than 28 bits', async () => {
+      fpp.start_time = 2 ** 28 - 1
       fpp.end_time = fpp.start_time + 100
 
       await testTokenADeployed.approve(happyTokenPoolDeployed.address, fpp.total_tokens)
@@ -143,8 +147,7 @@ describe('HappyTokenPool', () => {
       })
       const result = abiCoder.decode(fill_success_types, logs[0].data)
 
-      expect(result)
-        .to.have.property('total')
+      expect(result.total.toString())
         .that.to.be.eq(fpp.total_tokens)
       expect(result).to.have.property('id').that.to.not.be.null
       expect(result).to.have.property('creator').that.to.not.be.null
@@ -152,12 +155,9 @@ describe('HappyTokenPool', () => {
       expect(result)
         .to.have.property('token_address')
         .that.to.be.eq(testTokenADeployed.address)
-      expect(result)
-        .to.have.property('name')
-        .that.to.be.eq('Cache Miss')
-      expect(result)
-        .to.have.property('message')
-        .that.to.be.eq('Hello From the Outside')
+      expect(result.message).to.be.eq(
+        'Hello From the Outside Hello From the Outside',
+      )
     })
 
     it('Should emit fillSuccess event when none of ratio gcd is not equal to 1 and fill token is very small', async () => {
@@ -266,7 +266,7 @@ describe('HappyTokenPool', () => {
       const { verification, validation } = getVerification(PASSWORD, signer.address)
       happyTokenPoolDeployed
         .connect(signer)
-        .swap(pool_id, verification, signer.address, validation, tokenB_address_index, approve_amount)
+        .swap(pool_id, verification, validation, tokenB_address_index, approve_amount)
       const { remaining: remaining_now } = await getAvailability(happyTokenPoolDeployed, pool_id, creator.address)
       const ratio = fpp.exchange_ratios[3] / fpp.exchange_ratios[2] // tokenA <=> tokenB
       const exchange_tokenA_amount = BigNumber(approve_amount).multipliedBy(ratio)
@@ -279,6 +279,7 @@ describe('HappyTokenPool', () => {
       fpp.limit = '10'
       const signer = signers[1]
       const { id: pool_id } = await getResultFromPoolFill(happyTokenPoolDeployed, fpp)
+      await happyTokenPoolDeployed.connect(creator).setUnlockTime(pool_id, 0)
       const { remaining: remaining_before } = await getAvailability(happyTokenPoolDeployed, pool_id, signer.address)
       expect(remaining_before.toString()).to.be.eq(fpp.total_tokens)
 
@@ -290,7 +291,7 @@ describe('HappyTokenPool', () => {
       const { verification, validation } = getVerification(PASSWORD, signer.address)
       happyTokenPoolDeployed
         .connect(signer)
-        .swap(pool_id, verification, signer.address, validation, tokenB_address_index, approve_amount)
+        .swap(pool_id, verification, validation, tokenB_address_index, approve_amount)
       const { remaining: remaining_now } = await getAvailability(happyTokenPoolDeployed, pool_id, signer.address)
       const tokenB_balance = await testTokenBDeployed.balanceOf(signer.address)
       const tokenA_balance = await testTokenADeployed.balanceOf(signer.address)
@@ -307,11 +308,12 @@ describe('HappyTokenPool', () => {
     let exchange_amount
     before(async () => {
       const transfer_amount = BigNumber('1e26').toFixed()
+      await testTokenBDeployed.connect(creator).transfer(signers[2].address, transfer_amount)
       await testTokenCDeployed.connect(creator).transfer(signers[2].address, transfer_amount)
     })
 
     beforeEach(async () => {
-      await testTokenADeployed.connect(creator).approve(happyTokenPoolDeployed.address, fpp.total_tokens)
+      await testTokenADeployed.connect(creator).approve(happyTokenPoolDeployed.address, BigNumber('1e26').toFixed())
       const r = getVerification(PASSWORD, signers[2].address)
       verification = r.verification
       validation = r.validation
@@ -324,7 +326,6 @@ describe('HappyTokenPool', () => {
         happyTokenPoolDeployed.swap(
           pool_id,
           verification,
-          signers[2].address,
           validation,
           tokenC_address_index,
           exchange_amount,
@@ -338,7 +339,6 @@ describe('HappyTokenPool', () => {
         happyTokenPoolDeployed.swap(
           pool_id,
           verification,
-          signers[2].address,
           'wrong validation',
           tokenC_address_index,
           exchange_amount,
@@ -358,12 +358,34 @@ describe('HappyTokenPool', () => {
         happyTokenPoolDeployed.swap(
           pool_id,
           verification,
-          signers[2].address,
           validation,
           tokenC_address_index,
           exchange_amount,
         ),
       ).to.be.rejectedWith(Error)
+    })
+
+    it('Should throw error when swapped by a blocked account', async () => {
+      fpp.qualification = qualificationTesterDeployed2.address
+      const badGuy = signers[9]
+
+      const { verification, validation } = await prepare(badGuy)
+      const { id: pool_id } = await getResultFromPoolFill(happyTokenPoolDeployed, fpp)
+
+      expect(
+        happyTokenPoolDeployed
+          .connect(badGuy)
+          .swap(pool_id, verification, validation, tokenC_address_index, exchange_amount),
+      ).to.be.rejectedWith(Error)
+
+      async function prepare(signer) {
+        const transfer_amount = BigNumber('1e26').toFixed()
+        await testTokenCDeployed.connect(creator).transfer(signer.address, transfer_amount)
+        const approve_amount = BigNumber('1e10').toFixed()
+        exchange_amount = approve_amount
+        await testTokenCDeployed.connect(signer).approve(happyTokenPoolDeployed.address, approve_amount)
+        return getVerification(PASSWORD, signer.address)
+      }
     })
 
     it('Should throw error when happyTokenPoolDeployed is expired', async () => {
@@ -377,7 +399,7 @@ describe('HappyTokenPool', () => {
       expect(
         happyTokenPoolDeployed
           .connect(signers[2])
-          .swap(pool_id, verification, signers[2].address, validation, tokenC_address_index, exchange_amount),
+          .swap(pool_id, verification, validation, tokenC_address_index, exchange_amount),
       ).to.be.rejectedWith(Error)
     })
 
@@ -387,7 +409,6 @@ describe('HappyTokenPool', () => {
         happyTokenPoolDeployed.swap(
           pool_id,
           'wrong password',
-          signers[2].address,
           validation,
           tokenC_address_index,
           exchange_amount,
@@ -405,7 +426,7 @@ describe('HappyTokenPool', () => {
       expect(
         happyTokenPoolDeployed
           .connect(signers[2])
-          .swap(pool_id, verification, signers[2].address, validation, tokenC_address_index, exchange_amount),
+          .swap(pool_id, verification, validation, tokenC_address_index, exchange_amount),
       ).to.be.rejectedWith(Error)
     })
 
@@ -419,7 +440,7 @@ describe('HappyTokenPool', () => {
       expect(
         happyTokenPoolDeployed
           .connect(signers[2])
-          .swap(pool_id, verification, signers[2].address, validation, tokenC_address_index, exchange_amount),
+          .swap(pool_id, verification, validation, tokenC_address_index, exchange_amount),
       ).to.be.rejectedWith(Error)
     })
 
@@ -431,11 +452,11 @@ describe('HappyTokenPool', () => {
 
       await happyTokenPoolDeployed
         .connect(signers[2])
-        .swap(pool_id, verification, signers[2].address, validation, tokenC_address_index, exchange_amount)
+        .swap(pool_id, verification, validation, tokenC_address_index, exchange_amount)
       expect(
         happyTokenPoolDeployed
           .connect(signers[2])
-          .swap(pool_id, verification, signers[2].address, validation, tokenC_address_index, exchange_amount),
+          .swap(pool_id, verification, validation, tokenC_address_index, exchange_amount),
       ).to.be.rejectedWith(Error)
     })
 
@@ -447,7 +468,7 @@ describe('HappyTokenPool', () => {
 
       await happyTokenPoolDeployed
         .connect(signers[2])
-        .swap(pool_id, verification, signers[2].address, validation, tokenC_address_index, exchange_amount)
+        .swap(pool_id, verification, validation, tokenC_address_index, exchange_amount)
       const logs = await ethers.provider.getLogs({
         address: happyTokenPoolDeployed.address,
         topics: [ethers.utils.keccak256(ethers.utils.toUtf8Bytes(swap_success_encode))],
@@ -457,11 +478,9 @@ describe('HappyTokenPool', () => {
 
       expect(result).to.have.property('id').that.to.not.be.null
       expect(result).to.have.property('swapper').that.to.not.be.null
-      expect(result)
-        .to.have.property('from_value')
+      expect(result.from_value.toString())
         .that.to.be.eq(String(exchange_amount))
-      expect(result)
-        .to.have.property('to_value')
+      expect(result.to_value.toString())
         .that.to.be.eq(String(exchange_amount * ratio))
       expect(result)
         .to.have.property('from_address')
@@ -479,7 +498,7 @@ describe('HappyTokenPool', () => {
 
       await happyTokenPoolDeployed
         .connect(signers[2])
-        .swap(pool_id, verification, signers[2].address, validation, tokenC_address_index, exchange_amount)
+        .swap(pool_id, verification, validation, tokenC_address_index, exchange_amount)
       const logs = await ethers.provider.getLogs({
         address: happyTokenPoolDeployed.address,
         topics: [ethers.utils.keccak256(ethers.utils.toUtf8Bytes(swap_success_encode))],
@@ -503,7 +522,7 @@ describe('HappyTokenPool', () => {
       var vr = getVerification(PASSWORD, signers[4].address)
       await happyTokenPoolDeployed
         .connect(signers[4])
-        .swap(pool_id, vr.verification, signers[4].address, vr.validation, 0, exchange_amount, {
+        .swap(pool_id, vr.verification, vr.validation, 0, exchange_amount, {
           value: approve_amount,
         })
       const logs_eth = await ethers.provider.getLogs({
@@ -512,8 +531,7 @@ describe('HappyTokenPool', () => {
       })
       const result_eth = abiCoder.decode(swap_success_types, logs_eth[0].data)
       const ratio_eth = fpp.exchange_ratios[1] / fpp.exchange_ratios[0] // tokenA <=> tokenC
-      expect(result_eth)
-        .to.have.property('to_value')
+      expect(result_eth.to_value.toString())
         .that.to.be.eq(String(exchange_amount * ratio_eth))
 
       // 0.02 TESTB => 40 TESTA
@@ -527,7 +545,7 @@ describe('HappyTokenPool', () => {
       var vr = getVerification(PASSWORD, signers[3].address)
       await happyTokenPoolDeployed
         .connect(signers[3])
-        .swap(pool_id, vr.verification, signers[3].address, vr.validation, 1, exchange_amount)
+        .swap(pool_id, vr.verification, vr.validation, 1, exchange_amount)
       const logs_b = await ethers.provider.getLogs({
         address: happyTokenPoolDeployed.address,
         topics: [ethers.utils.keccak256(ethers.utils.toUtf8Bytes(swap_success_encode))],
@@ -535,8 +553,7 @@ describe('HappyTokenPool', () => {
       const result_b = abiCoder.decode(swap_success_types, logs_b[0].data)
       const ratio_b = fpp.exchange_ratios[3] / fpp.exchange_ratios[2] // tokenA <=> tokenC
 
-      expect(result_b)
-        .to.have.property('to_value')
+      expect(result_b.to_value.toString())
         .that.to.be.eq(String(exchange_amount * ratio_b))
 
       // 80000 TESTC => 20 TESTA
@@ -546,7 +563,7 @@ describe('HappyTokenPool', () => {
 
       await happyTokenPoolDeployed
         .connect(signers[2])
-        .swap(pool_id, verification, signers[2].address, validation, tokenC_address_index, exchange_amount)
+        .swap(pool_id, verification, validation, tokenC_address_index, exchange_amount)
       const logs_c = await ethers.provider.getLogs({
         address: happyTokenPoolDeployed.address,
         topics: [ethers.utils.keccak256(ethers.utils.toUtf8Bytes(swap_success_encode))],
@@ -554,14 +571,11 @@ describe('HappyTokenPool', () => {
       const result_c = abiCoder.decode(swap_success_types, logs_c[0].data)
       const ratio_c = fpp.exchange_ratios[5] / fpp.exchange_ratios[4] // tokenA <=> tokenC
 
-      expect(result_c)
-        .to.have.property('to_value')
+      expect(result_c.to_value.toString())
         .that.to.not.be.eq(String(exchange_amount * ratio_c))
-      expect(result_c)
-        .to.have.property('to_value')
+      expect(result_c.to_value.toString())
         .that.to.not.be.eq(fpp.limit)
-      expect(result_c)
-        .to.have.property('to_value')
+      expect(result_c.to_value.toString())
         .that.to.be.eq(BigNumber('2e19').toFixed())
     })
 
@@ -578,7 +592,7 @@ describe('HappyTokenPool', () => {
       const v1 = getVerification(PASSWORD, swapperFirstETH)
       await happyTokenPoolDeployed
         .connect(signers[2])
-        .swap(pool_id, v1.verification, swapperFirstETH, v1.validation, ETH_address_index, exchange_ETH_amount, {
+        .swap(pool_id, v1.verification, v1.validation, ETH_address_index, exchange_ETH_amount, {
           value: exchange_ETH_amount,
         })
 
@@ -588,7 +602,7 @@ describe('HappyTokenPool', () => {
       exchange_ETH_amount = BigNumber('1e12').toFixed()
       await happyTokenPoolDeployed
         .connect(signers[3])
-        .swap(pool_id, v2.verification, signers[3].address, v2.validation, ETH_address_index, exchange_ETH_amount, {
+        .swap(pool_id, v2.verification, v2.validation, ETH_address_index, exchange_ETH_amount, {
           value: exchange_ETH_amount,
         })
 
@@ -603,20 +617,167 @@ describe('HappyTokenPool', () => {
           .times(ratio)
           .toFixed(),
       )
-      expect(from_value)
+      expect(from_value.toString())
         .to.be.eq(
           BigNumber(remaining.toString())
             .div(ratio)
             .toFixed(),
         )
         .and.to.not.be.eq(exchange_ETH_amount)
-      expect(to_value)
+      expect(to_value.toString())
         .to.be.eq(remaining.toString())
         .and.to.not.be.eq(
           BigNumber(exchange_ETH_amount)
             .times(ratio)
             .toFixed(),
         )
+    })
+
+    describe('claim()', async () => {
+      it('should does no affect when claim before unlock time', async () => {
+        const approve_amount = BigNumber('1e10')
+        await testTokenCDeployed.connect(signers[2]).approve(happyTokenPoolDeployed.address, approve_amount.toFixed())
+
+        const { id: pool_id } = await getResultFromPoolFill(happyTokenPoolDeployed, fpp)
+        await happyTokenPoolDeployed.connect(creator).setUnlockTime(pool_id, fpp.lock_time)
+        await happyTokenPoolDeployed
+          .connect(signers[2])
+          .swap(pool_id, verification, validation, tokenC_address_index, approve_amount.toFixed())
+
+        const { swapped: claimablePrevious } = await getAvailability(
+          happyTokenPoolDeployed,
+          pool_id,
+          signers[2].address,
+        )
+
+        await happyTokenPoolDeployed.connect(signers[2]).claim([pool_id])
+        const { swapped: claimableNow } = await getAvailability(happyTokenPoolDeployed, pool_id, signers[2].address)
+
+        expect(claimablePrevious.toString())
+          .to.be.eq(claimableNow.toString())
+          .and.to.be.eq(approve_amount.div(fpp.exchange_ratios[tokenC_address_index * 2]).toString())
+          .and.to.be.eq('2500000')
+
+        const logs = await ethers.provider.getLogs({
+          address: happyTokenPoolDeployed.address,
+          topics: [ethers.utils.keccak256(ethers.utils.toUtf8Bytes(claim_success_encode))],
+        })
+
+        expect(logs).to.have.length(0)
+      })
+
+      it('should does no affect when claimable is zero', async () => {
+        const { id: pool_id } = await getResultFromPoolFill(happyTokenPoolDeployed, fpp)
+        await happyTokenPoolDeployed.connect(creator).setUnlockTime(pool_id, 0)
+        await happyTokenPoolDeployed.connect(signers[3]).claim([pool_id])
+        const logs = await ethers.provider.getLogs({
+          address: happyTokenPoolDeployed.address,
+          topics: [ethers.utils.keccak256(ethers.utils.toUtf8Bytes(claim_success_encode))],
+        })
+        expect(logs).to.have.length(0)
+      })
+
+      it('should emit multiple ClaimSuccess events when claim successfully and set claimable to zero', async () => {
+        const approve_amount = BigNumber('1e10')
+
+        await testTokenBDeployed.connect(signers[2]).approve(happyTokenPoolDeployed.address, approve_amount.toFixed())
+        await testTokenCDeployed.connect(signers[2]).approve(happyTokenPoolDeployed.address, approve_amount.toFixed())
+
+        const { id: pool_id } = await getResultFromPoolFill(happyTokenPoolDeployed, fpp)
+        const { id: pool_id2 } = await getResultFromPoolFill(happyTokenPoolDeployed, fpp)
+        await happyTokenPoolDeployed.connect(creator).setUnlockTime(pool_id, fpp.lock_time)
+        await happyTokenPoolDeployed
+          .connect(signers[2])
+          .swap(pool_id, verification, validation, tokenC_address_index, approve_amount.toFixed())
+
+        await happyTokenPoolDeployed
+          .connect(signers[2])
+          .swap(pool_id2, verification, validation, tokenB_address_index, approve_amount.toFixed())
+
+        const { swapped: claimablePrevious } = await getAvailability(
+          happyTokenPoolDeployed,
+          pool_id,
+          signers[2].address,
+        )
+
+        expect(claimablePrevious.toString())
+          .to.be.eq(approve_amount.div(fpp.exchange_ratios[tokenC_address_index * 2]).toString())
+          .and.to.be.eq('2500000')
+
+        const { swapped: claimablePrevious2 } = await getAvailability(
+          happyTokenPoolDeployed,
+          pool_id2,
+          signers[2].address,
+        )
+
+        expect(claimablePrevious2.toString())
+          .to.be.eq(approve_amount.multipliedBy(fpp.exchange_ratios[tokenB_address_index * 2 + 1]).toString())
+          .and.to.be.eq('20000000000000')
+
+        await helper.advanceTimeAndBlock(fpp.lock_time)
+
+        await happyTokenPoolDeployed.connect(signers[2]).claim([pool_id, pool_id2])
+        const { swapped: claimableNow } = await getAvailability(happyTokenPoolDeployed, pool_id, signers[2].address)
+        const { swapped: claimableNow2 } = await getAvailability(happyTokenPoolDeployed, pool_id2, signers[2].address)
+
+        expect(claimableNow.toString())
+          .to.be.eq('0')
+          .and.to.be.not.eq(claimablePrevious.toString())
+
+        expect(claimableNow2.toString())
+          .to.be.eq('0')
+          .and.to.be.not.eq(claimablePrevious2.toString())
+
+        const logs = await ethers.provider.getLogs({
+          address: happyTokenPoolDeployed.address,
+          topics: [ethers.utils.keccak256(ethers.utils.toUtf8Bytes(claim_success_encode))],
+        })
+
+        expect(logs).to.have.length(2)
+
+        const result = abiCoder.decode(claim_success_types, logs[0].data)
+        const result2 = abiCoder.decode(claim_success_types, logs[1].data)
+
+        expect(result.to_value.toString()).to.be.eq(claimablePrevious.toString())
+
+        expect(result2.to_value.toString()).to.be.eq(claimablePrevious2.toString())
+      })
+
+      it('should still be able to claim after destruct pool', async () => {
+        const approve_amount = BigNumber('1e10')
+        await testTokenCDeployed.connect(signers[2]).approve(happyTokenPoolDeployed.address, approve_amount.toFixed())
+
+        const { id: pool_id } = await getResultFromPoolFill(happyTokenPoolDeployed, fpp)
+        await happyTokenPoolDeployed.connect(creator).setUnlockTime(pool_id, fpp.lock_time)
+        await happyTokenPoolDeployed
+          .connect(signers[2])
+          .swap(pool_id, verification, validation, tokenC_address_index, approve_amount.toFixed())
+
+        const { swapped: claimablePrevious } = await getAvailability(
+          happyTokenPoolDeployed,
+          pool_id,
+          signers[2].address,
+        )
+
+        await helper.advanceTimeAndBlock(fpp.lock_time)
+
+        await happyTokenPoolDeployed.connect(creator).destruct(pool_id)
+
+        await happyTokenPoolDeployed.connect(signers[2]).claim([pool_id])
+        const { swapped: claimableNow } = await getAvailability(happyTokenPoolDeployed, pool_id, signers[2].address)
+
+        expect(claimableNow.toString())
+          .to.be.eq('0')
+          .and.to.be.not.eq(claimablePrevious.toString())
+
+        const logs = await ethers.provider.getLogs({
+          address: happyTokenPoolDeployed.address,
+          topics: [ethers.utils.keccak256(ethers.utils.toUtf8Bytes(claim_success_encode))],
+        })
+        const result = abiCoder.decode(claim_success_types, logs[0].data)
+
+        expect(result.to_value.toString()).to.be.eq(claimablePrevious.toString())
+      })
     })
   })
 
@@ -634,94 +795,16 @@ describe('HappyTokenPool', () => {
       expect(happyTokenPoolDeployed.connect(account_not_creator).destruct(pool_id)).to.be.rejectedWith(Error)
     })
 
-    it('Should throw error when happyTokenPoolDeployed is not expired', async () => {
-      const fakeTime = (new Date().getTime() + 1000 * 1000) / 1000
-      fpp.end_time = Math.ceil(fakeTime) - base_timestamp
-      fpp.start_time = fpp.end_time - 10
+    it('Should throw error if happyTokenPoolDeployed is not expired', async () => {
       const { id: pool_id } = await getResultFromPoolFill(happyTokenPoolDeployed, fpp)
-
       expect(happyTokenPoolDeployed.connect(creator).destruct(pool_id)).to.be.rejectedWith(Error)
     })
 
     it('Should emit DestructSuccess event and withdraw all tokens', async () => {
       const fakeTime = (new Date().getTime() + 1000 * 1000) / 1000
       fpp.end_time = Math.ceil(fakeTime) - base_timestamp
-      const { id: pool_id } = await getResultFromPoolFill(happyTokenPoolDeployed, fpp)
-      const previous_tokenB_balance = await testTokenBDeployed.balanceOf(creator.address)
-      const previous_tokenC_balance = await testTokenCDeployed.balanceOf(creator.address)
-      const exchange_ETH_amount = BigNumber('1e15').toFixed()
-      const { verification, validation } = getVerification(PASSWORD, signers[2].address)
-      await happyTokenPoolDeployed
-        .connect(signers[2])
-        .swap(pool_id, verification, signers[2].address, validation, ETH_address_index, exchange_ETH_amount, {
-          value: exchange_ETH_amount,
-        })
-
-      const exchange_tokenB_amount = BigNumber('2e10').toFixed()
-      await approveThenSwapToken(testTokenBDeployed, signers[3], tokenB_address_index, pool_id, exchange_tokenB_amount)
-
-      const exchange_tokenC_amount = BigNumber('1e22').toFixed()
-      await approveThenSwapToken(testTokenCDeployed, signers[4], tokenC_address_index, pool_id, exchange_tokenC_amount)
-
-      await helper.advanceTimeAndBlock(2000 * 1000)
-      await happyTokenPoolDeployed.connect(creator).destruct(pool_id)
-
-      const logs = await ethers.provider.getLogs({
-        address: happyTokenPoolDeployed.address,
-        topics: [ethers.utils.keccak256(ethers.utils.toUtf8Bytes(destruct_success_encode))],
-      })
-      const result = abiCoder.decode(destruct_success_types, logs[0].data)
-
-      expect(result)
-        .to.have.property('id')
-        .that.to.be.eq(pool_id)
-      expect(result)
-        .to.have.property('token_address')
-        .that.to.be.eq(testTokenADeployed.address)
-      expect(result).to.have.property('remaining_tokens')
-      expect(result).to.have.property('exchanged_values')
-
-      const ratioETH = fpp.exchange_ratios[1] / fpp.exchange_ratios[0]
-      const ratioB = fpp.exchange_ratios[3] / fpp.exchange_ratios[2]
-      const ratioC = fpp.exchange_ratios[5] / fpp.exchange_ratios[4]
-      const remaining_tokens =
-        fpp.total_tokens -
-        ratioB * exchange_tokenB_amount -
-        ratioC * exchange_tokenC_amount -
-        ratioETH * exchange_ETH_amount
-      const result_remaining_tokens = Number(result.remaining_tokens)
-
-      expect(result_remaining_tokens).to.be.eq(remaining_tokens)
-      const transfer_amount = new BigNumber('1e26')
-      const tokenB_balance = await testTokenBDeployed.balanceOf(creator.address)
-      expect(BigNumber(tokenB_balance.toString()).toString())
-        .to.be.eq(
-          BigNumber(previous_tokenB_balance.toString())
-            .minus(transfer_amount)
-            .plus(BigNumber(exchange_tokenB_amount))
-            .toString(),
-        )
-        .and.to.be.eq(
-          BigNumber('9e26')
-            .plus(BigNumber('2e10'))
-            .toString(),
-        )
-
-      const tokenC_balance = await testTokenCDeployed.balanceOf(creator.address)
-      expect(BigNumber(tokenC_balance.toString()).toString())
-        .to.be.eq(
-          BigNumber(previous_tokenC_balance.toString())
-            .minus(transfer_amount)
-            .plus(BigNumber(exchange_tokenC_amount))
-            .toString(),
-        )
-        .and.to.be.eq(BigNumber('80001e22').toString())
-    })
-
-    it('Should emit DestructSuccess event and withdraw all tokens', async () => {
-      const fakeTime = (new Date().getTime() + 1000 * 1000) / 1000
-      fpp.end_time = Math.ceil(fakeTime) - base_timestamp
-      ;(fpp.exchange_ratios = [1, 75000, 1, 100, 1, 100]), (fpp.limit = BigNumber('100000e18').toFixed())
+      fpp.exchange_ratios = [1, 75000, 1, 100, 1, 100]
+      fpp.limit = BigNumber('100000e18').toFixed()
       fpp.total_tokens = BigNumber('1000000e18').toFixed()
       const { id: pool_id } = await getResultFromPoolFill(happyTokenPoolDeployed, fpp)
       let previous_eth_balance = await ethers.provider.getBalance(creator.address)
@@ -732,7 +815,7 @@ describe('HappyTokenPool', () => {
       const { verification, validation } = getVerification(PASSWORD, signers[2].address)
       await happyTokenPoolDeployed
         .connect(signers[2])
-        .swap(pool_id, verification, signers[2].address, validation, ETH_address_index, exchange_ETH_amount, {
+        .swap(pool_id, verification, validation, ETH_address_index, exchange_ETH_amount, {
           value: exchange_ETH_amount,
         })
 
@@ -762,7 +845,6 @@ describe('HappyTokenPool', () => {
 
       const ratioETH = fpp.exchange_ratios[1] / fpp.exchange_ratios[0]
       const ratioB = fpp.exchange_ratios[3] / fpp.exchange_ratios[2]
-      const ratioC = fpp.exchange_ratios[5] / fpp.exchange_ratios[4]
       const remaining_tokens = BigNumber(fpp.total_tokens)
         .minus(
           BigNumber(ratioB)
@@ -782,7 +864,7 @@ describe('HappyTokenPool', () => {
 
       const transfer_amount = BigNumber('1e26').toFixed()
       const tokenB_balance = await testTokenBDeployed.balanceOf(creator.address)
-      expect(tokenB_balance).to.be.eq(
+      expect(tokenB_balance.toString()).to.be.eq(
         BigNumber(previous_tokenB_balance.toString())
           .minus(BigNumber(transfer_amount))
           .plus(BigNumber(exchange_tokenB_amount))
@@ -790,13 +872,13 @@ describe('HappyTokenPool', () => {
       )
 
       const tokenC_balance = await testTokenCDeployed.balanceOf(creator.address)
-      expect(tokenC_balance).to.be.not.eq(
+      expect(tokenC_balance.toString()).to.be.not.eq(
         BigNumber(previous_tokenC_balance.toString())
           .minus(BigNumber(transfer_amount))
           .plus(BigNumber(exchange_tokenC_amount))
           .toFixed(),
       )
-      expect(tokenC_balance).to.be.eq(
+      expect(tokenC_balance.toString()).to.be.eq(
         BigNumber(previous_tokenC_balance.toString())
           .minus(BigNumber(transfer_amount))
           .plus(
@@ -806,10 +888,11 @@ describe('HappyTokenPool', () => {
       )
     })
 
-    it('Should emit DestructSuccess event and withdraw all tokens before expiry', async () => {
+    it('Should emit DestructSuccess event and withdraw all tokens when remaining_tokens is zero', async () => {
       const fakeTime = (new Date().getTime() + 1000 * 1000) / 1000
       fpp.end_time = Math.ceil(fakeTime) - base_timestamp
-      ;(fpp.exchange_ratios = [1, 75000, 1, 100, 1, 100]), (fpp.limit = BigNumber('50000e18').toFixed())
+      fpp.exchange_ratios = [1, 75000, 1, 100, 1, 100]
+      fpp.limit = BigNumber('50000e18').toFixed()
       fpp.total_tokens = BigNumber('50000e18').toFixed()
       const { id: pool_id } = await getResultFromPoolFill(happyTokenPoolDeployed, fpp)
 
@@ -831,8 +914,7 @@ describe('HappyTokenPool', () => {
       expect(result)
         .to.have.property('token_address')
         .that.to.be.eq(testTokenADeployed.address)
-      expect(result)
-        .to.have.property('remaining_tokens')
+      expect(result.remaining_tokens.toString())
         .that.to.be.eq('0')
       expect(result).to.have.property('exchanged_values')
     })
@@ -846,7 +928,8 @@ describe('HappyTokenPool', () => {
     it('Should emit WithdrawSuccess event and withdraw the specified token', async () => {
       const fakeTime = (new Date().getTime() + 1000 * 1000) / 1000
       fpp.end_time = Math.ceil(fakeTime) - base_timestamp
-      ;(fpp.exchange_ratios = [1, 75000, 1, 100, 1, 100]), (fpp.limit = BigNumber('50000e18').toFixed())
+      fpp.exchange_ratios = [1, 75000, 1, 100, 1, 100]
+      fpp.limit = BigNumber('50000e18').toFixed()
       fpp.total_tokens = BigNumber('50000e18').toFixed()
       const { id: pool_id } = await getResultFromPoolFill(happyTokenPoolDeployed, fpp)
 
@@ -855,7 +938,7 @@ describe('HappyTokenPool', () => {
       const { verification, validation } = getVerification(PASSWORD, signers[2].address)
       await happyTokenPoolDeployed
         .connect(signers[2])
-        .swap(pool_id, verification, signers[2].address, validation, ETH_address_index, exchange_ETH_amount, {
+        .swap(pool_id, verification, validation, ETH_address_index, exchange_ETH_amount, {
           value: exchange_ETH_amount,
         })
 
@@ -878,11 +961,9 @@ describe('HappyTokenPool', () => {
       const logWithdrawTokenB = abiCoder.decode(withdraw_success_types, logs[0].data)
       const logWithdrawETH = abiCoder.decode(withdraw_success_types, logs[1].data)
 
-      expect(logWithdrawTokenB)
-        .to.have.property('withdraw_balance')
+      expect(logWithdrawTokenB.withdraw_balance.toString())
         .that.to.be.eq(BigNumber('200e18').toFixed())
-      expect(logWithdrawETH)
-        .to.have.property('withdraw_balance')
+      expect(logWithdrawETH.withdraw_balance.toString())
         .that.to.be.eq(BigNumber('3e14').toFixed())
     })
   })
@@ -898,15 +979,14 @@ describe('HappyTokenPool', () => {
     await test_token.connect(swapper).approve(happyTokenPoolDeployed.address, approve_amount)
     await happyTokenPoolDeployed
       .connect(swapper)
-      .swap(pool_id, verification, swapper.address, validation, token_address_index, exchange_amount)
+      .swap(pool_id, verification, validation, token_address_index, exchange_amount)
   }
 
   function getVerification(password, account) {
     var hash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(password))
     var hash_bytes = Uint8Array.from(Buffer.from(hash.slice(2), 'hex'))
-    hash = hash_bytes.slice(0, 6)
+    hash = hash_bytes.slice(0, 5)
     hash = '0x' + Buffer.from(hash).toString('hex')
-
     return {
       verification: soliditySha3(hexToNumber(hash), account),
       validation: sha3(account),
@@ -927,6 +1007,48 @@ describe('HappyTokenPool', () => {
     happyTokenPoolDeployed = happyTokenPoolDeployed.connect(signer)
     return happyTokenPoolDeployed.check_availability(pool_id)
   }
+})
+
+describe('qualification', () => {
+  it('should check the integrity of qualification contract', async () => {
+    const isERC165 = await qualificationTesterDeployed.supportsInterface(erc165_interface_id)
+    const isQualification = await qualificationTesterDeployed.supportsInterface(qualification_interface_id)
+    expect(isERC165).to.be.true
+    expect(isQualification).to.be.true
+
+    const unknown_interface_id = '0x87ab3aaa'
+    const invalid_interface_id = '0xffffffff'
+    const isok_1 = await qualificationTesterDeployed.supportsInterface(unknown_interface_id)
+    const isok_2 = await qualificationTesterDeployed.supportsInterface(invalid_interface_id)
+    expect(isok_1).to.be.false
+    expect(isok_2).to.be.false
+  })
+
+  describe('logQualified()', () => {
+    it('should always return false once swap before start_time', async () => {
+      await qualificationTesterDeployed2.connect(signers[10]).logQualified(signers[10].address, pending_qualification_timestamp)
+      let result = await getLogResult()
+      expect(result).to.be.null
+
+      await helper.advanceTimeAndBlock(pending_qualification_timestamp + 1000)
+      await qualificationTesterDeployed2.connect(signers[11]).logQualified(signers[11].address, pending_qualification_timestamp)
+      result = await getLogResult()
+      expect(result.qualified).to.be.true
+
+      await qualificationTesterDeployed2.connect(signers[10]).logQualified(signers[10].address, pending_qualification_timestamp)
+      result = await getLogResult()
+      expect(result).to.be.null
+    })
+
+    async function getLogResult() {
+      const logs = await ethers.provider.getLogs({
+        address: qualificationTesterDeployed2.address,
+        topics: [ethers.utils.keccak256(ethers.utils.toUtf8Bytes(qualification_encode))],
+      })
+      if (logs.length === 0) return null
+      return abiCoder.decode(qualification_types, logs[0].data)
+    }
+  })
 })
 
 describe('InternalFunctions', () => {

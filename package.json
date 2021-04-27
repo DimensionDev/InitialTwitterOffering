@@ -5,7 +5,7 @@
     "author": "Yisi Liu",
     "main": "hardhat.config.ts",
     "scripts": {
-        "test": "hardhat test",
+        "test": "hardhat coverage",
         "compile": "hardhat compile",
         "format": "prettier --write './test/*.js'"
     },
@@ -22,10 +22,11 @@
         "chai": "^4.3.4",
         "chai-as-promised": "^7.1.1",
         "ethers": "^5.0.32",
-        "hardhat": "^2.1.2",
+        "hardhat": "^2.2.0",
         "mocha": "^8.3.0",
         "prettier": "^1.19.1",
         "solhint": "^2.3.0",
+        "solidity-coverage": "^0.7.16",
         "ts-node": "^9.1.1",
         "typescript": "^4.2.3",
         "web3-utils": "^1.3.4"
