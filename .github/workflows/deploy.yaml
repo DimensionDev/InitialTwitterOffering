@@ -15,5 +15,6 @@ jobs:
           
       - run: npm install
       - run: npm run deploy:ropsten
-        env: DEPLOY_PRIVATE_KEY=${{ secrets.DEPLOY_PRIVATE_KEY }}
+        env: 
+          DEPLOY_PRIVATE_KEY: ${{ secrets.DEPLOY_PRIVATE_KEY }}
         if: startsWith(github.ref, 'refs/heads/feat')
