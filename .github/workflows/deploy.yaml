@@ -2,7 +2,7 @@ name: Deploy
 
 on:
   push:
-    branches: ['develop/**']
+    branches: ['feat/**']
 
 jobs:
   test:
@@ -16,4 +16,4 @@ jobs:
       - run: npm install
             
       - run: DEPLOY_PRIVATE_KEY=${{ secrets.DEPLOY_PRIVATE_KEY }} npm run deploy:ropsten
-        if: startsWith(github.ref, 'refs/heads/develop') 
+        if: startsWith(github.ref, 'refs/heads/feat')

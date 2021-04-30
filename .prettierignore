@@ -5,4 +5,8 @@ truffle-config.js
 tsconfig.json
 README.md
 contracts/**
+coverage/**
+deployments/**
+cache/**
+artifacts/**
 migrations/**

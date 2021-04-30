@@ -8,7 +8,7 @@
         "deploy:ropsten": "hardhat --network ropsten deploy",
         "test": "hardhat coverage",
         "compile": "hardhat compile",
-        "format": "prettier --write './test/*.js' './deploy/*.ts' './*.ts'"
+        "format": "prettier --write '**/*.js' '**/*.ts'"
     },
     "dependencies": {
         "@openzeppelin/contracts": "^4.0.0"
