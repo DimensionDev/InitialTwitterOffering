@@ -5,18 +5,15 @@ on:
     branches: ['feat/**']
 
 jobs:
-  test:
+  deploy:
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v2
         with:
           node-version: 15
-    
-      - name: create env file
-        run: |
-          touch .env
-          echo DEPLOY_PRIVATE_KEY=${{ secrets.DEPLOY_PRIVATE_KEY }} >> .env          
+          
       - run: npm install
-      - run: npm run deploy:ropsten
+      - run: 
+          DEPLOY_PRIVATE_KEY=${{ secrets.DEPLOY_PRIVATE_KEY }} npm run deploy:ropsten
         if: startsWith(github.ref, 'refs/heads/feat')
