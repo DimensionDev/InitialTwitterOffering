@@ -14,16 +14,12 @@ abstract contract IQLF is IERC165 {
     /**
      * @dev Returns if the given address is qualified, implemented on demand.
      */
-    function ifQualified (address account, address token_address) virtual external view returns (bool);
+    function ifQualified (address account) virtual external view returns (bool);
 
     /**
      * @dev Logs if the given address is qualified, implemented on demand.
      */
-    function logQualified (
-        address account, 
-        uint256 ito_start_time, 
-        address token_address
-    ) virtual external returns (bool);
+    function logQualified (address account, uint256 ito_start_time) virtual external returns (bool);
 
     /**
      * @dev Ensure that custom contract implements `ifQualified` amd `logQualified` correctly.

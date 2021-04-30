@@ -27,7 +27,6 @@ const {
   tokenB_address_index,
   tokenC_address_index,
   pending_qualification_timestamp,
-  qualification_amount,
 } = require('./constants')
 
 const abiCoder = new ethers.utils.AbiCoder()
@@ -67,10 +66,6 @@ describe('HappyTokenPool', () => {
     happyTokenPoolDeployed = await happyTokenPool.deployed()
     qualificationTesterDeployed = await qualificationTester.deployed()
     qualificationTesterDeployed2 = await qualificationTester2.deployed()
-
-    for (let i = 1; i < 20; i++) {
-      await testTokenADeployed.connect(creator).transfer(signers[i].address, qualification_amount)
-    }
   })
 
   beforeEach(async () => {
@@ -192,7 +187,7 @@ describe('HappyTokenPool', () => {
     })
 
     it('Should return status `started === true` when current time greater than start_time', async () => {
-      const fakeTime = (new Date().getTime() - 10000 * 10) / 1000
+      const fakeTime = (new Date().getTime() - 1000 * 10) / 1000
       fpp.start_time = Math.ceil(fakeTime) - base_timestamp
       const { id: pool_id } = await getResultFromPoolFill(happyTokenPoolDeployed, fpp)
       const result = await getAvailability(happyTokenPoolDeployed, pool_id, signers[1].address)
@@ -201,7 +196,7 @@ describe('HappyTokenPool', () => {
     })
 
     it('Should return status `started === false` when current time less than start_time', async () => {
-      const fakeTime = (new Date().getTime() + 100000) / 1000
+      const fakeTime = (new Date().getTime() + 1000 * 10) / 1000
       fpp.start_time = Math.ceil(fakeTime) - base_timestamp
 
       const { id: pool_id } = await getResultFromPoolFill(happyTokenPoolDeployed, fpp)
@@ -211,7 +206,7 @@ describe('HappyTokenPool', () => {
     })
 
     it('Should return status `expired === true` when current time less than end_time', async () => {
-      const fakeTime = (new Date().getTime() - 100000) / 1000
+      const fakeTime = (new Date().getTime() - 1000 * 10) / 1000
       fpp.end_time = Math.ceil(fakeTime) - base_timestamp
 
       const { id: pool_id } = await getResultFromPoolFill(happyTokenPoolDeployed, fpp)
@@ -221,7 +216,7 @@ describe('HappyTokenPool', () => {
     })
 
     it('Should return status `expired === false` when current time less than end_time', async () => {
-      const fakeTime = (new Date().getTime() + 100000) / 1000
+      const fakeTime = (new Date().getTime() + 1000 * 10) / 1000
       fpp.end_time = Math.ceil(fakeTime) - base_timestamp
 
       const { id: pool_id } = await getResultFromPoolFill(happyTokenPoolDeployed, fpp)
@@ -301,7 +296,7 @@ describe('HappyTokenPool', () => {
       const tokenB_balance = await testTokenBDeployed.balanceOf(signer.address)
       const tokenA_balance = await testTokenADeployed.balanceOf(signer.address)
 
-      expect(tokenA_balance.toString()).to.be.eq(String(1 + qualification_amount))
+      expect(tokenA_balance.toString()).to.be.eq('1')
       expect(tokenB_balance.toString()).to.be.eq('0')
       expect(remaining_now.toString()).to.be.eq('9')
     })
@@ -1031,16 +1026,16 @@ describe('qualification', () => {
 
   describe('logQualified()', () => {
     it('should always return false once swap before start_time', async () => {
-      await qualificationTesterDeployed2.connect(signers[10]).logQualified(signers[10].address, pending_qualification_timestamp, testTokenADeployed.address)
+      await qualificationTesterDeployed2.connect(signers[10]).logQualified(signers[10].address, pending_qualification_timestamp)
       let result = await getLogResult()
       expect(result).to.be.null
 
       await helper.advanceTimeAndBlock(pending_qualification_timestamp + 1000)
-      await qualificationTesterDeployed2.connect(signers[11]).logQualified(signers[11].address, pending_qualification_timestamp, testTokenADeployed.address)
+      await qualificationTesterDeployed2.connect(signers[11]).logQualified(signers[11].address, pending_qualification_timestamp)
       result = await getLogResult()
       expect(result.qualified).to.be.true
 
-      await qualificationTesterDeployed2.connect(signers[10]).logQualified(signers[10].address, pending_qualification_timestamp, testTokenADeployed.address)
+      await qualificationTesterDeployed2.connect(signers[10]).logQualified(signers[10].address, pending_qualification_timestamp)
       result = await getLogResult()
       expect(result).to.be.null
     })

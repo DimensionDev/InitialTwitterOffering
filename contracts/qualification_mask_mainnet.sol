@@ -9,8 +9,11 @@
 pragma solidity >= 0.8.0;
 
 import "./IQLF.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-contract QLF is IQLF {
+contract QLF_MASK_MAINNET is IQLF {
+    using SafeERC20 for IERC20;
+
     string private name;
     uint256 private creation_time;
     uint256 start_time;
@@ -45,12 +48,17 @@ contract QLF is IQLF {
         start_time = _start_time;
     }
 
-    function ifQualified(address) public pure override returns (bool qualified) {
+    function ifQualified(address account) public view override returns (bool qualified) {
+        if (IERC20(address(0x69af81e73A73B40adF4f3d4223Cd9b1ECE623074)).balanceOf(account) == 0) {
+            return false;
+        }
         qualified = true;
     } 
 
     function logQualified(address account, uint256 ito_start_time) public override returns (bool qualified) {
-        
+        if (IERC20(address(0x69af81e73A73B40adF4f3d4223Cd9b1ECE623074)).balanceOf(account) == 0) {
+            return false;
+        }              
         if (start_time > block.timestamp || ito_start_time > block.timestamp) {
             black_list[address(msg.sender)] = true;
             return false;
