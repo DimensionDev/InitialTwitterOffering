@@ -50,7 +50,6 @@ contract QLF is IQLF {
     } 
 
     function logQualified(address account, uint256 ito_start_time) public override returns (bool qualified) {
-        
         if (start_time > block.timestamp || ito_start_time > block.timestamp) {
             black_list[address(msg.sender)] = true;
             return false;
