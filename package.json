@@ -5,9 +5,10 @@
     "author": "Yisi Liu",
     "main": "hardhat.config.ts",
     "scripts": {
+        "deploy:ropsten": "hardhat --network ropsten deploy",
         "test": "hardhat coverage",
         "compile": "hardhat compile",
-        "format": "prettier --write './test/*.js'"
+        "format": "prettier --write './test/*.js' './deploy/*.ts' './*.ts'"
     },
     "dependencies": {
         "@openzeppelin/contracts": "^4.0.0"
@@ -23,6 +24,7 @@
         "chai-as-promised": "^7.1.1",
         "ethers": "^5.0.32",
         "hardhat": "^2.2.0",
+        "hardhat-deploy": "^0.7.5",
         "mocha": "^8.3.0",
         "prettier": "^1.19.1",
         "solhint": "^2.3.0",
