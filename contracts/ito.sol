@@ -196,9 +196,11 @@ contract HappyTokenPool {
         Packed memory packed = Packed(pool.packed1, pool.packed2);
         require (
             IQLF(
-                address(
-                    uint160(unbox(packed.packed1, 0, 160)))
-                ).logQualified(msg.sender, uint256(unbox(packed.packed1, 200, 28) + base_time)
+                address(uint160(unbox(packed.packed1, 0, 160)))
+            ).logQualified(
+                msg.sender, 
+                uint256(unbox(packed.packed1, 200, 28) + base_time),
+                address(pool.token_address)
             ) == true, 
             "Not Qualified"
         );
