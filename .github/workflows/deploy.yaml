@@ -13,7 +13,10 @@ jobs:
         with:
           node-version: 15
     
+      - name: create env file
+        run: |
+          touch .env
+          echo DEPLOY_PRIVATE_KEY=${{ secrets.DEPLOY_PRIVATE_KEY }} >> .env          
       - run: npm install
-            
-      - run: DEPLOY_PRIVATE_KEY=${{ secrets.DEPLOY_PRIVATE_KEY }} npm run deploy:ropsten
+      - run: npm run deploy:ropsten
         if: startsWith(github.ref, 'refs/heads/feat')
