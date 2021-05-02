@@ -49,14 +49,14 @@ contract QLF_MASK_MAINNET is IQLF {
     }
 
     function ifQualified(address account) public view override returns (bool qualified) {
-        if (IERC20(address(0x69af81e73A73B40adF4f3d4223Cd9b1ECE623074)).balanceOf(account) == 0) {
+        if (IERC20(address(0x69af81e73A73B40adF4f3d4223Cd9b1ECE623074)).balanceOf(account) < 100e18) {
             return false;
         }
         qualified = true;
     } 
 
     function logQualified(address account, uint256 ito_start_time) public override returns (bool qualified) {
-        if (IERC20(address(0x69af81e73A73B40adF4f3d4223Cd9b1ECE623074)).balanceOf(account) == 0) {
+        if (IERC20(address(0x69af81e73A73B40adF4f3d4223Cd9b1ECE623074)).balanceOf(account) < 100e18) {
             return false;
         }              
         if (start_time > block.timestamp || ito_start_time > block.timestamp) {

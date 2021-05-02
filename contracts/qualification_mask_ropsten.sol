@@ -49,14 +49,14 @@ contract QLF_MASK_ROPSTEN is IQLF {
     }
 
     function ifQualified(address account) public view override returns (bool qualified) {
-        if (IERC20(address(0x5B966f3a32Db9C180843bCb40267A66b73E4f022)).balanceOf(account) == 0) {
+        if (IERC20(address(0x5B966f3a32Db9C180843bCb40267A66b73E4f022)).balanceOf(account) < 100e18) {
             return false;
         }
         qualified = true;
     } 
 
     function logQualified(address account, uint256 ito_start_time) public override returns (bool qualified) {
-        if (IERC20(address(0x5B966f3a32Db9C180843bCb40267A66b73E4f022)).balanceOf(account) == 0) {
+        if (IERC20(address(0x5B966f3a32Db9C180843bCb40267A66b73E4f022)).balanceOf(account) < 100e18) {
             return false;
         }              
         if (start_time > block.timestamp || ito_start_time > block.timestamp) {
