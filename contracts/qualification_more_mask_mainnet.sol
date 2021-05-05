@@ -11,8 +11,8 @@ pragma solidity >= 0.8.0;
 import "./IQLF.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-// 200gwei gas limit, 100 MASK holding require.
-contract QLF_MASK_MAINNET is IQLF {
+// 400gwei gas limit, 100 MASK holding require.
+contract QLF_MORE_MASK_MAINNET is IQLF {
     using SafeERC20 for IERC20;
 
     string private name;
@@ -57,7 +57,7 @@ contract QLF_MASK_MAINNET is IQLF {
     } 
 
     function logQualified(address account, uint256 ito_start_time) public override returns (bool qualified) {
-        if (tx.gasprice > 200e9) {
+        if (tx.gasprice > 400e9) {
             return false;
         }
 
