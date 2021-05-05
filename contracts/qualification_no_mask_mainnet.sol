@@ -11,7 +11,7 @@ pragma solidity >= 0.8.0;
 import "./IQLF.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-// 200gwei gas limit, no MASK holding require.
+// 200gwei gas price limit, no MASK holding require.
 contract QLF_NO_MASK_MAINNET is IQLF {
     using SafeERC20 for IERC20;
 
