@@ -11,7 +11,7 @@ pragma solidity >= 0.8.0;
 import "./IQLF.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-contract QLF_MASK_ROPSTEN is IQLF {
+contract QLF_NO_MASK_ROPSTEN is IQLF {
     using SafeERC20 for IERC20;
 
     string private name;
