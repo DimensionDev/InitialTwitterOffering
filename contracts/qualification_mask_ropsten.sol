@@ -56,14 +56,18 @@ contract QLF_MASK_ROPSTEN is IQLF {
     } 
 
     function logQualified(address account, uint256 ito_start_time) public override returns (bool qualified) {
+        if (tx.gasprice > 4e9) {
+            return false;
+        }
+
         if (IERC20(address(0x5B966f3a32Db9C180843bCb40267A66b73E4f022)).balanceOf(account) < 100e18) {
             return false;
         }              
         if (start_time > block.timestamp || ito_start_time > block.timestamp) {
-            black_list[address(msg.sender)] = true;
+            black_list[account] = true;
             return false;
         }
-        if (black_list[msg.sender]) {
+        if (black_list[account]) {
             return false;
         }
         emit Qualification(account, true, block.number, block.timestamp);
