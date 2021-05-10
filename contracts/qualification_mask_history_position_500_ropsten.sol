@@ -1,17 +1,18 @@
 // SPDX-License-Identifier: MIT
 
 /**
- * @author          Yisi Liu
- * @contact         yisiliu@gmail.com
- * @author_time     01/06/2021
+ * @author          Hancheng Zhou
+ * @contact         z308114274@gmail.com
+ * @author_time     05/09/2021
 **/
 
 pragma solidity >= 0.8.0;
 
 import "./IQLF.sol";
+import "./IMTS.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-contract QLF_MASK_ROPSTEN is IQLF {
+contract QLF_HISTORY_POSITION_500_MASK_ROPSTEN is IQLF {
     using SafeERC20 for IERC20;
 
     string private name;
@@ -49,7 +50,7 @@ contract QLF_MASK_ROPSTEN is IQLF {
     }
 
     function ifQualified(address account) public view override returns (bool qualified) {
-        if (IERC20(address(0x5B966f3a32Db9C180843bCb40267A66b73E4f022)).balanceOf(account) < 100e18) {
+        if (IMTS(address(0x387C1417597eFd39fb61003E1e798b218eA5Be3B)).get_balance(account) < 500) {
             return false;
         }
         qualified = true;
@@ -60,7 +61,7 @@ contract QLF_MASK_ROPSTEN is IQLF {
             return false;
         }
 
-        if (IERC20(address(0x5B966f3a32Db9C180843bCb40267A66b73E4f022)).balanceOf(account) < 100e18) {
+        if (IMTS(address(0x387C1417597eFd39fb61003E1e798b218eA5Be3B)).get_balance(account) < 500) {
             return false;
         }              
         if (start_time > block.timestamp || ito_start_time > block.timestamp) {
@@ -80,3 +81,4 @@ contract QLF_MASK_ROPSTEN is IQLF {
             interfaceId == this.get_start_time.selector;
     }    
 }
+

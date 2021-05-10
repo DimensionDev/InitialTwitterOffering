@@ -12,7 +12,7 @@ import "./IQLF.sol";
 import "./IMTS.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-contract QLF_HISTORY_POSITION_MASK_ROPSTEN is IQLF {
+contract QLF_HISTORY_POSITION_1000_MASK_ROPSTEN is IQLF {
     using SafeERC20 for IERC20;
 
     string private name;
@@ -50,7 +50,7 @@ contract QLF_HISTORY_POSITION_MASK_ROPSTEN is IQLF {
     }
 
     function ifQualified(address account) public view override returns (bool qualified) {
-        if (IMTS(address(0x387C1417597eFd39fb61003E1e798b218eA5Be3B)).get_balance(account) < 100) {
+        if (IMTS(address(0x387C1417597eFd39fb61003E1e798b218eA5Be3B)).get_balance(account) < 1000) {
             return false;
         }
         qualified = true;
@@ -61,7 +61,7 @@ contract QLF_HISTORY_POSITION_MASK_ROPSTEN is IQLF {
             return false;
         }
 
-        if (IMTS(address(0x387C1417597eFd39fb61003E1e798b218eA5Be3B)).get_balance(account) < 100) {
+        if (IMTS(address(0x387C1417597eFd39fb61003E1e798b218eA5Be3B)).get_balance(account) < 1000) {
             return false;
         }              
         if (start_time > block.timestamp || ito_start_time > block.timestamp) {
