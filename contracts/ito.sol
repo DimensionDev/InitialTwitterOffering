@@ -43,8 +43,8 @@ contract HappyTokenPool {
     // swap pool filling success event
     event FillSuccess (
         uint256 total,
-        bytes32 id,
-        address creator,
+        bytes32 indexed id,
+        address indexed creator,
         uint256 creation_time,
         address token_address,
         string message
@@ -52,8 +52,8 @@ contract HappyTokenPool {
 
     // swap success event
     event SwapSuccess (
-        bytes32 id,
-        address swapper,
+        bytes32 indexed id,
+        address indexed swapper,
         address from_address,
         address to_address,
         uint256 from_value,
@@ -62,8 +62,8 @@ contract HappyTokenPool {
 
     // claim success event
     event ClaimSuccess (
-        bytes32 id,
-        address claimer,
+        bytes32 indexed id,
+        address indexed claimer,
         uint256 timestamp,
         uint256 to_value,
         address token_address
@@ -71,7 +71,7 @@ contract HappyTokenPool {
 
     // swap pool destruct success event
     event DestructSuccess (
-        bytes32 id,
+        bytes32 indexed id,
         address token_address,
         uint256 remaining_balance,
         uint128[] exchanged_values
@@ -79,7 +79,7 @@ contract HappyTokenPool {
 
     // single token withdrawl from a swap pool success even
     event WithdrawSuccess (
-        bytes32 id,
+        bytes32 indexed id,
         address token_address,
         uint256 withdraw_balance
     );
