@@ -3,14 +3,12 @@
 ## 简介
 Initial Twitter Offering(ITO) 是一个基于 Mask 浏览器插件上的小程序，功能分为两方面，浏览器插件端与以太坊智能合约端，本文档只介绍以太坊智能合约端的设计思想与逻辑，还会描述智能合约中的各个函数与接口。
 
-功能设计
----
+## 功能设计
 ITO 的本质是一个可以由任何以太坊用户创建的代币兑换池（Token Swap Pool），用户可以转入一定量的某一种目标代币，然后设定一系列的兑换比例（现支持 ETH 与 ERC20），例如 {1 ETH: 10000 TOKEN, 1 DAI: 10 TOKEN ，通过引入`IQLF`(在 appendix 中会补充定义) 中的 `qualified` 接口来规定参与兑换的地址的资格，并设定好最高兑换上限（以目标代币 TOKEN 为基础），例如 10000 TOKEN。在设定的截止时间到期或待交换池已经兑光后，交换池的作者可以将剩余代币（如在到期时还有剩余）和所有兑换到的代币提取出来，并将这个交换池销毁。
 
 用户参与只需要基于按照指定`pool id` 的兑换比例，向合约的地址 `approve` 相应的目标代币，并调用合约的 `swap` 函数进行代币兑换，合约将会把相应数量的目标代币直接转给用户，并将兑换的代币从用户的地址转到合约中，待未来被兑换池创建者提取。每个用户只可以兑换一次或不超过兑换上限的代币，由兑换池发起方决定。
 
-合约 API 设计
----
+## 合约 API 设计
 ### Structs and Global Variables
 ```
 uint32 nonce;                                      // 内部计数器，仅用于生成随机数
@@ -48,12 +46,21 @@ event FillSuccess (
     address creator,
     uint256 creation_time,
     address token_address,
-    string name,
     string message
 );
 
 // 兑换成功
 event SwapSuccess (
+    bytes32 id,
+    address swapper,
+    address from_address,
+    address to_address,
+    uint256 from_value,
+    uint256 to_value
+);
+
+// 报销成功
+event ClaimSuccess (
     bytes32 id,
     address swapper,
     address from_address,
@@ -68,6 +75,13 @@ event DestructSuccess (
     address token_address,
     uint256 remaining_balance,
     uint256[] exchanged_values
+);
+
+// 提款成功
+event WithdrawSuccess (
+    bytes32 id,
+    address token_address,
+    uint256 withdraw_balance
 );
 ```
 

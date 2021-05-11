@@ -1,4 +1,4 @@
-# InitialTwitterOffering
+# Initial Twitter Offering
 
 ## Introduction
 
@@ -15,9 +15,15 @@ Initial Twitter Offering (ITO) is a Dapplet based on the Mask broswer extension.
 
 ## Overview <a name="overview"></a>
 
-ITO is basically a token swap pool that can be initiated by any Ethereum user. Users can transfer an amount of a target token (now supporting ETH and ERC20) into the pool and set the swap ratios, e.g. {1 ETH: 10000 TOKEN, 1 DAI: 10 TOKEN}. Users can also set the swap limit (ceiling) to control how many tokens to be swapped by a single address, e.g. 10000 TOKEN. After the pool is expired (also set on initiation) or the target token is out of stock, the pool creator can withdraw any target token left and all the swapped tokens. The pool will be destructed after the withdrawal.
+ITO is a token swap pool that can be initiated by any Ethereum user, i.e. the pool creator. The pool creator can transfer an amount of a target token (now supporting ETH and ERC20) into the pool and set the swap ratios, e.g. {1 ETH: 10000 TOKEN, 1 DAI: 10 TOKEN}. 
 
-Participants only need to approve one of the specified token according to the pool ratio and call the `swap()` function to swap the target token out. The swapped amount is automatically calculated by the smart contract and the users can received the target token instantly after a successful call of the `swap()`. Pool creator can also set an unlock time for ITO which means to receive the target token participants need to wait after that unlock time by calling `claim()` function.
+A swap limit (ceiling) is also set to control the maximum number of tokens to be swapped by a single address, e.g. 10000 TOKEN. After the pool becomes expired (also set on initiation) or the target token is out of stock, the pool creator can withdraw any target token left and all the swapped tokens. The pool will be destructed after the withdrawal.
+
+Participants can only use one of the token exchange pairs according to the pool swap ratio and call the `swap()` function to swap the target token out. The swapped amount is automatically calculated by the smart contract and the users will receive their tokens in one of the following scenarios:
+1. <b>If pool does not have unlock time:</b>
+The target token is instantly transferred to the participant's address.
+2. <b>If pool creator has set an unlock time:</b>
+Participants need to wait until the unlock time, then call the `claim()` function to receive the pool tokens.
 
 ## Getting Started <a name="getting_started"></a>
 
@@ -48,17 +54,17 @@ function debug_param (address _token_addr) public {
 ```
 
 ## ITO Contract API Reference <a name="api_reference"></a>
-### Structs and Global Variables
-```
-
-```
-
 ### Functions
 #### Main Functions
-1. `fill_pool(_hash, _start, _end, message, _exchange_addrs, _ratios, 
-    _unlock_time, _token_addr, _total_tokens, _limit, _qualification)`
-```
-fill_pool(_hash, _start, _end, message, _exchange_addrs, _ratios, 
+1. `fill_pool()` - creates a swap pool with specific parameters from the input.
+2. `swap()` - allows users to swap tokens in a swap pool.
+3. `check_availability()` - returns a pool's details given a pool ID.
+4. `claim()` - lets participant claim the swapped tokens from a list of pools.
+5. `setUnlockTime()` - sets the time delta from base time in which the pool will unlock.
+6. `destruct()` - destructs the given pool given the pool id.
+7. `withdraw()` - transfers out all tokens of a single ERC20 type to pool creator after a pool becomes expired or empty.
+```solidity
+fill_pool( _hash, _start, _end, message, _exchange_addrs, _ratios, 
     _unlock_time, _token_addr, _total_tokens, _limit, _qualification)
 swap(id, verification, validation, exchange_addr_i, input_total)
 check_availability(id)
@@ -69,7 +75,14 @@ withdraw(id, addr_i)
 ```
 
 #### Helper Functions
-```
+1. `wrap1()` - inserts variables `_qualification`, `_hash`, `_start` and `_end` into a 32-byte block.
+2. `wrap2()` - inserts variables `_total_tokens_` and `_limit_` into a 32-byte block.
+3. `box()` - inserts the data in a 256-bit block with the given position and returns it.
+4. `unbox()` - extracts the data out of a 256-bit block with the given position and returns it.
+5. `validRange()` - checks if the given data is over the specified data size, returns `true` if valid.
+6. `rewriteBox()` - updates a 256-bit block with a data at the given position with the specified size.
+7. `transfer_token()` - transfers a given amount of ERC20 tokens from the sender's address to the recipient's address.
+```solidity
 wrap1(_qualification, _hash, _start, _end)
 wrap2(_total_tokens, _limit)
 box(position, size, data)
@@ -80,7 +93,7 @@ transfer_token(token_address, sender_address, recipient_address, amount)
 ```
 
 ### Events
-```
+```solidity
 FillSuccess (total, id, creator, creation_time, token_address, message)
 SwapSuccess (id, swapper, from_address, to_address, from_value, to_value)
 ClaimSuccess (id, claimer, timestamp, to_value, token_address)
