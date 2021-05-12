@@ -266,6 +266,7 @@ contract HappyTokenPool {
         // if unlock_time == 0, transfer the swapped tokens to the recipient address (msg.sender) - OUTPUT
         // if not, claim() needs to be called to get the token
         if (pool.unlock_time == 0) {
+            pool.swapped_map[msg.sender] = 0;
             transfer_token(pool.token_address, address(this), msg.sender, swapped_tokens);
             emit ClaimSuccess(id, msg.sender, block.timestamp, swapped_tokens, pool.token_address);
         }
