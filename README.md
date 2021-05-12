@@ -1,4 +1,4 @@
-# Initial Twitter Offering
+# InitialTwitterOffering
 
 ## Introduction
 
@@ -15,7 +15,7 @@ Initial Twitter Offering (ITO) is a Dapplet based on the Mask broswer extension.
 
 ## Overview <a name="overview"></a>
 
-ITO is a token swap pool that can be initiated by any Ethereum user, i.e. the pool creator. The pool creator can transfer an amount of a target token (now supporting ETH and ERC20) into the pool and set the swap ratios, e.g. {1 ETH: 10000 TOKEN, 1 DAI: 10 TOKEN}. 
+ITO is a token swap pool that can be created by any Ethereum user. The pool creator can transfer an amount of a target token (now supporting ETH and ERC20) into the pool and set the swap ratios, e.g. {1 ETH: 10000 TOKEN, 1 DAI: 10 TOKEN}. 
 
 A swap limit (ceiling) is also set to control the maximum number of tokens to be swapped by a single address, e.g. 10000 TOKEN. After the pool becomes expired (also set on initiation) or the target token is out of stock, the pool creator can withdraw any target token left and all the swapped tokens. The pool will be destructed after the withdrawal.
 
@@ -117,7 +117,7 @@ WithdrawSuccess (id, token_address, withdraw_balance)
 
 Another smart contract interface `IQLF` ([source code](https://github.com/DimensionDev/InitialTwitterOffering/blob/master/contracts/IQLF.sol)) is also introduced to provide an API `ifQualified()` that takes an address as input and returns a boolean indicating if the given address is qualified. Custom qualification contracts **SHOULD** implement contract `IQLF` rather than just ERC-165 to further ensure required interface is implemented, since `IQLF` is compliant with ERC-165 and has implemented the details of `supportsInterface` function.
 
-To prevent malicious attack, you can set a `set_start_time` in your custom qualification contract, then add accounts who swap before that time to a black list, they will no longer be able to access your ITO. Please confirm the `swap_start_time` carefully, it must be less than the end time of ITO, otherwise nobody can access your ITO at all. To let Mask broswer extension to help you check the if `swap_start_time` is less than the end time of ITO. You need to append `interfaceId == this.get_start_time.selector;` to `supportsInterface()`(Notice the getter function **MUST** be named `get_start_time()` to keep the same with the broswer extension code), just copy the implemetation of [our default qualification contract](https://github.com/DimensionDev/InitialTwitterOffering/blob/master/contracts/qualification.sol).
+To prevent malicious attack, you can call `set_start_time` from your custom qualification contract, then add accounts who swap before that time to a black list, and they will no longer be able to access your ITO. Please confirm the `set_start_time` carefully; it must be less than the end time of ITO, otherwise nobody can access your ITO at all. To let Mask broswer extension help you check the if `set_start_time` is less than the end time of ITO, you need to append `interfaceId == this.get_start_time.selector;` to `supportsInterface()`. (Notice the getter function **MUST** be named `get_start_time()` to keep the same with the broswer extension code), just copy the implemetation of [our default qualification contract](https://github.com/DimensionDev/InitialTwitterOffering/blob/master/contracts/qualification.sol).
 
 ### Empty Qualification Contract
 

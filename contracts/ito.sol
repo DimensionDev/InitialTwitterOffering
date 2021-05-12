@@ -302,6 +302,13 @@ contract HappyTokenPool {
         );
     }
 
+    /**
+     * @dev 
+     * claim() lets participant claim the swapped tokens from a list of pools
+     * ito_ids              list of swap pool ids
+     * This function is called by the swapper to claim the swapped tokens after the pool becomes unlocked.
+    **/
+
     function claim(bytes32[] memory ito_ids) public {
         uint256 claimed_amount;
         for (uint256 i = 0; i < ito_ids.length; i++) {
@@ -318,6 +325,14 @@ contract HappyTokenPool {
         }
     }
 
+     /**
+     * @dev 
+     * setUnlockTime() sets the time delta from base time in which the pool will unlock
+     * id                   swap pool id
+     * _unlock_time         unlock time delta, real unlock time = base_time + _unlock_time
+     * This function is called by the swapper to claim the swapped tokens after the pool becomes unlocked.
+    **/
+
     function setUnlockTime(bytes32 id, uint256 _unlock_time) public {
         Pool storage pool = pool_by_id[id];
         require(pool.creator == msg.sender, "Pool Creator Only");
@@ -325,13 +340,15 @@ contract HappyTokenPool {
     }
 
     /**
+     * @dev
      * destruct() destructs the given pool given the pool id
      * id                    swap pool id
      * this function can only be called by the pool creator. after validation, it transfers all the remaining token 
      * (if any) and all the swapped tokens to the pool creator. it will then destruct the pool by reseting almost 
      * all the variables to zero to get the gas refund.
-     * note that this function may not work if a pool needs to transfer over ~200 tokens back to the address due to 
-     * the block gas limit. we have another function withdraw() to help the pool creator to withdraw a single token 
+     * note that this function may not work if a pool needs to transfer over ~200 tokens back to the sender's address
+     * due to the block gas limit. A separate function, withdraw(), helps the pool creator withdraw all tokens of an
+     * individual ERC20 type.
     **/
 
     function destruct (bytes32 id) public {
@@ -375,6 +392,7 @@ contract HappyTokenPool {
     }
 
     /**
+     * @dev
      * withdraw() transfers out a single token after a pool is expired or empty 
      * id                    swap pool id
      * addr_i                withdraw token index
