@@ -84,10 +84,12 @@ contract HappyTokenPool {
         uint256 withdraw_balance
     );
 
+    /*
     modifier creatorOnly {
         require(msg.sender == contract_creator, "Contract Creator Only");
         _;
     }
+    */
 
     using SafeERC20 for IERC20;
     uint32 nonce;
