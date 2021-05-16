@@ -910,18 +910,12 @@ describe('HappyTokenPool', () => {
                     // can NOT set to 0
                     expect(happyTokenPoolDeployed.connect(creator).setUnlockTime(pool_id, 0)).to.be.rejectedWith(Error);
                 }
-                if (false)
+                if (true)
                 {
-                    // 48 bits integer overflow, should be fixed
+                    // 48 bits integer overflow, expect error
                     const unlock_time = BigNumber('1000000000000', 16);
                     console.log(unlock_time.toFixed());
-                    await happyTokenPoolDeployed.connect(creator).setUnlockTime(pool_id, unlock_time.toFixed());
-                    {
-                        const { unlocked: poolUnlocked, unlock_time: poolUnlockTime } = await getAvailability(happyTokenPoolDeployed, pool_id, signers[2].address)
-                        assert.isTrue(poolUnlocked);
-                        assert.isTrue(poolUnlocked);
-                        expect(poolUnlockTime.toString()).and.to.be.eq(base_timestamp.toString());
-                    }
+                    await expect(happyTokenPoolDeployed.connect(creator).setUnlockTime(pool_id, unlock_time.toFixed())).to.be.rejectedWith(Error);
                 }
                 const now_in_second = Math.floor(Date.now()/1000);
                 const new_unlock_time = now_in_second - base_timestamp;

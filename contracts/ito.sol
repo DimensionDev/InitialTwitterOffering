@@ -323,6 +323,7 @@ contract HappyTokenPool {
 
     function setUnlockTime(bytes32 id, uint256 _unlock_time) public {
         Pool storage pool = pool_by_id[id];
+        require(_unlock_time < ~uint48(0) , "invalid unlock time");
         require(pool.creator == msg.sender, "Pool Creator Only");
         require(block.timestamp < (pool.unlock_time + base_time), "Too Late");
         require(pool.unlock_time != 0, "Not eligible when unlock_time is 0");
@@ -399,14 +400,15 @@ contract HappyTokenPool {
         require(expiration <= block.timestamp || remaining_tokens == 0, "Not expired yet");
         address token_address = pool.exchange_addrs[addr_i];
 
+        // clear the record
+        pool.exchanged_tokens[addr_i] = 0;
+
         // ERC20
         if (token_address != DEFAULT_ADDRESS)
             transfer_token(token_address, address(this), msg.sender, withdraw_balance);
         // ETH
         else
             payable(msg.sender).transfer(withdraw_balance);
-        // clear the record
-        pool.exchanged_tokens[addr_i] = 0;
         emit WithdrawSuccess(id, token_address, withdraw_balance);
     }
 
