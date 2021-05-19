@@ -7,10 +7,15 @@
     "scripts": {
         "test": "hardhat coverage",
         "compile": "hardhat compile",
+        "deploy:bsc_test": "hardhat --network bsc_test deploy",
+        "deploy:matic_mumbai_test": "hardhat --network matic_mumbai_test deploy",
+        "deploy:matic_mainnet": "hardhat --network matic_mainnet deploy",
         "format": "prettier --write './test/*.js'"
     },
     "dependencies": {
-        "@openzeppelin/contracts": "^4.0.0"
+        "@openzeppelin/contracts": "^4.0.0",
+        "hardhat-deploy": "^0.7.6",
+        "hardhat-deploy-ethers": "^0.3.0-beta.7"
     },
     "devDependencies": {
         "@nomiclabs/hardhat-ethers": "^2.0.2",
