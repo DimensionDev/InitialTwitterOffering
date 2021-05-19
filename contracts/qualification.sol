@@ -51,10 +51,10 @@ contract QLF is IQLF {
 
     function logQualified(address account, uint256 ito_start_time) public override returns (bool qualified) {
         if (start_time > block.timestamp || ito_start_time > block.timestamp) {
-            black_list[address(msg.sender)] = true;
+            black_list[account] = true;
             return false;
         }
-        if (black_list[msg.sender]) {
+        if (black_list[account]) {
             return false;
         }
         emit Qualification(account, true, block.number, block.timestamp);
