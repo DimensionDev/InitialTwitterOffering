@@ -74,16 +74,19 @@ describe('HappyTokenPool', () => {
         fpp = {
             hash: ethers.utils.keccak256(ethers.utils.toUtf8Bytes(PASSWORD)),
             start_time: 0,
-            end_time: 5184000, // duration 60 days
+            end_time: 10368000, // duration 120 days
             message: 'Hello From the Outside Hello From the Outside',
             exchange_addrs: [eth_address, testTokenBDeployed.address, testTokenCDeployed.address],
             exchange_ratios: [1, 10000, 1, 2000, 4000, 1],
-            lock_time: 7776000, // duration 90 days
+            lock_time: 12960000, // duration 150 days
             token_address: testTokenADeployed.address,
             total_tokens: BigNumber('1e22').toFixed(),
             limit: BigNumber('1e21').toFixed(),
             qualification: qualificationTesterDeployed.address,
         }
+        const nowTimeStamp = Math.floor(new Date().getTime() / 1000);
+        assert((base_timestamp + fpp.end_time) > nowTimeStamp, "Need adjust fpp.end_time");
+        assert(fpp.lock_time > fpp.start_time, "Need adjust fpp.lock_time");
     })
 
     afterEach(async () => {
