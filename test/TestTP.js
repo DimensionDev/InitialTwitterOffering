@@ -93,11 +93,6 @@ describe('HappyTokenPool', () => {
         await helper.revertToSnapShot(snapshotId)
     })
 
-    it('Should return the HappyTokenPool contract creator', async () => {
-        const contract_creator = await happyTokenPoolDeployed.contract_creator()
-        expect(contract_creator).to.be.eq(creator.address)
-    })
-
     describe('fill_pool()', async () => {
         it('Should throw error when start time is greater than end time', async () => {
             fpp.start_time = fpp.end_time + 100

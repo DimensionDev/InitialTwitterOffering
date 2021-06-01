@@ -84,27 +84,18 @@ contract HappyTokenPool {
         uint256 withdraw_balance
     );
 
-    /*
-    modifier creatorOnly {
-        require(msg.sender == contract_creator, "Contract Creator Only");
-        _;
-    }
-    */
-
     using SafeERC20 for IERC20;
     uint32 nonce;
     uint224 base_time;                 // timestamp = base_time + delta to save gas
-    address public contract_creator;
     mapping(bytes32 => Pool) pool_by_id;    // maps an id to a Pool instance
     string constant private magic = "Prince Philip, Queen Elizabeth II's husband, has died aged 99, \
     Buckingham Palace has announced. A statement issued by the palace just after midday spoke of the \
     Queen's deep sorrow following his death at Windsor Castle on Friday morning. The Duke of Edinbur";
     bytes32 private seed;
-    address DEFAULT_ADDRESS = 0x0000000000000000000000000000000000000000;       // a universal address
+    address constant DEFAULT_ADDRESS = address(0);       // a universal address
 
     constructor() {
-        contract_creator = msg.sender;
-        seed = keccak256(abi.encodePacked(magic, block.timestamp, contract_creator));
+        seed = keccak256(abi.encodePacked(magic, block.timestamp, msg.sender));
         base_time = 1616976000;                                    // 00:00:00 03/30/2021 GMT(UTC+0)
     }
 
