@@ -1324,22 +1324,3 @@ describe('qualification', () => {
         }
     })
 })
-
-describe('InternalFunctions', () => {
-    before(async () => {
-        const InternalFunctions = await ethers.getContractFactory('InternalFunctions')
-        const internalFunctions = await InternalFunctions.deploy()
-        internalFunctionsDeployed = await internalFunctions.deployed()
-    })
-    it('validRange()', async () => {
-        const result = await internalFunctionsDeployed._validRange(2, 4)
-        expect(result).to.be.false
-    })
-    it('unbox()', async () => {
-        const base = 40
-        const position = 3
-        const size = 255
-        const result = await internalFunctionsDeployed._unbox(base, position, size)
-        expect(result.toString()).to.be.eq('5')
-    })
-})

@@ -15,15 +15,29 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "./IQLF.sol";
 
 contract HappyTokenPool {
+    struct Packed1 {
+        address qualification_addr;
+        uint40 password;
+    }
+
+    struct Packed2 {
+        uint128 total_tokens;
+        uint128 limit;
+    }
+
+    struct Packed3 {
+        address token_address;
+        uint32 start_time;
+        uint32 end_time;
+        uint32 unlock_time;
+    }
 
     struct Pool {
-        uint256 packed1;            // qualification_address(160) the smart contract address to verify qualification
-                                    // hash(40) start_time_delta(28) 
-                                    // expiration_time_delta(28) BIG ENDIAN
-        uint256 packed2;            // total_tokens(128) limit(128)
-        uint48  unlock_time;        // unlock_time + base_time = real_time
+        Packed1 packed1;
+        Packed2 packed2;
+        Packed3 packed3;
+
         address creator;
-        address token_address;      // the target token address
         address[] exchange_addrs;   // a list of ERC20 addresses for swapping
         uint128[] exchanged_tokens; // a list of amounts of swapped tokens
         uint128[] ratios;           // a list of swap ratios
@@ -32,14 +46,13 @@ contract HappyTokenPool {
                                     // e.g. [1, 10]
                                     // represents 1 tokenA to swap 10 target token
                                     // note: each ratio pair needs to be coprime
+        // Change: ABI compatible with existing contract
+        // Add more states, like swapped, claimed, etc
         mapping(address => uint256) swapped_map;      // swapped amount of an address
     }
 
-    struct Packed {
-        uint256 packed1;
-        uint256 packed2;
-    }
-
+    // Change: ABI NOT compatible with existing contract
+    // Using indexed event
     // swap pool filling success event
     event FillSuccess (
         uint256 total,
@@ -125,18 +138,16 @@ contract HappyTokenPool {
         require(_end < _unlock_time || _unlock_time == 0, "End time should be earlier than unlock time");
         require(_limit <= _total_tokens, "Limit needs to be less than or equal to the total supply");
         require(_total_tokens < 2 ** 128, "No more than 2^128 tokens(incluidng decimals) allowed");
-        require(IERC20(_token_addr).allowance(msg.sender, address(this)) >= _total_tokens, "Insuffcient allowance");
         require(_exchange_addrs.length > 0, "Exchange token addresses need to be set");
         require(_ratios.length == 2 * _exchange_addrs.length, "Size of ratios = 2 * size of exchange_addrs");
 
         bytes32 _id = keccak256(abi.encodePacked(msg.sender, block.timestamp, nonce, seed));
         Pool storage pool = pool_by_id[_id];
-        pool.packed1 = wrap1(_qualification, _hash, _start, _end);      // 256 bytes    detail in wrap1()
-        pool.packed2 = wrap2(_total_tokens, _limit);                    // 256 bytes    detail in wrap2()
-        pool.unlock_time = uint48(_unlock_time);                        // 48  bytes    unlock_time 0 -> unlocked
-        pool.creator = msg.sender;                                      // 160 bytes    pool creator
-        pool.exchange_addrs = _exchange_addrs;                          // 160 bytes    target token
-        pool.token_address = _token_addr;                               // 160 bytes    target token address
+        pool.packed1 = Packed1(_qualification, uint40(uint256(_hash) >> 216));
+        pool.packed2 = Packed2(uint128(_total_tokens), uint128(_limit));
+        pool.packed3 = Packed3(_token_addr, uint32(_start), uint32(_end), uint32(_unlock_time));
+        pool.creator = msg.sender;
+        pool.exchange_addrs = _exchange_addrs;
 
         // Init each token swapped amount to 0
         for (uint256 i = 0; i < _exchange_addrs.length; i++) {
@@ -186,26 +197,23 @@ contract HappyTokenPool {
     public payable returns (uint256 swapped) {
 
         Pool storage pool = pool_by_id[id];
-        Packed memory packed = Packed(pool.packed1, pool.packed2);
+        Packed1 memory packed1 = pool.packed1;
+        Packed2 memory packed2 = pool.packed2;
+        Packed3 memory packed3 = pool.packed3;
         require (
-            IQLF(
-                address(
-                    uint160(unbox(packed.packed1, 0, 160)))
-                ).logQualified(msg.sender, uint256(unbox(packed.packed1, 200, 28) + base_time)
-            ) == true, 
+            IQLF(packed1.qualification_addr).logQualified(msg.sender, uint256(packed3.start_time + base_time)) == true, 
             "Not Qualified"
         );
-        require (unbox(packed.packed1, 200, 28) + base_time < block.timestamp, "Not started.");
-        require (unbox(packed.packed1, 228, 28) + base_time > block.timestamp, "Expired.");
+        require (packed3.start_time + base_time < block.timestamp, "Not started.");
+        require (packed3.end_time + base_time > block.timestamp, "Expired.");
         // sha3(sha3(passowrd)[:40] + msg.sender) so that the raw password will never appear in the contract
-        require (verification == keccak256(abi.encodePacked(unbox(packed.packed1, 160, 40), msg.sender)), 
+        require (verification == keccak256(abi.encodePacked(uint256(packed1.password), msg.sender)), 
                  'Wrong Password');
         // sha3(msg.sender) to protect from front runs (but this is kinda naive since the contract is open sourced)
         require (validation == keccak256(abi.encodePacked(msg.sender)), "Validation Failed");
 
-        uint256 total_tokens = unbox(packed.packed2, 0, 128);
         // revert if the pool is empty
-        require (total_tokens > 0, "Out of Stock");
+        require (packed2.total_tokens > 0, "Out of Stock");
 
         address exchange_addr = pool.exchange_addrs[exchange_addr_i];
         uint256 ratioA = pool.ratios[exchange_addr_i*2];
@@ -213,30 +221,25 @@ contract HappyTokenPool {
         // check if the input is enough for the desired transfer
         if (exchange_addr == DEFAULT_ADDRESS) {
             require(msg.value == input_total, 'No enough ether.');
-        } else {
-            uint256 allowance = IERC20(exchange_addr).allowance(msg.sender, address(this));
-            require(allowance >= input_total, 'No enough allowance.');
         }
 
-        uint256 swapped_tokens;
         // this calculation won't be overflow thanks to the SafeMath and the co-prime test
-        swapped_tokens = SafeMath.div(SafeMath.mul(input_total, ratioB), ratioA);       // 2^256=10e77 >> 10e18 * 10e18
+        uint256 swapped_tokens = SafeMath.div(SafeMath.mul(input_total, ratioB), ratioA);       // 2^256=10e77 >> 10e18 * 10e18
         require(swapped_tokens > 0, "Better not draw water with a sieve");
 
-        uint256 limit = unbox(packed.packed2, 128, 128);
-        if (swapped_tokens > limit) {
+        if (swapped_tokens > packed2.limit) {
             // don't be greedy - you can only get at most limit tokens
-            swapped_tokens = limit;
-            input_total = uint128(SafeMath.div(SafeMath.mul(limit, ratioA), ratioB));           // Update input_total
-        } else if (swapped_tokens > total_tokens) {
+            swapped_tokens = packed2.limit;
+            input_total = uint128(SafeMath.div(SafeMath.mul(packed2.limit, ratioA), ratioB));           // Update input_total
+        } else if (swapped_tokens > packed2.total_tokens ) {
             // if the left tokens are not enough
-            swapped_tokens = total_tokens;
-            input_total = uint128(SafeMath.div(SafeMath.mul(total_tokens, ratioA), ratioB));    // Update input_total
+            swapped_tokens = packed2.total_tokens;
+            input_total = uint128(SafeMath.div(SafeMath.mul(packed2.total_tokens , ratioA), ratioB));    // Update input_total
             // return the eth
             if (exchange_addr == DEFAULT_ADDRESS)
                 payable(msg.sender).transfer(msg.value - input_total);
         }
-        require(swapped_tokens <= limit);                                                       // make sure again
+        require(swapped_tokens <= packed2.limit);                                                       // make sure again
         pool.exchanged_tokens[exchange_addr_i] = uint128(SafeMath.add(pool.exchanged_tokens[exchange_addr_i], 
                                                                       input_total));            // update exchanged
 
@@ -244,7 +247,7 @@ contract HappyTokenPool {
         require (pool.swapped_map[msg.sender] == 0, "Already swapped");
 
         // update the remaining tokens and swapped token mapping
-        pool.packed2 = rewriteBox(packed.packed2, 0, 128, SafeMath.sub(total_tokens, swapped_tokens));
+        pool.packed2.total_tokens = uint128(SafeMath.sub(packed2.total_tokens, swapped_tokens));
         pool.swapped_map[msg.sender] = swapped_tokens;
 
         // transfer the token after state changing
@@ -254,13 +257,13 @@ contract HappyTokenPool {
         }
 
         // Swap success event
-        emit SwapSuccess(id, msg.sender, exchange_addr, pool.token_address, input_total, swapped_tokens);
+        emit SwapSuccess(id, msg.sender, exchange_addr, packed3.token_address, input_total, swapped_tokens);
 
         // if unlock_time == 0, transfer the swapped tokens to the recipient address (msg.sender) - OUTPUT
         // if not, claim() needs to be called to get the token
-        if (pool.unlock_time == 0) {
-            transfer_token(pool.token_address, address(this), msg.sender, swapped_tokens);
-            emit ClaimSuccess(id, msg.sender, block.timestamp, swapped_tokens, pool.token_address);
+        if (packed3.unlock_time == 0) {
+            IERC20(packed3.token_address).safeTransfer(msg.sender, swapped_tokens);
+            emit ClaimSuccess(id, msg.sender, block.timestamp, swapped_tokens, packed3.token_address);
         }
             
         return swapped_tokens;
@@ -282,44 +285,47 @@ contract HappyTokenPool {
                  bool started, bool expired, bool unlocked, uint256 unlock_time,
                  uint256 swapped, uint128[] memory exchanged_tokens) {
         Pool storage pool = pool_by_id[id];
+        Packed3 memory packed3 = pool.packed3;
         return (
             pool.exchange_addrs,                                                // exchange_addrs 0x0 means destructed
-            unbox(pool.packed2, 0, 128),                                        // remaining
-            block.timestamp > unbox(pool.packed1, 200, 28) + base_time,         // started
-            block.timestamp > unbox(pool.packed1, 228, 28) + base_time,         // expired
-            block.timestamp > pool.unlock_time + base_time,                     // unlocked
-            pool.unlock_time + base_time,                                       // unlock_time
+            pool.packed2.total_tokens,                                          // remaining
+            block.timestamp > packed3.start_time + base_time,                   // started
+            block.timestamp > packed3.end_time + base_time,                     // expired
+            block.timestamp > packed3.unlock_time + base_time,                  // unlocked
+            packed3.unlock_time + base_time,                                    // unlock_time
             pool.swapped_map[msg.sender],                                       // swapped number 
             pool.exchanged_tokens                                               // exchanged tokens
         );
     }
 
     function claim(bytes32[] memory ito_ids) public {
-        uint256 claimed_amount;
         for (uint256 i = 0; i < ito_ids.length; i++) {
             Pool storage pool = pool_by_id[ito_ids[i]];
-            if (pool.unlock_time == 0)
+            Packed3 memory packed3 = pool.packed3;
+            if (packed3.unlock_time == 0)
                 continue;
-            if (pool.unlock_time + base_time > block.timestamp)
+            if (packed3.unlock_time + base_time > block.timestamp)
                 continue;
-            claimed_amount = pool.swapped_map[msg.sender];
+            uint256 claimed_amount = pool.swapped_map[msg.sender];
             if (claimed_amount == 0)
                 continue;
             pool.swapped_map[msg.sender] = 0;
-            transfer_token(pool.token_address, address(this), msg.sender, claimed_amount);
-
-            emit ClaimSuccess(ito_ids[i], msg.sender, block.timestamp, claimed_amount, pool.token_address);
+            IERC20(packed3.token_address).safeTransfer(msg.sender, claimed_amount);
+            emit ClaimSuccess(ito_ids[i], msg.sender, block.timestamp, claimed_amount, packed3.token_address);
         }
     }
 
+    // Change: NOT ABI compatible with existing contract
+    // `uint256 _unlock_time` -> uint32 _unlock_time
     function setUnlockTime(bytes32 id, uint256 _unlock_time) public {
         Pool storage pool = pool_by_id[id];
-        require(_unlock_time < ~uint48(0) , "invalid unlock time");
+        uint32 packed3_unlock_time = pool.packed3.unlock_time;
+        require(_unlock_time < ~uint32(0) , "invalid unlock time");
         require(pool.creator == msg.sender, "Pool Creator Only");
-        require(block.timestamp < (pool.unlock_time + base_time), "Too Late");
-        require(pool.unlock_time != 0, "Not eligible when unlock_time is 0");
+        require(block.timestamp < (packed3_unlock_time + base_time), "Too Late");
+        require(packed3_unlock_time != 0, "Not eligible when unlock_time is 0");
         require(_unlock_time != 0, "Cannot set to 0");
-        pool.unlock_time = uint48(_unlock_time);
+        pool.packed3.unlock_time = uint32(_unlock_time);
     }
 
     /**
@@ -334,16 +340,17 @@ contract HappyTokenPool {
 
     function destruct (bytes32 id) public {
         Pool storage pool = pool_by_id[id];
+        Packed3 memory packed3 = pool.packed3;
         require(msg.sender == pool.creator, "Only the pool creator can destruct.");
 
-        uint256 expiration = unbox(pool.packed1, 228, 28) + base_time;
-        uint256 remaining_tokens = unbox(pool.packed2, 0, 128);
+        uint256 expiration = pool.packed3.end_time + base_time;
+        uint256 remaining_tokens = pool.packed2.total_tokens;
         // only after expiration or the pool is empty
         require(expiration <= block.timestamp || remaining_tokens == 0, "Not expired yet");
 
         // if any left in the pool
         if (remaining_tokens != 0) {
-            transfer_token(pool.token_address, address(this), msg.sender, remaining_tokens);
+            IERC20(packed3.token_address).safeTransfer(msg.sender, remaining_tokens);
         }
         
         // transfer the swapped tokens accordingly
@@ -352,17 +359,17 @@ contract HappyTokenPool {
             if (pool.exchanged_tokens[i] > 0) {
                 // ERC20
                 if (pool.exchange_addrs[i] != DEFAULT_ADDRESS)
-                    transfer_token(pool.exchange_addrs[i], address(this), msg.sender, pool.exchanged_tokens[i]);
+                    IERC20(pool.exchange_addrs[i]).safeTransfer(msg.sender, pool.exchanged_tokens[i]);
                 // ETH
                 else
                     payable(msg.sender).transfer(pool.exchanged_tokens[i]);
             }
         }
-        emit DestructSuccess(id, pool.token_address, remaining_tokens, pool.exchanged_tokens);
+        emit DestructSuccess(id, packed3.token_address, remaining_tokens, pool.exchanged_tokens);
 
         // Gas Refund
-        pool.packed1 = 0;
-        pool.packed2 = 0;
+        pool.packed1 = Packed1(DEFAULT_ADDRESS, 0);
+        pool.packed2 = Packed2(0, 0);
         for (uint256 i = 0; i < pool.exchange_addrs.length; i++) {
             pool.exchange_addrs[i] = DEFAULT_ADDRESS;
             pool.exchanged_tokens[i] = 0;
@@ -385,8 +392,8 @@ contract HappyTokenPool {
 
         uint256 withdraw_balance = pool.exchanged_tokens[addr_i];
         require(withdraw_balance > 0, "None of this token left");
-        uint256 expiration = unbox(pool.packed1, 228, 28) + base_time;
-        uint256 remaining_tokens = unbox(pool.packed2, 0, 128);
+        uint256 expiration = pool.packed3.end_time + base_time;
+        uint256 remaining_tokens = pool.packed2.total_tokens;
         // only after expiration or the pool is empty
         require(expiration <= block.timestamp || remaining_tokens == 0, "Not expired yet");
         address token_address = pool.exchange_addrs[addr_i];
@@ -396,121 +403,10 @@ contract HappyTokenPool {
 
         // ERC20
         if (token_address != DEFAULT_ADDRESS)
-            transfer_token(token_address, address(this), msg.sender, withdraw_balance);
+            IERC20(token_address).safeTransfer(msg.sender, withdraw_balance);
         // ETH
         else
             payable(msg.sender).transfer(withdraw_balance);
         emit WithdrawSuccess(id, token_address, withdraw_balance);
     }
-
-    // helper functions TODO: migrate this to a helper file
-
-    /**
-     * _qualification the smart contract address to verify qualification      160
-     * _hash          sha3-256(password)                                      40
-     * _start         start time delta                                        28
-     * _end           end time  delta                                         28
-     * wrap1() inserts the above variables into a 32-word block
-    **/
-
-    function wrap1 (address _qualification, bytes32 _hash, uint256 _start, uint256 _end) internal pure 
-                    returns (uint256 packed1) {
-        uint256 _packed1 = 0;
-        _packed1 |= box(0, 160,  uint256(uint160(_qualification)));     // _qualification = 160 bits
-        _packed1 |= box(160, 40, uint256(_hash) >> 216);                // hash = 40 bits (safe?)
-        _packed1 |= box(200, 28, _start);                               // start_time = 28 bits 
-        _packed1 |= box(228, 28, _end);                                 // expiration_time = 28 bits
-        return _packed1;
-    }
-
-    /**
-     * _total_tokens   target remaining         128
-     * _limit          single swap limit        128
-     * wrap2() inserts the above variables into a 32-word block
-    **/
-
-    function wrap2 (uint256 _total_tokens, uint256 _limit) internal pure returns (uint256 packed2) {
-        uint256 _packed2 = 0;
-        _packed2 |= box(0, 128, _total_tokens);             // total_tokens = 128 bits ~= 3.4e38
-        _packed2 |= box(128, 128, _limit);                  // limit = 128 bits
-        return _packed2;
-    }
-
-    /**
-     * position      position in a memory block
-     * size          data size
-     * data          data
-     * box() inserts the data in a 256bit word with the given position and returns it
-     * data is checked by validRange() to make sure it is not over size 
-    **/
-
-    function box (uint16 position, uint16 size, uint256 data) internal pure returns (uint256 boxed) {
-        require(validRange(size, data), "Value out of range BOX");
-        assembly {
-            // data << position
-            boxed := shl(position, data)
-        }
-    }
-
-    /**
-     * position      position in a memory block
-     * size          data size
-     * base          base data
-     * unbox() extracts the data out of a 256bit word with the given position and returns it
-     * base is checked by validRange() to make sure it is not over size 
-    **/
-
-    function unbox (uint256 base, uint16 position, uint16 size) internal pure returns (uint256 unboxed) {
-        require(validRange(256, base), "Value out of range UNBOX");
-        assembly {
-            // (((1 << size) - 1) & base >> position)
-            unboxed := and(sub(shl(size, 1), 1), shr(position, base))
-
-        }
-    }
-
-    /**
-     * size          data size
-     * data          data
-     * validRange()  checks if the given data is over the specified data size
-    **/
-
-    function validRange (uint16 size, uint256 data) internal pure returns(bool ifValid) { 
-        assembly {
-            // 2^size > data or size ==256
-            ifValid := or(eq(size, 256), gt(shl(size, 1), data))
-        }
-    }
-
-    /**
-     * _box          32byte data to be modified
-     * position      position in a memory block
-     * size          data size
-     * data          data to be inserted
-     * rewriteBox() updates a 32byte word with a data at the given position with the specified size
-    **/
-
-    function rewriteBox (uint256 _box, uint16 position, uint16 size, uint256 data) 
-                        internal pure returns (uint256 boxed) {
-        assembly {
-            // mask = ~((1 << size - 1) << position)
-            // _box = (mask & _box) | ()data << position)
-            boxed := or( and(_box, not(shl(position, sub(shl(size, 1), 1)))), shl(position, data))
-        }
-    }
-
-    /**
-     * token_address      ERC20 address
-     * sender_address     sender address
-     * recipient_address  recipient address
-     * amount             transfer amount
-     * transfer_token() transfers a given amount of ERC20 from the sender address to the recipient address
-    **/
-   
-    function transfer_token (address token_address, address sender_address,
-                             address recipient_address, uint256 amount) internal {
-        require(IERC20(token_address).balanceOf(sender_address) >= amount, "Balance not enough");
-        IERC20(token_address).safeTransfer(recipient_address, amount);
-    }
-    
 }
