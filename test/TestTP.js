@@ -934,7 +934,7 @@ describe('HappyTokenPool', () => {
                 {
                     // 48 bits integer overflow, expect error
                     const unlock_time = BigNumber('1000000000000', 16);
-                    console.log(unlock_time.toFixed());
+                    // console.log(unlock_time.toFixed());
                     await expect(happyTokenPoolDeployed.connect(creator).setUnlockTime(pool_id, unlock_time.toFixed())).to.be.rejectedWith(Error);
                 }
                 const now_in_second = Math.floor(Date.now()/1000);

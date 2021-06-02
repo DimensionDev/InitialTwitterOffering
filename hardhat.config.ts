@@ -9,10 +9,25 @@ import "@nomiclabs/hardhat-ethers"
 import "solidity-coverage"
 import "hardhat-gas-reporter"
 
-const {
-    infura_project_id,
-    private_key_list,
-} = require('./project.secret');
+const fs = require('fs');
+
+let project_secret;
+
+try {
+    if(fs.existsSync('./project.secret.js')) {
+        project_secret = require('./project.secret');
+    }
+    else if (fs.existsSync('./project.secret.sample.js')) {
+        project_secret = require('./project.secret.sample');
+        console.log('Warning: loading secrets from tempalte file, might be invalid');
+    }
+    else {
+        console.log('Warning: project secure config file does not exist.');
+    }
+}
+catch (err) {
+    console.error(err);
+}
 
 const networks = {
     localhost: {
@@ -25,8 +40,8 @@ const networks = {
         gas: 'auto',
     },
     ropsten: {
-        url: 'https://ropsten.infura.io/v3/' + infura_project_id,
-        accounts: private_key_list,
+        url: 'https://ropsten.infura.io/v3/' + project_secret.infura_project_id,
+        accounts: project_secret.private_key_list,
         chainId: 3,
         // 10gwei make test faster
         gasPrice: ethers.utils.parseUnits('10', 'gwei').toNumber(),
@@ -34,7 +49,7 @@ const networks = {
     },
     bsc_test: {
         url: 'https://data-seed-prebsc-1-s1.binance.org:8545',
-        accounts: private_key_list,
+        accounts: project_secret.private_key_list,
         chainId: 97,
         // 25 Gwei, if too low, we would see "ProviderError: transaction underpriced"
         gasPrice: 25000000000,
@@ -43,7 +58,7 @@ const networks = {
     // BSC mainnet not tested yet, not sure if it works
     bsc_mainnet: {
         url: 'https://bsc-dataseed1.binance.org:443',
-        accounts: private_key_list,
+        accounts: project_secret.private_key_list,
         chainId: 56,
         // 5 Gwei
         gasPrice: 5000000000,
@@ -51,16 +66,16 @@ const networks = {
     },
     matic_mumbai_test: {
         url: 'https://rpc-mumbai.maticvigil.com',
-        accounts: private_key_list,
+        accounts: project_secret.private_key_list,
         chainId: 80001,
         gasPrice: ethers.utils.parseUnits('10', 'gwei').toNumber(),
         // blockGasLimit 8000000
     },
     matic_mainnet: {
         url: 'https://rpc-mainnet.matic.network',
-        accounts: private_key_list,
+        accounts: project_secret.private_key_list,
         chainId: 137,
-        gasPrice: ethers.utils.parseUnits('10', 'gwei').toNumber(),
+        gasPrice: ethers.utils.parseUnits('1', 'gwei').toNumber(),
         // blockGasLimit 8000000
     },
 };

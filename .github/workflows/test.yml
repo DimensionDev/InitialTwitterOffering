@@ -1,0 +1,18 @@
+name: test
+
+on:
+  push:
+    branches: [proposed_change_review]
+  pull_request:
+    branches: [proposed_change_review]
+
+jobs:
+  test:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: 12
+      - run: npm i
+      - run: npm run test
