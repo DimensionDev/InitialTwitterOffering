@@ -477,6 +477,26 @@ describe('HappyTokenPool', () => {
             ).to.be.rejectedWith(Error)
         })
 
+        it('Should throw error when swap-token-index is invalid', async () => {
+            const ratio = 10 ** 10
+            fpp.exchange_ratios = [1, ratio]
+            fpp.exchange_addrs = [eth_address]
+            const approve_amount = BigNumber('1e10').toFixed()
+            exchange_amount = approve_amount
+            await testTokenCDeployed.connect(signers[2]).approve(happyTokenPoolDeployed.address, approve_amount)
+            const { id: pool_id } = await getResultFromPoolFill(happyTokenPoolDeployed, fpp)
+            expect(
+                happyTokenPoolDeployed
+                    .connect(signers[2])
+                    .swap(pool_id, verification, validation, tokenC_address_index, exchange_amount),
+            ).to.be.rejectedWith(Error)
+            expect(
+                happyTokenPoolDeployed
+                    .connect(signers[2])
+                    .swap(pool_id, verification, validation, 100, exchange_amount),
+            ).to.be.rejectedWith(Error)
+        })
+
         it('Should throw error when balance is not enough', async () => {
             const approve_amount = BigNumber('1e10').toFixed()
             exchange_amount = approve_amount
@@ -788,7 +808,9 @@ describe('HappyTokenPool', () => {
 
                 await helper.advanceTimeAndBlock(fpp.lock_time)
 
-                await happyTokenPoolDeployed.connect(pool_user).claim([pool_id, pool_id2])
+                // contains duplicated pool-id and an invalid pool id
+                const invalid_pool_id = "0x1234567833dc44ce38f1024d3ea7d861f13ac29112db0e5b9814c54b12345678";
+                await happyTokenPoolDeployed.connect(pool_user).claim([pool_id, pool_id2, pool_id2, invalid_pool_id])
                 const { swapped: claimableNow } = await getAvailability(happyTokenPoolDeployed, pool_id, pool_user.address)
                 const { swapped: claimableNow2 } = await getAvailability(happyTokenPoolDeployed, pool_id2, pool_user.address)
                 const userTokenABalanceAfterClaim = await testTokenADeployed.balanceOf(pool_user.address);
