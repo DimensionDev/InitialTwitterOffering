@@ -5,7 +5,8 @@
     "author": "Yisi Liu",
     "main": "hardhat.config.ts",
     "scripts": {
-        "test": "hardhat coverage",
+        "test": "npx hardhat test",
+        "test:coverage": "hardhat coverage",
         "compile": "hardhat compile",
         "deploy:bsc_test": "hardhat --network bsc_test deploy",
         "deploy:matic_mumbai_test": "hardhat --network matic_mumbai_test deploy",
@@ -28,6 +29,7 @@
         "chai-as-promised": "^7.1.1",
         "ethers": "^5.0.32",
         "hardhat": "^2.2.1",
+        "hardhat-gas-reporter": "^1.0.4",
         "mocha": "^8.3.0",
         "prettier": "^1.19.1",
         "solhint": "^2.3.0",

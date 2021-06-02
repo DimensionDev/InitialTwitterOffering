@@ -7,6 +7,7 @@ import 'hardhat-deploy-ethers'
 import "@nomiclabs/hardhat-waffle"
 import "@nomiclabs/hardhat-ethers"
 import "solidity-coverage"
+import "hardhat-gas-reporter"
 
 const {
      infura_project_id,
@@ -78,5 +79,10 @@ module.exports = {
           deployer: {
                default: 0,
           },
+     },
+     gasReporter: {
+          currency: 'USD',
+          gasPrice: 21,
+          enabled : true,
      },
 };
