@@ -12,6 +12,7 @@ pragma solidity >= 0.8.0;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import "./IQLF.sol";
 
 contract HappyTokenPool {
@@ -158,21 +159,6 @@ contract HappyTokenPool {
             pool.exchanged_tokens.push(0); 
         }
 
-        // Make sure each ratio is co-prime to prevent overflow
-        for (uint256 i = 0; i < _ratios.length; i+= 2) {
-            uint256 divA = SafeMath.div(_ratios[i], _ratios[i+1]);      // Non-zero checked by SafteMath.div
-            uint256 divB = SafeMath.div(_ratios[i+1], _ratios[i]);      // Non-zero checked by SafteMath.div
-            
-            if (_ratios[i] == 1) {
-                require(divB == _ratios[i+1]);
-            } else if (_ratios[i+1] == 1) {
-                require(divA == _ratios[i]);
-            } else {
-                // if a and b are co-prime, then a / b * b != a and b / a * a != b
-                require(divA * _ratios[i+1] != _ratios[i]);
-                require(divB * _ratios[i] != _ratios[i+1]);
-            }
-        }
         pool.ratios = _ratios;                                          // 256 * k
         IERC20(_token_addr).safeTransferFrom(msg.sender, address(this), _total_tokens);
 
@@ -223,31 +209,30 @@ contract HappyTokenPool {
             require(msg.value == input_total, 'No enough ether.');
         }
 
-        // this calculation won't be overflow thanks to the SafeMath and the co-prime test
-        uint256 swapped_tokens = SafeMath.div(SafeMath.mul(input_total, ratioB), ratioA);       // 2^256=10e77 >> 10e18 * 10e18
+        uint128 swapped_tokens = SafeCast.toUint128(SafeMath.div(SafeMath.mul(input_total, ratioB), ratioA));
         require(swapped_tokens > 0, "Better not draw water with a sieve");
 
         if (swapped_tokens > packed2.limit) {
             // don't be greedy - you can only get at most limit tokens
             swapped_tokens = packed2.limit;
-            input_total = uint128(SafeMath.div(SafeMath.mul(packed2.limit, ratioA), ratioB));           // Update input_total
+            input_total = SafeCast.toUint128(SafeMath.div(SafeMath.mul(packed2.limit, ratioA), ratioB));           // Update input_total
         } else if (swapped_tokens > packed2.total_tokens ) {
             // if the left tokens are not enough
             swapped_tokens = packed2.total_tokens;
-            input_total = uint128(SafeMath.div(SafeMath.mul(packed2.total_tokens , ratioA), ratioB));    // Update input_total
+            input_total = SafeCast.toUint128(SafeMath.div(SafeMath.mul(packed2.total_tokens , ratioA), ratioB));    // Update input_total
             // return the eth
             if (exchange_addr == DEFAULT_ADDRESS)
                 payable(msg.sender).transfer(msg.value - input_total);
         }
         require(swapped_tokens <= packed2.limit);                                                       // make sure again
-        pool.exchanged_tokens[exchange_addr_i] = uint128(SafeMath.add(pool.exchanged_tokens[exchange_addr_i], 
+        pool.exchanged_tokens[exchange_addr_i] = SafeCast.toUint128(SafeMath.add(pool.exchanged_tokens[exchange_addr_i], 
                                                                       input_total));            // update exchanged
 
         // penalize greedy attackers by placing duplication check at the very last
         require (pool.swapped_map[msg.sender] == 0, "Already swapped");
 
         // update the remaining tokens and swapped token mapping
-        pool.packed2.total_tokens = uint128(SafeMath.sub(packed2.total_tokens, swapped_tokens));
+        pool.packed2.total_tokens = SafeCast.toUint128(SafeMath.sub(packed2.total_tokens, swapped_tokens));
         pool.swapped_map[msg.sender] = swapped_tokens;
 
         // transfer the token after state changing

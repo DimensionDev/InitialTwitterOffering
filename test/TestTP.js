@@ -497,6 +497,24 @@ describe('HappyTokenPool', () => {
             ).to.be.rejectedWith(Error)
         })
 
+        it('Should throw error when ratio is not valid', async () => {
+            // slightly smaller than 128 bits unsigned integer
+            const approve_amount = BigNumber('1e10').toFixed()
+            exchange_amount = approve_amount
+            {
+                // 128 bits integer overflow
+                const tokenCRatio = BigNumber('1e38').toFixed();
+                fpp.exchange_ratios = [1, 75000, 1, 100, 1, tokenCRatio]
+                await testTokenCDeployed.connect(signers[2]).approve(happyTokenPoolDeployed.address, approve_amount)
+                const { id: pool_id } = await getResultFromPoolFill(happyTokenPoolDeployed, fpp)
+                expect(
+                    happyTokenPoolDeployed
+                    .connect(signers[2])
+                    .swap(pool_id, verification, validation, tokenC_address_index, exchange_amount),
+                ).to.be.rejectedWith(Error);
+            }
+        })
+
         it('Should throw error when balance is not enough', async () => {
             const approve_amount = BigNumber('1e10').toFixed()
             exchange_amount = approve_amount
@@ -947,6 +965,7 @@ describe('HappyTokenPool', () => {
                 {
                     await happyTokenPoolDeployed.connect(creator).setUnlockTime(pool_id, new_unlock_time);
                     {
+                        await helper.advanceTimeAndBlock(1000);
                         const { unlocked: poolUnlocked, unlock_time: poolUnlockTime } = await getAvailability(happyTokenPoolDeployed, pool_id, signers[2].address)
                         assert.isTrue(poolUnlocked);
                         expect(poolUnlockTime.toString()).and.to.be.eq(now_in_second.toString());
