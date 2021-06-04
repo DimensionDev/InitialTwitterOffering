@@ -7,7 +7,7 @@ const func: DeployFunction = async function(hre: HardhatRuntimeEnvironment) {
   const { deployer } = await getNamedAccounts()
   await deploy('HappyTokenPool', {
     from: deployer,
-    args: [],
+    args: [1616976000],
     log: true,
   })
 }

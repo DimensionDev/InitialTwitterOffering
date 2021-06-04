@@ -32,7 +32,6 @@ let testTokenBDeployed
 let testTokenCDeployed
 let happyTokenPoolDeployed
 let qualificationTesterDeployed
-let internalFunctionsDeployed
 let signers
 let creator
 let ito_user;
@@ -52,7 +51,7 @@ describe('HappyTokenPool', () => {
         const testTokenA = await TestTokenA.deploy(amount)
         const testTokenB = await TestTokenB.deploy(amount)
         const testTokenC = await TestTokenC.deploy(amount)
-        const happyTokenPool = await HappyTokenPool.deploy()
+        const happyTokenPool = await HappyTokenPool.deploy(base_timestamp)
         const qualificationTester = await QualificationTester.deploy('NeverSayNo', 0)
         const qualificationTester2 = await QualificationTester.deploy('NeverSayYes', pending_qualification_timestamp)
 
@@ -287,7 +286,7 @@ describe('HappyTokenPool', () => {
             const { verification, validation } = getVerification(PASSWORD, signer.address)
             happyTokenPoolDeployed
                 .connect(signer)
-                .swap(pool_id, verification, validation, tokenB_address_index, approve_amount)
+                .swap(pool_id, verification, tokenB_address_index, approve_amount, [pool_id])
             const { remaining: remaining_now } = await getAvailability(happyTokenPoolDeployed, pool_id, creator.address)
             const ratio = fpp.exchange_ratios[3] / fpp.exchange_ratios[2] // tokenA <=> tokenB
             const exchange_tokenA_amount = BigNumber(approve_amount).multipliedBy(ratio)
@@ -313,7 +312,7 @@ describe('HappyTokenPool', () => {
             const { verification, validation } = getVerification(PASSWORD, signer.address)
             happyTokenPoolDeployed
                 .connect(signer)
-                .swap(pool_id, verification, validation, tokenB_address_index, approve_amount)
+                .swap(pool_id, verification, tokenB_address_index, approve_amount, [pool_id])
             const { remaining: remaining_now } = await getAvailability(happyTokenPoolDeployed, pool_id, signer.address)
             const tokenB_balance = await testTokenBDeployed.balanceOf(signer.address)
             const tokenA_balance = await testTokenADeployed.balanceOf(signer.address)
@@ -348,22 +347,9 @@ describe('HappyTokenPool', () => {
                 happyTokenPoolDeployed.swap(
                     pool_id,
                     verification,
-                    validation,
                     tokenC_address_index,
                     exchange_amount,
-                ),
-            ).to.be.rejectedWith(Error)
-        })
-
-        it('Should throw error when validation wrong', async () => {
-            const { id: pool_id } = await getResultFromPoolFill(happyTokenPoolDeployed, fpp)
-            await expect(
-                happyTokenPoolDeployed.swap(
-                    pool_id,
-                    verification,
-                    'wrong validation',
-                    tokenC_address_index,
-                    exchange_amount,
+                    [pool_id],
                 ),
             ).to.be.rejectedWith(Error)
         })
@@ -380,9 +366,9 @@ describe('HappyTokenPool', () => {
                 happyTokenPoolDeployed.swap(
                     pool_id,
                     verification,
-                    validation,
                     tokenC_address_index,
                     exchange_amount,
+                    [pool_id],
                 ),
             ).to.be.rejectedWith(Error)
         })
@@ -397,7 +383,7 @@ describe('HappyTokenPool', () => {
             expect(
                 happyTokenPoolDeployed
                     .connect(badGuy)
-                    .swap(pool_id, verification, validation, tokenC_address_index, exchange_amount),
+                    .swap(pool_id, verification, tokenC_address_index, exchange_amount, [pool_id]),
             ).to.be.rejectedWith(Error)
 
             async function prepare(signer) {
@@ -421,7 +407,7 @@ describe('HappyTokenPool', () => {
             expect(
                 happyTokenPoolDeployed
                     .connect(signers[2])
-                    .swap(pool_id, verification, validation, tokenC_address_index, exchange_amount),
+                    .swap(pool_id, verification, tokenC_address_index, exchange_amount, [pool_id]),
             ).to.be.rejectedWith(Error)
         })
 
@@ -431,9 +417,9 @@ describe('HappyTokenPool', () => {
                 happyTokenPoolDeployed.swap(
                     pool_id,
                     'wrong password',
-                    validation,
                     tokenC_address_index,
                     exchange_amount,
+                    [pool_id],
                 ),
             ).to.be.rejectedWith(Error)
         })
@@ -448,7 +434,7 @@ describe('HappyTokenPool', () => {
             expect(
                 happyTokenPoolDeployed
                     .connect(signers[2])
-                    .swap(pool_id, verification, validation, tokenC_address_index, exchange_amount),
+                    .swap(pool_id, verification, tokenC_address_index, exchange_amount, [pool_id]),
             ).to.be.rejectedWith(Error)
         })
 
@@ -462,7 +448,7 @@ describe('HappyTokenPool', () => {
             expect(
                 happyTokenPoolDeployed
                     .connect(signers[2])
-                    .swap(pool_id, verification, validation, tokenC_address_index, exchange_amount),
+                    .swap(pool_id, verification, tokenC_address_index, exchange_amount, [pool_id]),
             ).to.be.rejectedWith(Error)
         })
 
@@ -474,11 +460,11 @@ describe('HappyTokenPool', () => {
 
             await happyTokenPoolDeployed
                 .connect(signers[2])
-                .swap(pool_id, verification, validation, tokenC_address_index, exchange_amount)
+                .swap(pool_id, verification, tokenC_address_index, exchange_amount, [pool_id])
             expect(
                 happyTokenPoolDeployed
                     .connect(signers[2])
-                    .swap(pool_id, verification, validation, tokenC_address_index, exchange_amount),
+                    .swap(pool_id, verification, tokenC_address_index, exchange_amount, [pool_id]),
             ).to.be.rejectedWith(Error)
         })
 
@@ -493,12 +479,12 @@ describe('HappyTokenPool', () => {
             expect(
                 happyTokenPoolDeployed
                     .connect(signers[2])
-                    .swap(pool_id, verification, validation, tokenC_address_index, exchange_amount),
+                    .swap(pool_id, verification, tokenC_address_index, exchange_amount, [pool_id]),
             ).to.be.rejectedWith(Error)
             expect(
                 happyTokenPoolDeployed
                     .connect(signers[2])
-                    .swap(pool_id, verification, validation, 100, exchange_amount),
+                    .swap(pool_id, verification, 100, exchange_amount, [pool_id]),
             ).to.be.rejectedWith(Error)
         })
 
@@ -515,7 +501,7 @@ describe('HappyTokenPool', () => {
                 expect(
                     happyTokenPoolDeployed
                     .connect(signers[2])
-                    .swap(pool_id, verification, validation, tokenC_address_index, exchange_amount),
+                    .swap(pool_id, verification, tokenC_address_index, exchange_amount, [pool_id]),
                 ).to.be.rejectedWith(Error);
             }
         })
@@ -542,7 +528,7 @@ describe('HappyTokenPool', () => {
             expect(
                 happyTokenPoolDeployed
                     .connect(pool_user)
-                    .swap(pool_id, verification, validation, tokenC_address_index, exchange_amount),
+                    .swap(pool_id, verification, tokenC_address_index, exchange_amount, [pool_id]),
             ).to.be.rejectedWith(Error)
 
             // Transfer test tokens back
@@ -565,7 +551,7 @@ describe('HappyTokenPool', () => {
 
             await happyTokenPoolDeployed
                 .connect(pool_user)
-                .swap(pool_id, verification, validation, tokenC_address_index, exchange_amount);
+                .swap(pool_id, verification, tokenC_address_index, exchange_amount, [pool_id]);
             const logs = await ethers.provider.getLogs(happyTokenPoolDeployed.filters.SwapSuccess());
             const parsedLog = itoInterface.parseLog(logs[0]);
             const result = parsedLog.args;
@@ -607,7 +593,7 @@ describe('HappyTokenPool', () => {
 
             await happyTokenPoolDeployed
                 .connect(signers[2])
-                .swap(pool_id, verification, validation, tokenC_address_index, exchange_amount)
+                .swap(pool_id, verification, tokenC_address_index, exchange_amount, [pool_id])
             const logs = await ethers.provider.getLogs(happyTokenPoolDeployed.filters.SwapSuccess());
             const parsedLog = itoInterface.parseLog(logs[0]);
             const result = parsedLog.args;
@@ -629,7 +615,7 @@ describe('HappyTokenPool', () => {
             var vr = getVerification(PASSWORD, signers[4].address)
             await happyTokenPoolDeployed
                 .connect(signers[4])
-                .swap(pool_id, vr.verification, vr.validation, 0, exchange_amount, {
+                .swap(pool_id, vr.verification, 0, exchange_amount, [pool_id], {
                     value: approve_amount,
                 })
 
@@ -653,7 +639,7 @@ describe('HappyTokenPool', () => {
             var vr = getVerification(PASSWORD, signers[3].address)
             await happyTokenPoolDeployed
                 .connect(signers[3])
-                .swap(pool_id, vr.verification, vr.validation, 1, exchange_amount)
+                .swap(pool_id, vr.verification, 1, exchange_amount, [pool_id])
 
             {
                 const logs = await ethers.provider.getLogs(happyTokenPoolDeployed.filters.SwapSuccess());
@@ -673,7 +659,7 @@ describe('HappyTokenPool', () => {
 
             await happyTokenPoolDeployed
                 .connect(signers[2])
-                .swap(pool_id, verification, validation, tokenC_address_index, exchange_amount)
+                .swap(pool_id, verification, tokenC_address_index, exchange_amount, [pool_id])
 
             {
                 const logs = await ethers.provider.getLogs(happyTokenPoolDeployed.filters.SwapSuccess());
@@ -704,7 +690,7 @@ describe('HappyTokenPool', () => {
             const v1 = getVerification(PASSWORD, swapperFirstETH)
             await happyTokenPoolDeployed
                 .connect(signers[2])
-                .swap(pool_id, v1.verification, v1.validation, ETH_address_index, exchange_ETH_amount, {
+                .swap(pool_id, v1.verification, ETH_address_index, exchange_ETH_amount, [pool_id], {
                     value: exchange_ETH_amount,
                 })
 
@@ -714,7 +700,7 @@ describe('HappyTokenPool', () => {
             exchange_ETH_amount = BigNumber('1e12').toFixed()
             await happyTokenPoolDeployed
                 .connect(signers[3])
-                .swap(pool_id, v2.verification, v2.validation, ETH_address_index, exchange_ETH_amount, {
+                .swap(pool_id, v2.verification, ETH_address_index, exchange_ETH_amount, [pool_id], {
                     value: exchange_ETH_amount,
                 })
 
@@ -773,11 +759,11 @@ describe('HappyTokenPool', () => {
 
                 await happyTokenPoolDeployed
                     .connect(pool_user)
-                    .swap(pool_id, verification, validation, tokenC_address_index, approve_amount.toFixed())
+                    .swap(pool_id, verification, tokenC_address_index, approve_amount.toFixed(), [pool_id])
 
                 await happyTokenPoolDeployed
                     .connect(pool_user)
-                    .swap(pool_id2, verification, validation, tokenB_address_index, approve_amount.toFixed())
+                    .swap(pool_id2, verification, tokenB_address_index, approve_amount.toFixed(), [pool_id])
 
                 const userTokenABalanceBeforeClaim = await testTokenADeployed.balanceOf(pool_user.address);
                 const userTokenBBalanceAfterSwap = await testTokenBDeployed.balanceOf(pool_user.address);
@@ -884,7 +870,7 @@ describe('HappyTokenPool', () => {
                 //await happyTokenPoolDeployed.connect(creator).setUnlockTime(pool_id, fpp.lock_time)
                 await happyTokenPoolDeployed
                     .connect(signers[2])
-                    .swap(pool_id, verification, validation, tokenC_address_index, approve_amount.toFixed())
+                    .swap(pool_id, verification, tokenC_address_index, approve_amount.toFixed(), [pool_id])
 
                 const { swapped: claimablePrevious } = await getAvailability(
                     happyTokenPoolDeployed,
@@ -919,7 +905,7 @@ describe('HappyTokenPool', () => {
                 const { id: pool_id } = await getResultFromPoolFill(happyTokenPoolDeployed, fpp)
                 await happyTokenPoolDeployed
                     .connect(signers[2])
-                    .swap(pool_id, verification, validation, tokenC_address_index, approve_amount.toFixed())
+                    .swap(pool_id, verification, tokenC_address_index, approve_amount.toFixed(), [pool_id])
 
                 const { swapped: claimablePrevious } = await getAvailability(
                     happyTokenPoolDeployed,
@@ -997,7 +983,7 @@ describe('HappyTokenPool', () => {
 
             await happyTokenPoolDeployed
                 .connect(pool_owner)
-                .swap(pool_id, verification, validation, tokenC_address_index, approve_amount.toFixed())
+                .swap(pool_id, verification, tokenC_address_index, approve_amount.toFixed(), [pool_id])
 
             const userTokenABalanceAfterSwap = await testTokenADeployed.balanceOf(pool_owner.address);
             const userTokenCBalanceAfterSwap = await testTokenCDeployed.balanceOf(pool_owner.address);
@@ -1081,7 +1067,7 @@ describe('HappyTokenPool', () => {
             const { verification, validation } = getVerification(PASSWORD, signers[2].address)
             await happyTokenPoolDeployed
                 .connect(signers[2])
-                .swap(pool_id, verification, validation, ETH_address_index, exchange_ETH_amount, {
+                .swap(pool_id, verification, ETH_address_index, exchange_ETH_amount, [pool_id], {
                     value: exchange_ETH_amount,
                 })
 
@@ -1214,7 +1200,7 @@ describe('HappyTokenPool', () => {
             const { verification, validation } = getVerification(PASSWORD, signers[2].address)
             await happyTokenPoolDeployed
                 .connect(signers[2])
-                .swap(pool_id, verification, validation, ETH_address_index, exchange_ETH_amount, {
+                .swap(pool_id, verification, ETH_address_index, exchange_ETH_amount, [pool_id], {
                     value: exchange_ETH_amount,
                 })
 
@@ -1263,7 +1249,7 @@ describe('HappyTokenPool', () => {
         await test_token.connect(swapper).approve(happyTokenPoolDeployed.address, approve_amount)
         await happyTokenPoolDeployed
             .connect(swapper)
-            .swap(pool_id, verification, validation, token_address_index, exchange_amount)
+            .swap(pool_id, verification, token_address_index, exchange_amount, [pool_id])
     }
 
     function getVerification(password, account) {

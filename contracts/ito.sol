@@ -5,7 +5,7 @@
  * @contact         yisiliu@gmail.com
  * @author_time     01/06/2021
  * @maintainer      Hancheng Zhou, Yisi Liu
- * @maintain_time   04/15/2021
+ * @maintain_time   06/15/2021
 **/
 
 pragma solidity >= 0.8.0;
@@ -47,13 +47,9 @@ contract HappyTokenPool {
                                     // e.g. [1, 10]
                                     // represents 1 tokenA to swap 10 target token
                                     // note: each ratio pair needs to be coprime
-        // Change: ABI compatible with existing contract
-        // Add more states, like swapped, claimed, etc
         mapping(address => uint256) swapped_map;      // swapped amount of an address
     }
 
-    // Change: ABI NOT compatible with existing contract
-    // Using indexed event
     // swap pool filling success event
     event FillSuccess (
         address indexed creator,
@@ -99,18 +95,19 @@ contract HappyTokenPool {
     );
 
     using SafeERC20 for IERC20;
-    uint32 nonce;
-    uint224 base_time;                 // timestamp = base_time + delta to save gas
     mapping(bytes32 => Pool) pool_by_id;    // maps an id to a Pool instance
     string constant private magic = "Prince Philip, Queen Elizabeth II's husband, has died aged 99, \
     Buckingham Palace has announced. A statement issued by the palace just after midday spoke of the \
     Queen's deep sorrow following his death at Windsor Castle on Friday morning. The Duke of Edinbur";
     bytes32 private seed;
-    address constant DEFAULT_ADDRESS = address(0);       // a universal address
+    address constant DEFAULT_ADDRESS = address(0);
+    uint32 nonce;
+    // TODO: support set?
+    uint64 public base_time;
 
-    constructor() {
+    constructor(uint64 _base_time) {
         seed = keccak256(abi.encodePacked(magic, block.timestamp, msg.sender));
-        base_time = 1616976000;                                    // 00:00:00 03/30/2021 GMT(UTC+0)
+        base_time = _base_time;
     }
 
     /**
@@ -178,8 +175,11 @@ contract HappyTokenPool {
      * based on the pool ratio. After swap successfully, the same account can not swap the same pool again.
     **/
 
-    function swap (bytes32 id, bytes32 verification, 
-                   bytes32 validation, uint256 exchange_addr_i, uint128 input_total) 
+    function swap (bytes32 id,
+                   bytes32 verification,
+                   uint256 exchange_addr_i,
+                   uint128 input_total,
+                   bytes32[] memory merkleProof)
     public payable returns (uint256 swapped) {
 
         Pool storage pool = pool_by_id[id];
@@ -195,8 +195,6 @@ contract HappyTokenPool {
         // sha3(sha3(passowrd)[:40] + msg.sender) so that the raw password will never appear in the contract
         require (verification == keccak256(abi.encodePacked(uint256(packed1.password), msg.sender)), 
                  'Wrong Password');
-        // sha3(msg.sender) to protect from front runs (but this is kinda naive since the contract is open sourced)
-        require (validation == keccak256(abi.encodePacked(msg.sender)), "Validation Failed");
 
         // revert if the pool is empty
         require (packed2.total_tokens > 0, "Out of Stock");
@@ -283,7 +281,7 @@ contract HappyTokenPool {
         );
     }
 
-    function claim(bytes32[] memory ito_ids) public {
+    function claim(bytes32[] calldata ito_ids) external {
         for (uint256 i = 0; i < ito_ids.length; i++) {
             Pool storage pool = pool_by_id[ito_ids[i]];
             Packed3 memory packed3 = pool.packed3;
@@ -300,17 +298,14 @@ contract HappyTokenPool {
         }
     }
 
-    // Change: NOT ABI compatible with existing contract
-    // `uint256 _unlock_time` -> uint32 _unlock_time
-    function setUnlockTime(bytes32 id, uint256 _unlock_time) public {
+    function setUnlockTime(bytes32 id, uint32 _unlock_time) public {
         Pool storage pool = pool_by_id[id];
         uint32 packed3_unlock_time = pool.packed3.unlock_time;
-        require(_unlock_time < ~uint32(0) , "invalid unlock time");
         require(pool.creator == msg.sender, "Pool Creator Only");
         require(block.timestamp < (packed3_unlock_time + base_time), "Too Late");
         require(packed3_unlock_time != 0, "Not eligible when unlock_time is 0");
         require(_unlock_time != 0, "Cannot set to 0");
-        pool.packed3.unlock_time = uint32(_unlock_time);
+        pool.packed3.unlock_time = _unlock_time;
     }
 
     /**
