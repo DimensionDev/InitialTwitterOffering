@@ -56,9 +56,9 @@ contract HappyTokenPool {
     // Using indexed event
     // swap pool filling success event
     event FillSuccess (
+        address indexed creator,
+        bytes32 indexed id,
         uint256 total,
-        bytes32 id,
-        address creator,
         uint256 creation_time,
         address token_address,
         string message
@@ -66,8 +66,8 @@ contract HappyTokenPool {
 
     // swap success event
     event SwapSuccess (
-        bytes32 id,
-        address swapper,
+        bytes32 indexed id,
+        address indexed swapper,
         address from_address,
         address to_address,
         uint256 from_value,
@@ -76,8 +76,8 @@ contract HappyTokenPool {
 
     // claim success event
     event ClaimSuccess (
-        bytes32 id,
-        address claimer,
+        bytes32 indexed id,
+        address indexed claimer,
         uint256 timestamp,
         uint256 to_value,
         address token_address
@@ -85,16 +85,16 @@ contract HappyTokenPool {
 
     // swap pool destruct success event
     event DestructSuccess (
-        bytes32 id,
-        address token_address,
+        bytes32 indexed id,
+        address indexed token_address,
         uint256 remaining_balance,
         uint128[] exchanged_values
     );
 
     // single token withdrawl from a swap pool success even
     event WithdrawSuccess (
-        bytes32 id,
-        address token_address,
+        bytes32 indexed id,
+        address indexed token_address,
         uint256 withdraw_balance
     );
 
@@ -162,7 +162,7 @@ contract HappyTokenPool {
         pool.ratios = _ratios;                                          // 256 * k
         IERC20(_token_addr).safeTransferFrom(msg.sender, address(this), _total_tokens);
 
-        emit FillSuccess(_total_tokens, _id, msg.sender, block.timestamp, _token_addr, message);
+        emit FillSuccess(msg.sender, _id, _total_tokens, block.timestamp, _token_addr, message);
     }
 
     /**

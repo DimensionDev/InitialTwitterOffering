@@ -8,18 +8,6 @@ const helper = require('./helper')
 const {
     base_timestamp,
     eth_address,
-    fill_success_encode,
-    fill_success_types,
-    swap_success_encode,
-    swap_success_types,
-    claim_success_encode,
-    claim_success_types,
-    destruct_success_encode,
-    destruct_success_types,
-    withdraw_success_encode,
-    withdraw_success_types,
-    qualification_encode,
-    qualification_types,
     erc165_interface_id,
     qualification_interface_id,
     PASSWORD,
@@ -31,6 +19,11 @@ const {
 } = require('./constants')
 
 const abiCoder = new ethers.utils.AbiCoder()
+const itoJsonABI = require("../artifacts/contracts/ito.sol/HappyTokenPool.json");
+const itoInterface = new ethers.utils.Interface(itoJsonABI.abi);
+
+const qualificationJsonABI = require("../artifacts/contracts/qualification.sol/QLF.json");
+const qualificationInterface = new ethers.utils.Interface(qualificationJsonABI.abi);
 
 let fpp // fill happyTokenPoolDeployed parameters
 let snapshotId
@@ -40,13 +33,15 @@ let testTokenCDeployed
 let happyTokenPoolDeployed
 let qualificationTesterDeployed
 let internalFunctionsDeployed
-let creator
 let signers
+let creator
+let ito_user;
 
 describe('HappyTokenPool', () => {
     before(async () => {
         signers = await ethers.getSigners()
-        creator = signers[0]
+        creator = signers[0];
+        ito_user = signers[1];
 
         const TestTokenA = await ethers.getContractFactory('TestTokenA')
         const TestTokenB = await ethers.getContractFactory('TestTokenB')
@@ -144,12 +139,24 @@ describe('HappyTokenPool', () => {
 
             await testTokenADeployed.approve(happyTokenPoolDeployed.address, fpp.total_tokens)
             await happyTokenPoolDeployed.fill_pool(...Object.values(fpp))
-            const logs = await ethers.provider.getLogs({
-                address: happyTokenPoolDeployed.address,
-                topics: [ethers.utils.keccak256(ethers.utils.toUtf8Bytes(fill_success_encode))],
-            })
-            const result = abiCoder.decode(fill_success_types, logs[0].data)
+            {
+                // filter with signature, should work
+                const logs = await ethers.provider.getLogs(happyTokenPoolDeployed.filters.FillSuccess());
+                const parsedLog = itoInterface.parseLog(logs[0]);
+                const result = parsedLog.args;
+                expect(result.total.toString())
+                    .that.to.be.eq(fpp.total_tokens)
+            }
+            {
+                // filtered with user's address(not creator), should not get anything
+                const logs = await ethers.provider.getLogs(happyTokenPoolDeployed.filters.FillSuccess(ito_user.address));
+                expect(logs.length).that.to.be.eq(0);
+            }
 
+            // filter with *indexed creator*, should work as expected
+            const logs = await ethers.provider.getLogs(happyTokenPoolDeployed.filters.FillSuccess(creator.address));
+            const parsedLog = itoInterface.parseLog(logs[0]);
+            const result = parsedLog.args;
             expect(result.total.toString())
                 .that.to.be.eq(fpp.total_tokens)
             expect(result).to.have.property('id').that.to.not.be.null
@@ -182,11 +189,9 @@ describe('HappyTokenPool', () => {
             fpp.limit = '1'
             await testTokenADeployed.approve(happyTokenPoolDeployed.address, fpp.total_tokens)
             await happyTokenPoolDeployed.fill_pool(...Object.values(fpp))
-            const logs = await ethers.provider.getLogs({
-                address: happyTokenPoolDeployed.address,
-                topics: [ethers.utils.keccak256(ethers.utils.toUtf8Bytes(fill_success_encode))],
-            })
-            const result = abiCoder.decode(fill_success_types, logs[0].data)
+            const logs = await ethers.provider.getLogs(happyTokenPoolDeployed.filters.FillSuccess());
+            const parsedLog = itoInterface.parseLog(logs[0]);
+            const result = parsedLog.args;
             expect(result).to.have.property('id').that.to.not.be.null
         })
     })
@@ -560,12 +565,10 @@ describe('HappyTokenPool', () => {
 
             await happyTokenPoolDeployed
                 .connect(pool_user)
-                .swap(pool_id, verification, validation, tokenC_address_index, exchange_amount)
-                    const logs = await ethers.provider.getLogs({
-                address: happyTokenPoolDeployed.address,
-                topics: [ethers.utils.keccak256(ethers.utils.toUtf8Bytes(swap_success_encode))],
-            })
-            const result = abiCoder.decode(swap_success_types, logs[0].data)
+                .swap(pool_id, verification, validation, tokenC_address_index, exchange_amount);
+            const logs = await ethers.provider.getLogs(happyTokenPoolDeployed.filters.SwapSuccess());
+            const parsedLog = itoInterface.parseLog(logs[0]);
+            const result = parsedLog.args;
             const ratio = fpp.exchange_ratios[5] / fpp.exchange_ratios[4] // tokenA <=> tokenC
 
             const userTokenCBalanceAfterSwap = await testTokenCDeployed.balanceOf(pool_user.address);
@@ -605,11 +608,9 @@ describe('HappyTokenPool', () => {
             await happyTokenPoolDeployed
                 .connect(signers[2])
                 .swap(pool_id, verification, validation, tokenC_address_index, exchange_amount)
-            const logs = await ethers.provider.getLogs({
-                address: happyTokenPoolDeployed.address,
-                topics: [ethers.utils.keccak256(ethers.utils.toUtf8Bytes(swap_success_encode))],
-            })
-            const result = abiCoder.decode(swap_success_types, logs[0].data)
+            const logs = await ethers.provider.getLogs(happyTokenPoolDeployed.filters.SwapSuccess());
+            const parsedLog = itoInterface.parseLog(logs[0]);
+            const result = parsedLog.args;
             const ratio = fpp.exchange_ratios[5] / fpp.exchange_ratios[4] // tokenA <=> tokenC
 
             expect(result.to_value.toString())
@@ -631,14 +632,15 @@ describe('HappyTokenPool', () => {
                 .swap(pool_id, vr.verification, vr.validation, 0, exchange_amount, {
                     value: approve_amount,
                 })
-            const logs_eth = await ethers.provider.getLogs({
-                address: happyTokenPoolDeployed.address,
-                topics: [ethers.utils.keccak256(ethers.utils.toUtf8Bytes(swap_success_encode))],
-            })
-            const result_eth = abiCoder.decode(swap_success_types, logs_eth[0].data)
-            const ratio_eth = fpp.exchange_ratios[1] / fpp.exchange_ratios[0] // tokenA <=> tokenC
-            expect(result_eth.to_value.toString())
-                .that.to.be.eq(String(exchange_amount * ratio_eth))
+
+            {
+                const logs = await ethers.provider.getLogs(happyTokenPoolDeployed.filters.SwapSuccess());
+                const parsedLog = itoInterface.parseLog(logs[0]);
+                const result_eth = parsedLog.args;
+                const ratio_eth = fpp.exchange_ratios[1] / fpp.exchange_ratios[0] // tokenA <=> tokenC
+                expect(result_eth.to_value.toString())
+                    .that.to.be.eq(String(exchange_amount * ratio_eth))
+            }
 
             // 0.02 TESTB => 40 TESTA
             _transfer_amount = BigNumber('1e26').toFixed()
@@ -652,15 +654,17 @@ describe('HappyTokenPool', () => {
             await happyTokenPoolDeployed
                 .connect(signers[3])
                 .swap(pool_id, vr.verification, vr.validation, 1, exchange_amount)
-            const logs_b = await ethers.provider.getLogs({
-                address: happyTokenPoolDeployed.address,
-                topics: [ethers.utils.keccak256(ethers.utils.toUtf8Bytes(swap_success_encode))],
-            })
-            const result_b = abiCoder.decode(swap_success_types, logs_b[0].data)
-            const ratio_b = fpp.exchange_ratios[3] / fpp.exchange_ratios[2] // tokenA <=> tokenC
 
-            expect(result_b.to_value.toString())
-                .that.to.be.eq(String(exchange_amount * ratio_b))
+            {
+                const logs = await ethers.provider.getLogs(happyTokenPoolDeployed.filters.SwapSuccess());
+                const parsedLog = itoInterface.parseLog(logs[0]);
+                const result_b = parsedLog.args;
+                const ratio_b = fpp.exchange_ratios[3] / fpp.exchange_ratios[2] // tokenA <=> tokenC
+    
+                expect(result_b.to_value.toString())
+                    .that.to.be.eq(String(exchange_amount * ratio_b))
+            }
+
 
             // 80000 TESTC => 20 TESTA
             approve_amount = BigNumber('1.6e23').toFixed()
@@ -670,19 +674,21 @@ describe('HappyTokenPool', () => {
             await happyTokenPoolDeployed
                 .connect(signers[2])
                 .swap(pool_id, verification, validation, tokenC_address_index, exchange_amount)
-            const logs_c = await ethers.provider.getLogs({
-                address: happyTokenPoolDeployed.address,
-                topics: [ethers.utils.keccak256(ethers.utils.toUtf8Bytes(swap_success_encode))],
-            })
-            const result_c = abiCoder.decode(swap_success_types, logs_c[0].data)
-            const ratio_c = fpp.exchange_ratios[5] / fpp.exchange_ratios[4] // tokenA <=> tokenC
 
-            expect(result_c.to_value.toString())
-                .that.to.not.be.eq(String(exchange_amount * ratio_c))
-            expect(result_c.to_value.toString())
-                .that.to.not.be.eq(fpp.limit)
-            expect(result_c.to_value.toString())
-                .that.to.be.eq(BigNumber('2e19').toFixed())
+            {
+                const logs = await ethers.provider.getLogs(happyTokenPoolDeployed.filters.SwapSuccess());
+                const parsedLog = itoInterface.parseLog(logs[0]);
+                const result_c = parsedLog.args;
+
+                const ratio_c = fpp.exchange_ratios[5] / fpp.exchange_ratios[4] // tokenA <=> tokenC
+    
+                expect(result_c.to_value.toString())
+                    .that.to.not.be.eq(String(exchange_amount * ratio_c))
+                expect(result_c.to_value.toString())
+                    .that.to.not.be.eq(fpp.limit)
+                expect(result_c.to_value.toString())
+                    .that.to.be.eq(BigNumber('2e19').toFixed())
+            }
         })
 
         it('Should swap the remaining token when the amount of swap token is greater than total token', async () => {
@@ -712,11 +718,11 @@ describe('HappyTokenPool', () => {
                     value: exchange_ETH_amount,
                 })
 
-            const logs = await ethers.provider.getLogs({
-                address: happyTokenPoolDeployed.address,
-                topics: [ethers.utils.keccak256(ethers.utils.toUtf8Bytes(swap_success_encode))],
-            })
-            const { from_value, to_value } = abiCoder.decode(swap_success_types, logs[0].data)
+            const logs = await ethers.provider.getLogs(happyTokenPoolDeployed.filters.SwapSuccess());
+            const parsedLog = itoInterface.parseLog(logs[0]);
+            const result = parsedLog.args;
+            const from_value = result.from_value;
+            const to_value = result.to_value; 
 
             expect(remaining.toString()).to.be.eq(
                 BigNumber('5e11')
@@ -745,10 +751,7 @@ describe('HappyTokenPool', () => {
                 const { id: pool_id } = await getResultFromPoolFill(happyTokenPoolDeployed, fpp)
                 //await happyTokenPoolDeployed.connect(creator).setUnlockTime(pool_id, 0)
                 await happyTokenPoolDeployed.connect(signers[3]).claim([pool_id])
-                const logs = await ethers.provider.getLogs({
-                    address: happyTokenPoolDeployed.address,
-                    topics: [ethers.utils.keccak256(ethers.utils.toUtf8Bytes(claim_success_encode))],
-                })
+                const logs = await ethers.provider.getLogs(happyTokenPoolDeployed.filters.ClaimSuccess());
                 expect(logs).to.have.length(0)
             })
 
@@ -859,15 +862,14 @@ describe('HappyTokenPool', () => {
                     .to.be.eq('0')
                     .and.to.be.not.eq(claimablePrevious2.toString())
 
-                const logs = await ethers.provider.getLogs({
-                    address: happyTokenPoolDeployed.address,
-                    topics: [ethers.utils.keccak256(ethers.utils.toUtf8Bytes(claim_success_encode))],
-                })
+                const logs = await ethers.provider.getLogs(happyTokenPoolDeployed.filters.ClaimSuccess());
 
                 expect(logs).to.have.length(2)
 
-                const result = abiCoder.decode(claim_success_types, logs[0].data)
-                const result2 = abiCoder.decode(claim_success_types, logs[1].data)
+                let parsedLog = itoInterface.parseLog(logs[0]);
+                const result = parsedLog.args;
+                parsedLog = itoInterface.parseLog(logs[1]);
+                const result2 = parsedLog.args;
 
                 expect(result.to_value.toString()).to.be.eq(claimablePrevious.toString())
 
@@ -901,11 +903,9 @@ describe('HappyTokenPool', () => {
                     .to.be.eq('0')
                     .and.to.be.not.eq(claimablePrevious.toString())
 
-                const logs = await ethers.provider.getLogs({
-                    address: happyTokenPoolDeployed.address,
-                    topics: [ethers.utils.keccak256(ethers.utils.toUtf8Bytes(claim_success_encode))],
-                })
-                const result = abiCoder.decode(claim_success_types, logs[0].data)
+                const logs = await ethers.provider.getLogs(happyTokenPoolDeployed.filters.ClaimSuccess());
+                const parsedLog = itoInterface.parseLog(logs[0]);
+                const result = parsedLog.args;
 
                 expect(result.to_value.toString()).to.be.eq(claimablePrevious.toString())
             })
@@ -937,10 +937,7 @@ describe('HappyTokenPool', () => {
                         .and.to.be.eq(approve_amount.div(fpp.exchange_ratios[tokenC_address_index * 2]).toString())
                         .and.to.be.eq('2500000')
         
-                    const logs = await ethers.provider.getLogs({
-                        address: happyTokenPoolDeployed.address,
-                        topics: [ethers.utils.keccak256(ethers.utils.toUtf8Bytes(claim_success_encode))],
-                    })
+                    const logs = await ethers.provider.getLogs(happyTokenPoolDeployed.filters.ClaimSuccess());
         
                     expect(logs).to.have.length(0)
                 }
@@ -976,11 +973,9 @@ describe('HappyTokenPool', () => {
                         .to.be.eq('0')
                         .and.to.be.not.eq(claimablePrevious.toString());
 
-                    const logs = await ethers.provider.getLogs({
-                        address: happyTokenPoolDeployed.address,
-                        topics: [ethers.utils.keccak256(ethers.utils.toUtf8Bytes(claim_success_encode))],
-                    })
-                    const result = abiCoder.decode(claim_success_types, logs[0].data)
+                    const logs = await ethers.provider.getLogs(happyTokenPoolDeployed.filters.ClaimSuccess());
+                    const parsedLog = itoInterface.parseLog(logs[0]);
+                    const result = parsedLog.args;
                     expect(result.to_value.toString()).to.be.eq(claimablePrevious.toString())
                 }
             })
@@ -1099,11 +1094,9 @@ describe('HappyTokenPool', () => {
             await helper.advanceTimeAndBlock(2000 * 1000)
             await happyTokenPoolDeployed.connect(creator).destruct(pool_id)
 
-            const logs = await ethers.provider.getLogs({
-                address: happyTokenPoolDeployed.address,
-                topics: [ethers.utils.keccak256(ethers.utils.toUtf8Bytes(destruct_success_encode))],
-            })
-            const result = abiCoder.decode(destruct_success_types, logs[0].data)
+            const logs = await ethers.provider.getLogs(happyTokenPoolDeployed.filters.DestructSuccess());
+            const parsedLog = itoInterface.parseLog(logs[0]);
+            const result = parsedLog.args;
 
             expect(result)
                 .to.have.property('id')
@@ -1111,7 +1104,7 @@ describe('HappyTokenPool', () => {
             expect(result)
                 .to.have.property('token_address')
                 .that.to.be.eq(testTokenADeployed.address)
-            expect(result).to.have.property('remaining_tokens')
+            expect(result).to.have.property('remaining_balance')
             expect(result).to.have.property('exchanged_values')
 
             const ratioETH = fpp.exchange_ratios[1] / fpp.exchange_ratios[0]
@@ -1125,7 +1118,7 @@ describe('HappyTokenPool', () => {
                 )
                 .toFixed()
 
-            expect(remaining_tokens).to.be.eq(result.remaining_tokens.toString());
+            expect(remaining_tokens).to.be.eq(result.remaining_balance.toString());
 
             const eth_balance = await ethers.provider.getBalance(creator.address)
             const r = BigNumber(eth_balance.sub(previous_eth_balance).toString())
@@ -1187,11 +1180,9 @@ describe('HappyTokenPool', () => {
 
             await happyTokenPoolDeployed.connect(creator).destruct(pool_id)
 
-            const logs = await ethers.provider.getLogs({
-                address: happyTokenPoolDeployed.address,
-                topics: [ethers.utils.keccak256(ethers.utils.toUtf8Bytes(destruct_success_encode))],
-            })
-            const result = abiCoder.decode(destruct_success_types, logs[0].data)
+            const logs = await ethers.provider.getLogs(happyTokenPoolDeployed.filters.DestructSuccess());
+            const parsedLog = itoInterface.parseLog(logs[0]);
+            const result = parsedLog.args;
 
             expect(result)
                 .to.have.property('id')
@@ -1199,7 +1190,7 @@ describe('HappyTokenPool', () => {
             expect(result)
                 .to.have.property('token_address')
                 .that.to.be.eq(testTokenADeployed.address)
-            expect(result.remaining_tokens.toString())
+            expect(result.remaining_balance.toString())
                 .that.to.be.eq('0')
             expect(result).to.have.property('exchanged_values')
         })
@@ -1244,15 +1235,15 @@ describe('HappyTokenPool', () => {
             expect(happyTokenPoolDeployed.connect(creator).withdraw(pool_id, tokenB_address_index)).to.be.rejectedWith(Error);
 
             const latestBlock = await ethers.provider.getBlockNumber()
-            const logs = await ethers.provider.getLogs({
-                address: happyTokenPoolDeployed.address,
-                topics: [ethers.utils.keccak256(ethers.utils.toUtf8Bytes(withdraw_success_encode))],
-                fromBlock: latestBlock - 1,
-                toBlock: latestBlock,
-            })
+            const filter = happyTokenPoolDeployed.filters.WithdrawSuccess();
+            filter.fromBlock = latestBlock - 1;
+            filter.toBlock = latestBlock;
+            const logs = await ethers.provider.getLogs(filter);
 
-            const logWithdrawTokenB = abiCoder.decode(withdraw_success_types, logs[0].data)
-            const logWithdrawETH = abiCoder.decode(withdraw_success_types, logs[1].data)
+            let parsedLog = itoInterface.parseLog(logs[0]);
+            const logWithdrawTokenB = parsedLog.args;
+            parsedLog = itoInterface.parseLog(logs[1]);
+            const logWithdrawETH = parsedLog.args;
 
             expect(logWithdrawTokenB.withdraw_balance.toString())
                 .that.to.be.eq(BigNumber('200e18').toFixed())
@@ -1288,11 +1279,9 @@ describe('HappyTokenPool', () => {
 
     async function getResultFromPoolFill(happyTokenPoolDeployed, fpp) {
         await happyTokenPoolDeployed.fill_pool(...Object.values(fpp))
-        const logs = await ethers.provider.getLogs({
-            address: happyTokenPoolDeployed.address,
-            topics: [ethers.utils.keccak256(ethers.utils.toUtf8Bytes(fill_success_encode))],
-        })
-        return abiCoder.decode(fill_success_types, logs[0].data)
+        const logs = await ethers.provider.getLogs(happyTokenPoolDeployed.filters.FillSuccess());
+        const result = itoInterface.parseLog(logs[0]);
+        return result.args;
     }
 
     async function getAvailability(happyTokenPoolDeployed, pool_id, account) {
@@ -1334,12 +1323,10 @@ describe('qualification', () => {
         })
 
         async function getLogResult() {
-            const logs = await ethers.provider.getLogs({
-                address: qualificationTesterDeployed2.address,
-                topics: [ethers.utils.keccak256(ethers.utils.toUtf8Bytes(qualification_encode))],
-            })
+            const logs = await ethers.provider.getLogs(qualificationTesterDeployed2.filters.Qualification());
             if (logs.length === 0) return null
-            return abiCoder.decode(qualification_types, logs[0].data)
+            const result = qualificationInterface.parseLog(logs[0]);
+            return result.args;
         }
     })
 })
