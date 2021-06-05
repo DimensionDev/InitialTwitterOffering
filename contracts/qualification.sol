@@ -9,57 +9,39 @@
 pragma solidity >= 0.8.0;
 
 import "./IQLF.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract QLF is IQLF {
-    string private name;
-    uint256 private creation_time;
-    uint256 start_time;
-    address creator;
+contract QLF is IQLF, Ownable {
+    uint256 public start_time;
     mapping(address => bool) black_list;
 
-    modifier creatorOnly {
-        require(msg.sender == creator, "Not Authorized");
-        _;
-    }
-
-    constructor (string memory _name, uint256 _start_time) {
-        name = _name;
-        creation_time = block.timestamp;
+    constructor (uint256 _start_time) {
         start_time = _start_time;
-        creator = msg.sender;
-    }
-
-    function get_name() public view returns (string memory) {
-        return name;
-    }
-
-    function get_creation_time() public view returns (uint256) {
-        return creation_time;
     }
 
     function get_start_time() public view returns (uint256) {
         return start_time;
     }
 
-    function set_start_time(uint256 _start_time) public creatorOnly {
+    function set_start_time(uint256 _start_time) public onlyOwner {
         start_time = _start_time;
     }
 
-    function ifQualified(address) public pure override returns (bool qualified) {
-        qualified = true;
-    } 
+    function ifQualified(address account, bytes32[] memory data) public pure override returns (bool qualified, string memory errorMsg) {
+        return (true, "");
+    }
 
-    function logQualified(address account, uint256 ito_start_time) public override returns (bool qualified) {
-        if (start_time > block.timestamp || ito_start_time > block.timestamp) {
+    function logQualified(address account, bytes32[] memory data) public override returns (bool qualified, string memory errorMsg) {
+        if (start_time > block.timestamp) {
             black_list[account] = true;
-            return false;
+            return (false, "not started"); 
         }
         if (black_list[account]) {
-            return false;
+            return (false, "blacklisted"); 
         }
         emit Qualification(account, true, block.number, block.timestamp);
-        return true;
-    } 
+        return (true, "");
+    }
 
     function supportsInterface(bytes4 interfaceId) external override pure returns (bool) {
         return interfaceId == this.supportsInterface.selector || 

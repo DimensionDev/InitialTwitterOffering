@@ -52,8 +52,8 @@ describe('HappyTokenPool', () => {
         const testTokenB = await TestTokenB.deploy(amount)
         const testTokenC = await TestTokenC.deploy(amount)
         const happyTokenPool = await HappyTokenPool.deploy(base_timestamp)
-        const qualificationTester = await QualificationTester.deploy('NeverSayNo', 0)
-        const qualificationTester2 = await QualificationTester.deploy('NeverSayYes', pending_qualification_timestamp)
+        const qualificationTester = await QualificationTester.deploy(0)
+        const qualificationTester2 = await QualificationTester.deploy(pending_qualification_timestamp)
 
         testTokenADeployed = await testTokenA.deployed()
         testTokenBDeployed = await testTokenB.deployed()
@@ -1294,16 +1294,17 @@ describe('qualification', () => {
 
     describe('logQualified()', () => {
         it('should always return false once swap before start_time', async () => {
-            await qualificationTesterDeployed2.connect(signers[10]).logQualified(signers[10].address, pending_qualification_timestamp)
+            const fakeMerkleProof = "0x1234567833dc44ce38f1024d3ea7d861f13ac29112db0e5b9814c54b12345678";
+            await qualificationTesterDeployed2.connect(signers[10]).logQualified(signers[10].address, [fakeMerkleProof])
             let result = await getLogResult()
             expect(result).to.be.null
 
             await helper.advanceTimeAndBlock(pending_qualification_timestamp + 1000)
-            await qualificationTesterDeployed2.connect(signers[11]).logQualified(signers[11].address, pending_qualification_timestamp)
+            await qualificationTesterDeployed2.connect(signers[11]).logQualified(signers[11].address, [fakeMerkleProof])
             result = await getLogResult()
             expect(result.qualified).to.be.true
 
-            await qualificationTesterDeployed2.connect(signers[10]).logQualified(signers[10].address, pending_qualification_timestamp)
+            await qualificationTesterDeployed2.connect(signers[10]).logQualified(signers[10].address, [fakeMerkleProof])
             result = await getLogResult()
             expect(result).to.be.null
         })

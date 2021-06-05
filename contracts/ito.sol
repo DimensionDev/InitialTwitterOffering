@@ -4,7 +4,7 @@
  * @author          Yisi Liu
  * @contact         yisiliu@gmail.com
  * @author_time     01/06/2021
- * @maintainer      Hancheng Zhou, Yisi Liu
+ * @maintainer      Hancheng Zhou, Yisi Liu, Andy Jiang
  * @maintain_time   06/15/2021
 **/
 
@@ -179,17 +179,19 @@ contract HappyTokenPool {
                    bytes32 verification,
                    uint256 exchange_addr_i,
                    uint128 input_total,
-                   bytes32[] memory merkleProof)
+                   bytes32[] memory data)
     public payable returns (uint256 swapped) {
 
         Pool storage pool = pool_by_id[id];
         Packed1 memory packed1 = pool.packed1;
         Packed2 memory packed2 = pool.packed2;
         Packed3 memory packed3 = pool.packed3;
-        require (
-            IQLF(packed1.qualification_addr).logQualified(msg.sender, uint256(packed3.start_time + base_time)) == true, 
-            "Not Qualified"
-        );
+        {
+            bool qualified;
+            string memory errorMsg;
+            (qualified, errorMsg) = IQLF(packed1.qualification_addr).logQualified(msg.sender, data);
+            require(qualified, errorMsg);
+        }
         require (packed3.start_time + base_time < block.timestamp, "Not started.");
         require (packed3.end_time + base_time > block.timestamp, "Expired.");
         // sha3(sha3(passowrd)[:40] + msg.sender) so that the raw password will never appear in the contract
