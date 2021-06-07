@@ -87,6 +87,13 @@ describe('HappyTokenPool', () => {
         await helper.revertToSnapShot(snapshotId)
     })
 
+    describe('constructor()', async () => {
+        it('Should variables be initalized properly', async () => {
+            const base_time = await happyTokenPoolDeployed.base_time();
+            expect(base_time.toString()).that.to.be.eq(base_timestamp.toString());
+        })
+    })
+
     describe('fill_pool()', async () => {
         it('Should throw error when start time is greater than end time', async () => {
             fpp.start_time = fpp.end_time + 100
@@ -1160,7 +1167,6 @@ describe('HappyTokenPool', () => {
             fpp.total_tokens = BigNumber('50000e18').toFixed()
             const { id: pool_id } = await getResultFromPoolFill(happyTokenPoolDeployed, fpp)
 
-            const tokenB_address_index = 1
             const exchange_tokenB_amount = BigNumber('500e18').toFixed()
             await approveThenSwapToken(testTokenBDeployed, signers[3], tokenB_address_index, pool_id, exchange_tokenB_amount)
 
@@ -1204,7 +1210,6 @@ describe('HappyTokenPool', () => {
                     value: exchange_ETH_amount,
                 })
 
-            const tokenB_address_index = 1
             const exchange_tokenB_amount = BigNumber('200e18').toFixed()
             await approveThenSwapToken(testTokenBDeployed, signers[3], tokenB_address_index, pool_id, exchange_tokenB_amount)
 
