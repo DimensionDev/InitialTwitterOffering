@@ -278,8 +278,9 @@ describe('HappyTokenPool', () => {
       fpp.total_tokens = '10'
       fpp.limit = '10'
       const signer = signers[1]
+      fpp.lock_time = 0
       const { id: pool_id } = await getResultFromPoolFill(happyTokenPoolDeployed, fpp)
-      await happyTokenPoolDeployed.connect(creator).setUnlockTime(pool_id, 0)
+      //await happyTokenPoolDeployed.connect(creator).setUnlockTime(pool_id, 0)
       const { remaining: remaining_before } = await getAvailability(happyTokenPoolDeployed, pool_id, signer.address)
       expect(remaining_before.toString()).to.be.eq(fpp.total_tokens)
 
@@ -639,7 +640,7 @@ describe('HappyTokenPool', () => {
         await testTokenCDeployed.connect(signers[2]).approve(happyTokenPoolDeployed.address, approve_amount.toFixed())
 
         const { id: pool_id } = await getResultFromPoolFill(happyTokenPoolDeployed, fpp)
-        await happyTokenPoolDeployed.connect(creator).setUnlockTime(pool_id, fpp.lock_time)
+        //await happyTokenPoolDeployed.connect(creator).setUnlockTime(pool_id, fpp.lock_time)
         await happyTokenPoolDeployed
           .connect(signers[2])
           .swap(pool_id, verification, validation, tokenC_address_index, approve_amount.toFixed())
@@ -667,8 +668,9 @@ describe('HappyTokenPool', () => {
       })
 
       it('should does no affect when claimable is zero', async () => {
+        fpp.lock_time = 0
         const { id: pool_id } = await getResultFromPoolFill(happyTokenPoolDeployed, fpp)
-        await happyTokenPoolDeployed.connect(creator).setUnlockTime(pool_id, 0)
+        //await happyTokenPoolDeployed.connect(creator).setUnlockTime(pool_id, 0)
         await happyTokenPoolDeployed.connect(signers[3]).claim([pool_id])
         const logs = await ethers.provider.getLogs({
           address: happyTokenPoolDeployed.address,
@@ -685,7 +687,7 @@ describe('HappyTokenPool', () => {
 
         const { id: pool_id } = await getResultFromPoolFill(happyTokenPoolDeployed, fpp)
         const { id: pool_id2 } = await getResultFromPoolFill(happyTokenPoolDeployed, fpp)
-        await happyTokenPoolDeployed.connect(creator).setUnlockTime(pool_id, fpp.lock_time)
+        //await happyTokenPoolDeployed.connect(creator).setUnlockTime(pool_id, fpp.lock_time)
         await happyTokenPoolDeployed
           .connect(signers[2])
           .swap(pool_id, verification, validation, tokenC_address_index, approve_amount.toFixed())
@@ -748,7 +750,7 @@ describe('HappyTokenPool', () => {
         await testTokenCDeployed.connect(signers[2]).approve(happyTokenPoolDeployed.address, approve_amount.toFixed())
 
         const { id: pool_id } = await getResultFromPoolFill(happyTokenPoolDeployed, fpp)
-        await happyTokenPoolDeployed.connect(creator).setUnlockTime(pool_id, fpp.lock_time)
+        //await happyTokenPoolDeployed.connect(creator).setUnlockTime(pool_id, fpp.lock_time)
         await happyTokenPoolDeployed
           .connect(signers[2])
           .swap(pool_id, verification, validation, tokenC_address_index, approve_amount.toFixed())

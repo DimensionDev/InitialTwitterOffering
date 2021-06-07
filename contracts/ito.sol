@@ -305,6 +305,8 @@ contract HappyTokenPool {
         uint256 claimed_amount;
         for (uint256 i = 0; i < ito_ids.length; i++) {
             Pool storage pool = pool_by_id[ito_ids[i]];
+            if (pool.unlock_time == 0)
+                continue;
             if (pool.unlock_time + base_time > block.timestamp)
                 continue;
             claimed_amount = pool.swapped_map[msg.sender];
@@ -320,6 +322,9 @@ contract HappyTokenPool {
     function setUnlockTime(bytes32 id, uint256 _unlock_time) public {
         Pool storage pool = pool_by_id[id];
         require(pool.creator == msg.sender, "Pool Creator Only");
+        require(block.timestamp < (pool.unlock_time + base_time), "Too Late");
+        require(pool.unlock_time != 0, "Not eligible when unlock_time is 0");
+        require(_unlock_time != 0, "Cannot set to 0");
         pool.unlock_time = uint48(_unlock_time);
     }
 
@@ -364,7 +369,6 @@ contract HappyTokenPool {
         // Gas Refund
         pool.packed1 = 0;
         pool.packed2 = 0;
-        pool.creator = DEFAULT_ADDRESS;
         for (uint256 i = 0; i < pool.exchange_addrs.length; i++) {
             pool.exchange_addrs[i] = DEFAULT_ADDRESS;
             pool.exchanged_tokens[i] = 0;
