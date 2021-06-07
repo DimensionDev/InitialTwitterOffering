@@ -2,9 +2,9 @@ name: test
 
 on:
   push:
-    branches: [proposed_change_not_compatible]
+    branches: [audit_debug]
   pull_request:
-    branches: [proposed_change_not_compatible]
+    branches: [audit_debug]
 
 jobs:
   test:
