@@ -7,6 +7,7 @@
     "scripts": {
         "test": "npx hardhat test",
         "test:coverage": "hardhat coverage",
+        "lint": "npx hardhat check",
         "compile": "hardhat compile",
         "deploy:ropsten": "hardhat --network ropsten deploy",
         "deploy:bsc_test": "hardhat --network bsc_test deploy",
@@ -16,6 +17,7 @@
         "format": "prettier --write './test/*.js' './deploy/*.ts'"
     },
     "dependencies": {
+        "@nomiclabs/hardhat-solhint": "^2.0.0",
         "@openzeppelin/contracts": "^4.0.0",
         "hardhat-deploy": "^0.7.6",
         "hardhat-deploy-ethers": "^0.3.0-beta.7"

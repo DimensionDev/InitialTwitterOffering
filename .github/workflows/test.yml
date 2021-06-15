@@ -18,3 +18,6 @@ jobs:
       - run: npm run compile
       - run: npm run test
       - run: npx prettier --list-different ./test/*.js
+      # `npx hardhat check` does not return error code, even if there are `lint errors` reported.
+      # Using `grep` to expose error code to `github workflows`
+      - run: (! npx hardhat check | grep problem)

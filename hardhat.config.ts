@@ -9,6 +9,7 @@ import "@nomiclabs/hardhat-ethers"
 import "solidity-coverage"
 import "hardhat-gas-reporter"
 import '@openzeppelin/hardhat-upgrades'
+import "@nomiclabs/hardhat-solhint"
 
 const fs = require('fs');
 

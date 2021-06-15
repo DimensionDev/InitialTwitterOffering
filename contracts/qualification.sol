@@ -27,11 +27,26 @@ contract QLF is IQLF, Ownable {
         start_time = _start_time;
     }
 
-    function ifQualified(address account, bytes32[] memory data) public pure override returns (bool qualified, string memory errorMsg) {
+    function ifQualified(address account, bytes32[] memory data)
+        public
+        pure
+        override
+        returns (
+            bool qualified,
+            string memory errorMsg
+        )
+    {
         return (true, "");
     }
 
-    function logQualified(address account, bytes32[] memory data) public override returns (bool qualified, string memory errorMsg) {
+    function logQualified(address account, bytes32[] memory data)
+        public
+        override
+        returns (
+            bool qualified,
+            string memory errorMsg
+        )
+    {
         if (start_time > block.timestamp) {
             black_list[account] = true;
             return (false, "not started"); 

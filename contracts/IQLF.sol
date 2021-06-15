@@ -10,7 +10,8 @@ pragma solidity >= 0.8.0;
 
 import "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 
-abstract contract IQLF is IERC165 {
+abstract
+contract IQLF is IERC165 {
     /**
      * @dev Check if the given address is qualified, implemented on demand.
      *
