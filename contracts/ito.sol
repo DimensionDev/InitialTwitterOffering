@@ -61,7 +61,10 @@ contract HappyTokenPool {
         address creator,
         uint256 creation_time,
         address token_address,
-        string message
+        string message,
+        uint128[] ratios,
+        address qualification,
+        uint256 limit
     );
 
     // swap success event
@@ -162,7 +165,7 @@ contract HappyTokenPool {
         pool.ratios = _ratios;                                          // 256 * k
         IERC20(_token_addr).safeTransferFrom(msg.sender, address(this), _total_tokens);
 
-        emit FillSuccess(_total_tokens, _id, msg.sender, block.timestamp, _token_addr, message);
+        emit FillSuccess(_total_tokens, _id, msg.sender, block.timestamp, _token_addr, message, _ratios, _qualification, _limit);
     }
 
     /**
