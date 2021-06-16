@@ -8,7 +8,9 @@
         "test": "npx hardhat test",
         "test:coverage": "hardhat coverage",
         "compile": "hardhat compile",
+        "deploy:ropsten": "hardhat --network ropsten deploy",
         "deploy:bsc_test": "hardhat --network bsc_test deploy",
+        "deploy:bsc_mainnet": "hardhat --network bsc_mainnet deploy",
         "deploy:matic_mumbai_test": "hardhat --network matic_mumbai_test deploy",
         "deploy:matic_mainnet": "hardhat --network matic_mainnet deploy",
         "format": "prettier --write './test/*.js'"
