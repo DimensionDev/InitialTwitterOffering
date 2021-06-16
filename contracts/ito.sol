@@ -57,7 +57,13 @@ contract HappyTokenPool {
         uint256 total,
         uint256 creation_time,
         address token_address,
-        string message
+        string message,
+        uint256 start,
+        uint256 end,
+        address[] exchange_addrs,
+        uint128[] ratios,
+        address qualification,
+        uint256 limit
     );
 
     // swap success event
@@ -67,7 +73,8 @@ contract HappyTokenPool {
         address from_address,
         address to_address,
         uint256 from_value,
-        uint256 to_value
+        uint256 to_value,
+        uint128 input_total
     );
 
     // claim success event
@@ -127,7 +134,7 @@ contract HappyTokenPool {
      * This function takes the above parameters and creates the pool. _total_tokens of the target token
      * will be successfully transferred to this contract securely on a successful run of this function.
     **/
-    function fill_pool (bytes32 _hash, uint256 _start, uint256 _end, string memory message,
+    function fill_pool (bytes32 _hash, uint256 _start, uint256 _end, string memory _message,
                         address[] memory _exchange_addrs, uint128[] memory _ratios, uint256 _unlock_time,
                         address _token_addr, uint256 _total_tokens, uint256 _limit, address _qualification)
     public payable {
@@ -159,7 +166,34 @@ contract HappyTokenPool {
         pool.ratios = _ratios;                                          // 256 * k
         IERC20(_token_addr).safeTransferFrom(msg.sender, address(this), _total_tokens);
 
-        emit FillSuccess(msg.sender, _id, _total_tokens, block.timestamp, _token_addr, message);
+        {
+            // Solidity has stack depth limitation: "Stack too deep, try removing local variables"
+            // add local variables as a workaround
+            uint256 total_tokens = _total_tokens;
+            address token_addr = _token_addr;
+            string memory message = _message;
+            uint256 start = _start;
+            uint256 end = _end;
+            address[] memory exchange_addrs = _exchange_addrs;
+            uint128[] memory ratios = _ratios;
+            address qualification = _qualification;
+            uint256 limit = _limit;
+
+            emit FillSuccess(
+                msg.sender,
+                _id,
+                total_tokens,
+                block.timestamp,
+                token_addr,
+                message,
+                start,
+                end,
+                exchange_addrs,
+                ratios,
+                qualification,
+                limit
+            );
+        }
     }
 
     /**
@@ -182,6 +216,7 @@ contract HappyTokenPool {
                    bytes32[] memory data)
     public payable returns (uint256 swapped) {
 
+        uint128 from_value = input_total;
         Pool storage pool = pool_by_id[id];
         Packed1 memory packed1 = pool.packed1;
         Packed2 memory packed2 = pool.packed2;
@@ -206,27 +241,27 @@ contract HappyTokenPool {
         uint256 ratioB = pool.ratios[exchange_addr_i*2 + 1];
         // check if the input is enough for the desired transfer
         if (exchange_addr == DEFAULT_ADDRESS) {
-            require(msg.value == input_total, 'No enough ether.');
+            require(msg.value == from_value, 'No enough ether.');
         }
 
-        uint128 swapped_tokens = SafeCast.toUint128(SafeMath.div(SafeMath.mul(input_total, ratioB), ratioA));
+        uint128 swapped_tokens = SafeCast.toUint128(SafeMath.div(SafeMath.mul(from_value, ratioB), ratioA));
         require(swapped_tokens > 0, "Better not draw water with a sieve");
 
         if (swapped_tokens > packed2.limit) {
             // don't be greedy - you can only get at most limit tokens
             swapped_tokens = packed2.limit;
-            input_total = SafeCast.toUint128(SafeMath.div(SafeMath.mul(packed2.limit, ratioA), ratioB));           // Update input_total
+            from_value = SafeCast.toUint128(SafeMath.div(SafeMath.mul(packed2.limit, ratioA), ratioB));           // Update from_value
         } else if (swapped_tokens > packed2.total_tokens ) {
             // if the left tokens are not enough
             swapped_tokens = packed2.total_tokens;
-            input_total = SafeCast.toUint128(SafeMath.div(SafeMath.mul(packed2.total_tokens , ratioA), ratioB));    // Update input_total
+            from_value = SafeCast.toUint128(SafeMath.div(SafeMath.mul(packed2.total_tokens , ratioA), ratioB));    // Update from_value
             // return the eth
             if (exchange_addr == DEFAULT_ADDRESS)
-                payable(msg.sender).transfer(msg.value - input_total);
+                payable(msg.sender).transfer(msg.value - from_value);
         }
         require(swapped_tokens <= packed2.limit);                                                       // make sure again
         pool.exchanged_tokens[exchange_addr_i] = SafeCast.toUint128(SafeMath.add(pool.exchanged_tokens[exchange_addr_i], 
-                                                                      input_total));            // update exchanged
+                                                                      from_value));            // update exchanged
 
         // penalize greedy attackers by placing duplication check at the very last
         require (pool.swapped_map[msg.sender] == 0, "Already swapped");
@@ -238,11 +273,17 @@ contract HappyTokenPool {
         // transfer the token after state changing
         // ETH comes with the tx, but ERC20 does not - INPUT
         if (exchange_addr != DEFAULT_ADDRESS) {
-            IERC20(exchange_addr).safeTransferFrom(msg.sender, address(this), input_total);
+            IERC20(exchange_addr).safeTransferFrom(msg.sender, address(this), from_value);
         }
 
-        // Swap success event
-        emit SwapSuccess(id, msg.sender, exchange_addr, packed3.token_address, input_total, swapped_tokens);
+        {
+            // Solidity has stack depth limitation: "Stack too deep, try removing local variables"
+            // add local variables as a workaround
+            // Swap success event
+            bytes32 _id = id;
+            uint128 _input_total = input_total;
+            emit SwapSuccess(_id, msg.sender, exchange_addr, packed3.token_address, from_value, swapped_tokens, _input_total);
+        }
 
         // if unlock_time == 0, transfer the swapped tokens to the recipient address (msg.sender) - OUTPUT
         // if not, claim() needs to be called to get the token

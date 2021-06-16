@@ -292,7 +292,7 @@ describe('HappyTokenPool', () => {
                 signer.address,
             );
             const { verification, validation } = getVerification(PASSWORD, signer.address);
-            happyTokenPoolDeployed
+            await happyTokenPoolDeployed
                 .connect(signer)
                 .swap(pool_id, verification, tokenB_address_index, approve_amount, [pool_id]);
             const { remaining: remaining_now } = await getAvailability(
@@ -326,7 +326,7 @@ describe('HappyTokenPool', () => {
             await testTokenBDeployed.connect(creator).transfer(signer.address, transfer_amount);
             await testTokenBDeployed.connect(signer).approve(happyTokenPoolDeployed.address, approve_amount);
             const { verification, validation } = getVerification(PASSWORD, signer.address);
-            happyTokenPoolDeployed
+            await happyTokenPoolDeployed
                 .connect(signer)
                 .swap(pool_id, verification, tokenB_address_index, approve_amount, [pool_id]);
             const { remaining: remaining_now } = await getAvailability(happyTokenPoolDeployed, pool_id, signer.address);
