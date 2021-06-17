@@ -54,13 +54,10 @@ To prevent malicious attack, you can set a `swap_start_time` in your custom qual
 
 ### Empty Qualification Contract
 
-| Chain | Address |
-| ----- | ------- |
-| Mainnet | [0x989252d4853db438235fbd9c946afc4cca6e21f1](https://etherscan.io/address/0x989252d4853db438235fbd9c946afc4cca6e21f1) |
-| Ropsten | [0xbe3dd217479d93ed76457f01c98296c5235f3054](https://ropsten.etherscan.io/address/0xbe3dd217479d93ed76457f01c98296c5235f3054) |
-| Rinkeby | [0x88AA0AB3B7cDE263073e1cBa1D06473adeC1b38E](https://rinkeby.etherscan.io/address/0x88AA0AB3B7cDE263073e1cBa1D06473adeC1b38E) |
-| Kovan | N/A |
-| Görli | N/A |
+| Contract | [Mainnet](https://etherscan.io/) | [Ropsten](https://ropsten.etherscan.io/) | [BSC](https://bscscan.com/) |[BSC-testnet](https://testnet.bscscan.com/) | [Matic](https://matic.network/) | [Matic-mumbai](https://explorer-mumbai.maticvigil.com/) |
+|---|---|---|---|---|---|---|
+| [qualification](contracts/qualification.sol) | [0x989252d4](https://etherscan.io/address/0x989252d4853db438235fbd9c946afc4cca6e21f1) | [0x77ffa594](https://ropsten.etherscan.io/address/0x77ffa59414593Eb33e9F8e78549dc7185302c8D9) | [0x5B966f3a](https://bscscan.com/address/0x5B966f3a32Db9C180843bCb40267A66b73E4f022) | [0x54a0A221](https://testnet.bscscan.com/address/0x54a0A221C25Fc0a347EC929cFC5db0be17fA2a2B) | [0x02Ea0720](https://polygonscan.com/address/0x02Ea0720254F7fa4eca7d09A1b9C783F1020EbEF) | [0x5B966f3a](https://explorer-mumbai.maticvigil.com/address/0x5B966f3a32Db9C180843bCb40267A66b73E4f022) |
+
 
 
 ## Contribute

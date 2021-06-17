@@ -10,6 +10,13 @@ const func: DeployFunction = async function(hre: HardhatRuntimeEnvironment) {
     args: [],
     log: true,
   })
+  /*
+  await deploy('QLF', {
+    from: deployer,
+    args: ['ITO_QLF', 0],
+    log: true,
+  })
+  */
 }
 
 func.tags = ['HappyTokenPool']
