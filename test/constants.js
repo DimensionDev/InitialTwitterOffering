@@ -14,7 +14,7 @@ const fill_success_types = [
     { type: 'address', name: 'qualification' },
     { type: 'uint256', name: 'limit' }
 ]
-const swap_success_encode = 'SwapSuccess(bytes32,address,address,address,uint256,uint256)'
+const swap_success_encode = 'SwapSuccess(bytes32,address,address,address,uint256,uint256,uint128)'
 const swap_success_types = [
     { type: 'bytes32', name: 'id' },
     { type: 'address', name: 'swapper' },
@@ -22,6 +22,7 @@ const swap_success_types = [
     { type: 'address', name: 'to_address' },
     { type: 'uint256', name: 'from_value' },
     { type: 'uint256', name: 'to_value' },
+    { type: 'uint128', name: 'input_total' },
 ]
 const claim_success_encode = 'ClaimSuccess(bytes32,address,uint256,uint256,address)'
 const claim_success_types = [
