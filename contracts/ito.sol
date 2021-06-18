@@ -62,6 +62,9 @@ contract HappyTokenPool {
         uint256 creation_time,
         address token_address,
         string message,
+        uint256 start,
+        uint256 end,
+        address[] exchange_addrs,
         uint128[] ratios,
         address qualification,
         uint256 limit
@@ -134,7 +137,7 @@ contract HappyTokenPool {
      * This function takes the above parameters and creates the pool. _total_tokens of the target token
      * will be successfully transferred to this contract securely on a successful run of this function.
     **/
-    function fill_pool (bytes32 _hash, uint256 _start, uint256 _end, string memory message,
+    function fill_pool (bytes32 _hash, uint256 _start, uint256 _end, string memory _message,
                         address[] memory _exchange_addrs, uint128[] memory _ratios, uint256 _unlock_time,
                         address _token_addr, uint256 _total_tokens, uint256 _limit, address _qualification)
     public payable {
@@ -166,7 +169,28 @@ contract HappyTokenPool {
         pool.ratios = _ratios;                                          // 256 * k
         IERC20(_token_addr).safeTransferFrom(msg.sender, address(this), _total_tokens);
 
-        emit FillSuccess(_total_tokens, _id, msg.sender, block.timestamp, _token_addr, message, _ratios, _qualification, _limit);
+        {
+            address token_addr = _token_addr;
+            string memory message = _message;
+            uint256 start = _start;
+            uint256 end = _end;
+            address[] memory exchange_addrs = _exchange_addrs;
+            uint128[] memory ratios = _ratios;
+            address qualification = _qualification;
+            uint256 limit = _limit;
+            emit FillSuccess(_total_tokens,
+                _id,
+                msg.sender,
+                block.timestamp,
+                token_addr,
+                message,
+                start,
+                end,
+                exchange_addrs,
+                ratios,
+                qualification,
+                limit);
+        }
     }
 
     /**
