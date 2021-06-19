@@ -8,6 +8,7 @@ import "@nomiclabs/hardhat-waffle"
 import "@nomiclabs/hardhat-ethers"
 import "solidity-coverage"
 import "hardhat-gas-reporter"
+import '@openzeppelin/hardhat-upgrades'
 
 const fs = require('fs');
 

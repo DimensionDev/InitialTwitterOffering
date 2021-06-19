@@ -20,6 +20,10 @@ const {
 
 const itoJsonABI = require('../artifacts/contracts/ito.sol/HappyTokenPool.json');
 const itoInterface = new ethers.utils.Interface(itoJsonABI.abi);
+const itoJsonABI_V2 = require('../artifacts/contracts/ito_test_v2.sol/HappyTokenPool_V2.json');
+const itoInterface_V2 = new ethers.utils.Interface(itoJsonABI_V2.abi);
+
+const proxyAdminABI = require('@openzeppelin/upgrades-core/artifacts/ProxyAdmin.json');
 
 const qualificationJsonABI = require('../artifacts/contracts/qualification.sol/QLF.json');
 const qualificationInterface = new ethers.utils.Interface(qualificationJsonABI.abi);
@@ -31,6 +35,8 @@ let testTokenBDeployed;
 let testTokenCDeployed;
 let happyTokenPoolDeployed;
 let qualificationTesterDeployed;
+let HappyTokenPoolProxy;
+
 let signers;
 let creator;
 let ito_user;
@@ -44,22 +50,23 @@ describe('HappyTokenPool', () => {
         const TestTokenA = await ethers.getContractFactory('TestTokenA');
         const TestTokenB = await ethers.getContractFactory('TestTokenB');
         const TestTokenC = await ethers.getContractFactory('TestTokenC');
-        const HappyTokenPool = await ethers.getContractFactory('HappyTokenPool');
         const QualificationTester = await ethers.getContractFactory('QLF');
 
         const testTokenA = await TestTokenA.deploy(amount);
         const testTokenB = await TestTokenB.deploy(amount);
         const testTokenC = await TestTokenC.deploy(amount);
-        const happyTokenPool = await HappyTokenPool.deploy(base_timestamp);
         const qualificationTester = await QualificationTester.deploy(0);
         const qualificationTester2 = await QualificationTester.deploy(pending_qualification_timestamp);
 
         testTokenADeployed = await testTokenA.deployed();
         testTokenBDeployed = await testTokenB.deployed();
         testTokenCDeployed = await testTokenC.deployed();
-        happyTokenPoolDeployed = await happyTokenPool.deployed();
         qualificationTesterDeployed = await qualificationTester.deployed();
         qualificationTesterDeployed2 = await qualificationTester2.deployed();
+
+        const HappyTokenPool = await ethers.getContractFactory('HappyTokenPool');
+        HappyTokenPoolProxy = await upgrades.deployProxy(HappyTokenPool, [base_timestamp]);
+        happyTokenPoolDeployed = new ethers.Contract(HappyTokenPoolProxy.address, itoJsonABI.abi, creator);
     });
 
     beforeEach(async () => {
@@ -723,6 +730,93 @@ describe('HappyTokenPool', () => {
                 );
         });
 
+        it('Should proxy work properly', async () => {
+            const approve_amount = BigNumber('1e10').toFixed();
+            exchange_amount = approve_amount;
+            const pool_owner = signers[2];
+            const pool_user = signers[2];
+            await testTokenCDeployed.connect(pool_owner).approve(happyTokenPoolDeployed.address, approve_amount);
+            const { id: pool_id } = await getResultFromPoolFill(happyTokenPoolDeployed, fpp);
+
+            const userTokenCBalanceBeforeSwap = await testTokenCDeployed.balanceOf(pool_user.address);
+            const contractTokenCBalanceBeforeSwap = await testTokenCDeployed.balanceOf(happyTokenPoolDeployed.address);
+            {
+                {
+                    // make sure `others` can NOT upgrade
+                    const proxyAdmin = await getProxyAdmin(happyTokenPoolDeployed.address);
+                    const adminOnChain = await proxyAdmin.getProxyAdmin(happyTokenPoolDeployed.address);
+                    expect(proxyAdmin.address.toUpperCase()).that.to.be.eq(adminOnChain.toUpperCase());
+                    const owner = await proxyAdmin.owner();
+                    expect(owner.toUpperCase()).that.to.be.eq(creator.address.toUpperCase());
+                    await expect(
+                        proxyAdmin
+                            .connect(pool_user)
+                            .upgrade(happyTokenPoolDeployed.address, qualificationTesterDeployed.address),
+                    ).to.be.rejectedWith('caller is not the owner');
+                }
+
+                // upgrade contract
+                const itoContract_v2 = await ethers.getContractFactory('HappyTokenPool_V2');
+                await upgrades.upgradeProxy(HappyTokenPoolProxy.address, itoContract_v2);
+
+                // varaible values should persist
+                const base_time = await happyTokenPoolDeployed.base_time();
+                expect(base_time.toString()).that.to.be.eq(base_timestamp.toString());
+
+                await happyTokenPoolDeployed
+                    .connect(pool_user)
+                    .swap(pool_id, verification, tokenC_address_index, exchange_amount, [pool_id]);
+            }
+            const userTokenCBalanceAfterSwap = await testTokenCDeployed.balanceOf(pool_user.address);
+            const contractTokenCBalanceAfterSwap = await testTokenCDeployed.balanceOf(happyTokenPoolDeployed.address);
+
+            const ratio = fpp.exchange_ratios[5] / fpp.exchange_ratios[4]; // tokenA <=> tokenC
+            // after upgrade, `swap` behavior should change
+            // updated contract only swaps half of the input
+            const exchange_amount_v2 = exchange_amount / 2;
+            const exchanged_tokenA_amount = exchange_amount_v2 * ratio;
+
+            expect(contractTokenCBalanceAfterSwap.toString()).to.be.eq(
+                BigNumber(contractTokenCBalanceBeforeSwap.toString())
+                    .plus(BigNumber(exchange_amount_v2))
+                    .toFixed(),
+            );
+            expect(userTokenCBalanceAfterSwap.toString()).to.be.eq(
+                BigNumber(userTokenCBalanceBeforeSwap.toString())
+                    .minus(BigNumber(exchange_amount_v2))
+                    .toFixed(),
+            );
+
+            {
+                const happyTokenPoolDeployed_V2 = new ethers.Contract(
+                    HappyTokenPoolProxy.address,
+                    itoJsonABI_V2.abi,
+                    creator,
+                );
+                // filter with `upgraded` event signature
+                const logs = await ethers.provider.getLogs(happyTokenPoolDeployed_V2.filters.SwapSuccess());
+                const parsedLog = itoInterface_V2.parseLog(logs[0]);
+                const result = parsedLog.args;
+                expect(result).to.have.property('id').that.to.not.be.null;
+                expect(result).to.have.property('swapper').that.to.not.be.null;
+                expect(result.from_value.toString()).that.to.be.eq(String(exchange_amount_v2));
+                expect(result.to_value.toString()).that.to.be.eq(String(exchanged_tokenA_amount));
+                expect(result)
+                    .to.have.property('from_address')
+                    .that.to.be.eq(testTokenCDeployed.address);
+                expect(result)
+                    .to.have.property('to_address')
+                    .that.to.be.eq(testTokenADeployed.address);
+                // updated `SwapSuccess` should include `total_tokens`
+                expect(result).to.have.property('total_tokens').that.to.not.be.null;
+                expect(result.total_tokens.toString()).that.to.be.eq(
+                    BigNumber(fpp.total_tokens)
+                        .minus(exchanged_tokenA_amount)
+                        .toFixed(),
+                );
+            }
+        });
+
         describe('claim()', async () => {
             it('should does no affect when claimable is zero', async () => {
                 fpp.lock_time = 0;
@@ -1357,6 +1451,16 @@ describe('HappyTokenPool', () => {
         const signer = await ethers.getSigner(account);
         happyTokenPoolDeployed = happyTokenPoolDeployed.connect(signer);
         return happyTokenPoolDeployed.check_availability(pool_id);
+    }
+
+    async function getProxyAdmin(deployedProxyAddr) {
+        const adminStoragePosition = '0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103';
+        const storage = await ethers.provider.getStorageAt(deployedProxyAddr, adminStoragePosition);
+        const addrStoragePrefix = '0x000000000000000000000000';
+        assert.isTrue(storage.startsWith(addrStoragePrefix));
+        const adminAddr = '0x' + storage.substring(addrStoragePrefix.length);
+        const proxyAdmin = new ethers.Contract(adminAddr, proxyAdminABI.abi, creator);
+        return proxyAdmin;
     }
 });
 
