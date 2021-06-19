@@ -285,7 +285,6 @@ describe('HappyTokenPool', () => {
             await testTokenBDeployed.connect(creator).transfer(signer.address, transfer_amount);
             await testTokenBDeployed.connect(signer).approve(happyTokenPoolDeployed.address, approve_amount);
             // await happyTokenPoolDeployed.connect(signer).test_allowance(testTokenBDeployed.address)
-            console.log('fpp: ' + JSON.stringify(fpp, null, 2));
             const { id: pool_id } = await getResultFromPoolFill(happyTokenPoolDeployed, fpp);
             const { remaining: remaining_before } = await getAvailability(
                 happyTokenPoolDeployed,
@@ -303,9 +302,6 @@ describe('HappyTokenPool', () => {
             );
             const ratio = fpp.exchange_ratios[3] / fpp.exchange_ratios[2]; // tokenA <=> tokenB
             const exchange_tokenA_amount = BigNumber(approve_amount).multipliedBy(ratio);
-            console.log('remaining_before: ' + remaining_before);
-            console.log('remaining_now: ' + remaining_now);
-            console.log('exchange_tokenA_amount: ' + exchange_tokenA_amount);
             expect(remaining_before.sub(remaining_now).toString()).to.be.eq(exchange_tokenA_amount.toString());
         });
 
@@ -1297,18 +1293,9 @@ describe('HappyTokenPool', () => {
                 happyTokenPoolDeployed.connect(account_not_creator).withdraw(pool_id, ETH_address_index),
             ).to.be.rejectedWith(Error);
 
-            {
-                const latestBlock = await ethers.provider.getBlockNumber();
-                console.log('block id: ' + latestBlock);
-            }
             await helper.advanceTimeAndBlock(2000 * 1000);
             await happyTokenPoolDeployed.connect(creator).withdraw(pool_id, tokenB_address_index);
             await happyTokenPoolDeployed.connect(creator).withdraw(pool_id, ETH_address_index);
-
-            {
-                const latestBlock = await ethers.provider.getBlockNumber();
-                console.log('block id: ' + latestBlock);
-            }
 
             // can not withdraw again
             expect(happyTokenPoolDeployed.connect(creator).withdraw(pool_id, ETH_address_index)).to.be.rejectedWith(
@@ -1319,7 +1306,6 @@ describe('HappyTokenPool', () => {
             );
 
             const latestBlock = await ethers.provider.getBlockNumber();
-            console.log('block id: ' + latestBlock);
             const filter = happyTokenPoolDeployed.filters.WithdrawSuccess();
             filter.fromBlock = latestBlock - 1;
             filter.toBlock = latestBlock;
