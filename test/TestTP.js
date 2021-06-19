@@ -1401,7 +1401,7 @@ describe('HappyTokenPool', () => {
 
             const latestBlock = await ethers.provider.getBlockNumber();
             const filter = happyTokenPoolDeployed.filters.WithdrawSuccess();
-            filter.fromBlock = latestBlock - 1;
+            filter.fromBlock = latestBlock - 2;
             filter.toBlock = latestBlock;
             const logs = await ethers.provider.getLogs(filter);
 
