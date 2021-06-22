@@ -43,7 +43,7 @@ function debug_param (address _token_addr) public {
 
 | Contract | [Mainnet](https://etherscan.io/) | [Ropsten](https://ropsten.etherscan.io/) | [BSC](https://bscscan.com/) |[BSC-testnet](https://testnet.bscscan.com/) | [Matic](https://matic.network/) | [Matic-mumbai](https://explorer-mumbai.maticvigil.com/) |
 |---|---|---|---|---|---|---|
-| [ITO](contracts/ito.sol) | [0xxxxxxxx](https://etherscan.io/address/0xxxxxxxx) | [0xBD4c3Cf0](https://ropsten.etherscan.io/address/0xBD4c3Cf084B6F4d25430Ee5d44436e860Cc58Ee4) | [0xxxxxxxx](https://bscscan.com/address/0xxxxxxxx) | [0xbc558E76](https://testnet.bscscan.com/address/0xbc558E7683F79FAAE236c1083671396cbB2Ac242) | [0xxxxxxxx](https://polygonscan.com/address/0xxxxxxxx) | [0x4df24eB0](https://explorer-mumbai.maticvigil.com/address/0x4df24eB095A73CeCDe7c89233CeE1efCc7C1c685) |
+| [ITO](contracts/ito.sol) | [0xxxxxxxx](https://etherscan.io/address/0xxxxxxxx) | [0xBD4c3Cf0](https://ropsten.etherscan.io/address/0xBD4c3Cf084B6F4d25430Ee5d44436e860Cc58Ee4) | [0x96c7D011](https://bscscan.com/address/0x96c7D011cdFD467f551605f0f5Fce279F86F4186) | [0xbc558E76](https://testnet.bscscan.com/address/0xbc558E7683F79FAAE236c1083671396cbB2Ac242) | [0xF9F7C149](https://polygonscan.com/address/0xF9F7C1496c21bC0180f4B64daBE0754ebFc8A8c0) | [0x4df24eB0](https://explorer-mumbai.maticvigil.com/address/0x4df24eB095A73CeCDe7c89233CeE1efCc7C1c685) |
 
 
 ## Qualification
@@ -56,7 +56,7 @@ To prevent malicious attack, you can set a `swap_start_time` in your custom qual
 
 | Contract | [Mainnet](https://etherscan.io/) | [Ropsten](https://ropsten.etherscan.io/) | [BSC](https://bscscan.com/) |[BSC-testnet](https://testnet.bscscan.com/) | [Matic](https://matic.network/) | [Matic-mumbai](https://explorer-mumbai.maticvigil.com/) |
 |---|---|---|---|---|---|---|
-| [qualification](contracts/qualification.sol) | [0xxxxxxxx](https://etherscan.io/address/0xxxxxxxx) | [0xd5e6434b](https://ropsten.etherscan.io/address/0xd5e6434bde165062b3d9572DEFd6393c7B3E2902) | [0xxxxxxxx](https://bscscan.com/address/0xxxxxxxx) | [0xaaC2362f](https://testnet.bscscan.com/address/0xaaC2362f2DC523E9B37B1EE2eA57110e1Bd63F59) | [0xxxxxxxx](https://polygonscan.com/address/0xxxxxxxx) | [0x8AB2579C](https://explorer-mumbai.maticvigil.com/address/0x8AB2579C91E4f1688e1787288d969450BF6d478d) |
+| [qualification](contracts/qualification.sol) | [0xxxxxxxx](https://etherscan.io/address/0xxxxxxxx) | [0xd5e6434b](https://ropsten.etherscan.io/address/0xd5e6434bde165062b3d9572DEFd6393c7B3E2902) | [0xAb7B1bE4](https://bscscan.com/address/0xAb7B1bE4233A04e5C43a810E75657ECED8E5463B) | [0xaaC2362f](https://testnet.bscscan.com/address/0xaaC2362f2DC523E9B37B1EE2eA57110e1Bd63F59) | [0x2cf91AD8](https://polygonscan.com/address/0x2cf91AD8C175305EBe6970Bd8f81231585EFbd77) | [0x8AB2579C](https://explorer-mumbai.maticvigil.com/address/0x8AB2579C91E4f1688e1787288d969450BF6d478d) |
 
 
 
