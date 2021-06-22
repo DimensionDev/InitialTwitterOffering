@@ -10,6 +10,7 @@ const func: DeployFunction = async function(hre: HardhatRuntimeEnvironment) {
     const HappyTokenPoolImpl = await ethers.getContractFactory('HappyTokenPool');
     const HappyTokenPoolProxy = await upgrades.deployProxy(HappyTokenPoolImpl, [1616976000]);
     await HappyTokenPoolProxy.deployed();
+    console.log("HappyTokenPoolProxy: " + HappyTokenPoolProxy.address);
 
     await deploy('QLF', {
         from: deployer,
