@@ -41,6 +41,16 @@ const networks = {
         chainId: 31337,
         gas: 'auto',
     },
+
+    mainnet: {
+        url: 'https://mainnet.infura.io/v3/' + project_secret.infura_project_id,
+        accounts: project_secret.private_key_list,
+        chainId: 1,
+        gasPrice: ethers.utils.parseUnits('10', 'gwei').toNumber(),
+        // blockGasLimit 8000000
+        // to solve timeout error, increase the hardcoded `waitAndValidateDeployment` in `@openzeppelin/upgrades-core/dist/deployment.js`
+        // timeout: 600000,
+    },
     ropsten: {
         url: 'https://ropsten.infura.io/v3/' + project_secret.infura_project_id,
         accounts: project_secret.private_key_list,

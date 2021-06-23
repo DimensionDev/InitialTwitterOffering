@@ -41,9 +41,20 @@ function debug_param (address _token_addr) public {
 
 ### ITO Contract
 
+The ITO smart contract adopts the `Proxy Upgrade Pattern` to make it easier to upgrade. Hence, the addresses in this section are actually the deployed `TransparentUpgradeableProxy` smart contract addresses.
+
+
 | Contract | [Mainnet](https://etherscan.io/) | [Ropsten](https://ropsten.etherscan.io/) | [BSC](https://bscscan.com/) |[BSC-testnet](https://testnet.bscscan.com/) | [Matic](https://matic.network/) | [Matic-mumbai](https://explorer-mumbai.maticvigil.com/) |
 |---|---|---|---|---|---|---|
-| [ITO](contracts/ito.sol) | [0xxxxxxxx](https://etherscan.io/address/0xxxxxxxx) | [0xBD4c3Cf0](https://ropsten.etherscan.io/address/0xBD4c3Cf084B6F4d25430Ee5d44436e860Cc58Ee4) | [0x96c7D011](https://bscscan.com/address/0x96c7D011cdFD467f551605f0f5Fce279F86F4186) | [0xbc558E76](https://testnet.bscscan.com/address/0xbc558E7683F79FAAE236c1083671396cbB2Ac242) | [0xF9F7C149](https://polygonscan.com/address/0xF9F7C1496c21bC0180f4B64daBE0754ebFc8A8c0) | [0x4df24eB0](https://explorer-mumbai.maticvigil.com/address/0x4df24eB095A73CeCDe7c89233CeE1efCc7C1c685) |
+| [ITO](contracts/ito.sol) | [0xc2CFbF22](https://etherscan.io/address/0xc2CFbF22d6Dc87D0eE18d38d73733524c109Ff46) | [0xBD4c3Cf0](https://ropsten.etherscan.io/address/0xBD4c3Cf084B6F4d25430Ee5d44436e860Cc58Ee4) | [0x96c7D011](https://bscscan.com/address/0x96c7D011cdFD467f551605f0f5Fce279F86F4186) | [0xbc558E76](https://testnet.bscscan.com/address/0xbc558E7683F79FAAE236c1083671396cbB2Ac242) | [0xF9F7C149](https://polygonscan.com/address/0xF9F7C1496c21bC0180f4B64daBE0754ebFc8A8c0) | [0x4df24eB0](https://explorer-mumbai.maticvigil.com/address/0x4df24eB095A73CeCDe7c89233CeE1efCc7C1c685) |
+
+### ProxyAdmin
+
+Besides, it also deployed the `ProxyAdmin` to manage the `TransparentUpgradeableProxy`.
+
+| Contract | [Mainnet](https://etherscan.io/) | [Ropsten](https://ropsten.etherscan.io/) | [BSC](https://bscscan.com/) |[BSC-testnet](https://testnet.bscscan.com/) | [Matic](https://matic.network/) | [Matic-mumbai](https://explorer-mumbai.maticvigil.com/) |
+|---|---|---|---|---|---|---|
+| ProxyAdmin | [0x7aa4F9C7](https://etherscan.io/address/0x7aa4F9C72985Da8309aa97894070Dd855E63C544) | [0xa01c3cbe](https://ropsten.etherscan.io/address/0xa01c3cbeF7088cb4d22a990E1356F39bce7Ca3f2) | [0x83D6b366](https://bscscan.com/address/0x83D6b366f21e413f214EB077D5378478e71a5eD2) | [0xF7072bB9](https://testnet.bscscan.com/address/0xF7072bB93458250E38C6c4523882C6e2b5fe8ec0) | [0xAb7B1bE4](https://polygonscan.com/address/0xAb7B1bE4233A04e5C43a810E75657ECED8E5463B) | [0xDB80b907](https://explorer-mumbai.maticvigil.com/address/0xDB80b9076F24EEee87425Fe70eA64222d9bD6A2a) |
 
 
 ## Qualification
@@ -56,7 +67,7 @@ To prevent malicious attack, you can set a `swap_start_time` in your custom qual
 
 | Contract | [Mainnet](https://etherscan.io/) | [Ropsten](https://ropsten.etherscan.io/) | [BSC](https://bscscan.com/) |[BSC-testnet](https://testnet.bscscan.com/) | [Matic](https://matic.network/) | [Matic-mumbai](https://explorer-mumbai.maticvigil.com/) |
 |---|---|---|---|---|---|---|
-| [qualification](contracts/qualification.sol) | [0xxxxxxxx](https://etherscan.io/address/0xxxxxxxx) | [0xd5e6434b](https://ropsten.etherscan.io/address/0xd5e6434bde165062b3d9572DEFd6393c7B3E2902) | [0xAb7B1bE4](https://bscscan.com/address/0xAb7B1bE4233A04e5C43a810E75657ECED8E5463B) | [0xaaC2362f](https://testnet.bscscan.com/address/0xaaC2362f2DC523E9B37B1EE2eA57110e1Bd63F59) | [0x2cf91AD8](https://polygonscan.com/address/0x2cf91AD8C175305EBe6970Bd8f81231585EFbd77) | [0x8AB2579C](https://explorer-mumbai.maticvigil.com/address/0x8AB2579C91E4f1688e1787288d969450BF6d478d) |
+| [qualification](contracts/qualification.sol) | [0x4dC5f343](https://etherscan.io/address/0x4dC5f343Fe57E4fbDA1B454d125D396A3181272c) | [0xd5e6434b](https://ropsten.etherscan.io/address/0xd5e6434bde165062b3d9572DEFd6393c7B3E2902) | [0xAb7B1bE4](https://bscscan.com/address/0xAb7B1bE4233A04e5C43a810E75657ECED8E5463B) | [0xaaC2362f](https://testnet.bscscan.com/address/0xaaC2362f2DC523E9B37B1EE2eA57110e1Bd63F59) | [0x2cf91AD8](https://polygonscan.com/address/0x2cf91AD8C175305EBe6970Bd8f81231585EFbd77) | [0x8AB2579C](https://explorer-mumbai.maticvigil.com/address/0x8AB2579C91E4f1688e1787288d969450BF6d478d) |
 
 
 

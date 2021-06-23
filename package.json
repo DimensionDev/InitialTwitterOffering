@@ -9,6 +9,7 @@
         "test:coverage": "hardhat coverage",
         "lint": "npx hardhat check",
         "compile": "hardhat compile",
+        "deploy:mainnet": "hardhat --network mainnet deploy",
         "deploy:ropsten": "hardhat --network ropsten deploy",
         "deploy:bsc_test": "hardhat --network bsc_test deploy",
         "deploy:bsc_mainnet": "hardhat --network bsc_mainnet deploy",
