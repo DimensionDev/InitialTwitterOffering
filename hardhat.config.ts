@@ -59,6 +59,13 @@ const networks = {
         gasPrice: ethers.utils.parseUnits('10', 'gwei').toNumber(),
         // blockGasLimit 8000000
     },
+    rinkeby: {
+        url: "https://rinkeby.infura.io/v3/" + project_secret.infura_project_id,
+        accounts: project_secret.private_key_list,
+        chainId: 4,
+        gasPrice: ethers.utils.parseUnits('5', 'gwei').toNumber(),
+        // blockGasLimit 8000000
+    },
     bsc_test: {
         url: 'https://data-seed-prebsc-1-s1.binance.org:8545',
         accounts: project_secret.private_key_list,

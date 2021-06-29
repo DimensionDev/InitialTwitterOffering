@@ -11,6 +11,7 @@
         "compile": "hardhat compile",
         "deploy:mainnet": "hardhat --network mainnet deploy",
         "deploy:ropsten": "hardhat --network ropsten deploy",
+        "deploy:rinkeby": "hardhat --network rinkeby deploy",
         "deploy:bsc_test": "hardhat --network bsc_test deploy",
         "deploy:bsc_mainnet": "hardhat --network bsc_mainnet deploy",
         "deploy:matic_mumbai_test": "hardhat --network matic_mumbai_test deploy",
@@ -19,9 +20,7 @@
     },
     "dependencies": {
         "@nomiclabs/hardhat-solhint": "^2.0.0",
-        "@openzeppelin/contracts": "^4.0.0",
-        "hardhat-deploy": "^0.7.6",
-        "hardhat-deploy-ethers": "^0.3.0-beta.7"
+        "@openzeppelin/contracts": "^4.0.0"
     },
     "devDependencies": {
         "@nomiclabs/hardhat-ethers": "^2.0.2",
@@ -43,6 +42,9 @@
         "solidity-selector": "^1.3.0",
         "ts-node": "^9.1.1",
         "typescript": "^4.2.3",
-        "web3-utils": "^1.3.4"
+        "web3-utils": "^1.3.4",
+        "ethereum-waffle": "^3.4.0",
+        "hardhat-deploy": "^0.7.6",
+        "hardhat-deploy-ethers": "^0.3.0-beta.7"
     }
 }
