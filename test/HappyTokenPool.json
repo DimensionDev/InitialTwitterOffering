@@ -191,6 +191,12 @@
           "internalType": "uint128",
           "name": "input_total",
           "type": "uint128"
+        },
+        {
+          "indexed": false,
+          "internalType": "bool",
+          "name": "claimed",
+          "type": "bool"
         }
       ],
       "name": "SwapSuccess",
@@ -283,6 +289,11 @@
           "internalType": "uint128[]",
           "name": "exchanged_tokens",
           "type": "uint128[]"
+        },
+        {
+          "internalType": "bool",
+          "name": "claimed",
+          "type": "bool"
         }
       ],
       "stateMutability": "view",

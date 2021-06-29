@@ -1,15 +1,13 @@
 // SPDX-License-Identifier: MIT
 
 /**
- * @author          Andy Jiang
- * @contact         andy@mask.io
- * @author_time     20/June/2021
- * @maintainer      Andy Jiang
- * @maintain_time   20/June/2021
+ * @author          Yisi Liu
+ * @contact         yisiliu@gmail.com
+ * @author_time     01/06/2021
+ * @maintainer      Hancheng Zhou, Yisi Liu, Andy Jiang
+ * @maintain_time   06/15/2021
 **/
 
-// CAUTION: THIS IS A COPY OF `ito.sol`, JUST FOR TESTING THE PROXY
-// DO NOT USE IT
 pragma solidity >= 0.8.0;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -18,7 +16,8 @@ import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "./IQLF.sol";
 
-contract HappyTokenPool_V2 is Initializable {
+// ITO smart contract tag: v1.0
+contract HappyTokenPool_v1_0 is Initializable {
     struct Packed1 {
         address qualification_addr;
         uint40 password;
@@ -52,7 +51,6 @@ contract HappyTokenPool_V2 is Initializable {
                                     // represents 1 tokenA to swap 10 target token
                                     // note: each ratio pair needs to be coprime
         mapping(address => uint256) swapped_map;      // swapped amount of an address
-        uint256 status;             // for testing
     }
 
     // swap pool filling success event
@@ -79,8 +77,7 @@ contract HappyTokenPool_V2 is Initializable {
         address to_address,
         uint256 from_value,
         uint256 to_value,
-        uint128 input_total,
-        uint256 total_tokens      // for testing
+        uint128 input_total
     );
 
     // claim success event
@@ -115,7 +112,6 @@ contract HappyTokenPool_V2 is Initializable {
     address private DEFAULT_ADDRESS;
     uint64 public base_time;
     uint32 private nonce;
-    uint256 public global_status;             // for testing
 
     function initialize(uint64 _base_time) public initializer {
         seed = keccak256(abi.encodePacked("MASK", block.timestamp, msg.sender));
@@ -224,7 +220,7 @@ contract HappyTokenPool_V2 is Initializable {
     )
     public payable returns (uint256 swapped) {
 
-        uint128 from_value = input_total/2;
+        uint128 from_value = input_total;
         Pool storage pool = pool_by_id[id];
         Packed1 memory packed1 = pool.packed1;
         Packed2 memory packed2 = pool.packed2;
@@ -300,17 +296,14 @@ contract HappyTokenPool_V2 is Initializable {
             // Swap success event
             bytes32 _id = id;
             uint128 _input_total = input_total;
-            uint128 _from_value = from_value;
-            uint256 total_tokens = pool.packed2.total_tokens;
             emit SwapSuccess(
                 _id,
                 msg.sender,
                 exchange_addr,
                 packed3.token_address,
-                _from_value,
+                from_value,
                 swapped_tokens,
-                _input_total,
-                total_tokens
+                _input_total
             );
         }
 

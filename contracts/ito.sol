@@ -34,6 +34,10 @@ contract HappyTokenPool is Initializable {
         uint32 unlock_time;
     }
 
+    struct SwapStatus {
+        bool claimed;
+    }
+
     struct Pool {
         // CAUTION: DO NOT CHANGE ORDER & TYPE OF THESE VARIABLES
         // GOOGLE KEYWORDS "SOLIDITY, UPGRADEABLE CONTRACTS, STORAGE" FOR MORE INFO
@@ -50,6 +54,7 @@ contract HappyTokenPool is Initializable {
                                     // represents 1 tokenA to swap 10 target token
                                     // note: each ratio pair needs to be coprime
         mapping(address => uint256) swapped_map;      // swapped amount of an address
+        mapping(address => SwapStatus) swap_status;      // swapped amount of an address
     }
 
     // swap pool filling success event
@@ -76,7 +81,8 @@ contract HappyTokenPool is Initializable {
         address to_address,
         uint256 from_value,
         uint256 to_value,
-        uint128 input_total
+        uint128 input_total,
+        bool claimed
     );
 
     // claim success event
@@ -96,7 +102,7 @@ contract HappyTokenPool is Initializable {
         uint128[] exchanged_values
     );
 
-    // single token withdrawl from a swap pool success even
+    // single token withdrawl from a swap pool success event
     event WithdrawSuccess (
         bytes32 indexed id,
         address indexed token_address,
@@ -295,20 +301,27 @@ contract HappyTokenPool is Initializable {
             // Swap success event
             bytes32 _id = id;
             uint128 _input_total = input_total;
+            uint128 _from_value = from_value;
+            bool claimed = false;
+            if (packed3.unlock_time == 0) {
+                claimed = true;
+            }
             emit SwapSuccess(
                 _id,
                 msg.sender,
                 exchange_addr,
                 packed3.token_address,
-                from_value,
+                _from_value,
                 swapped_tokens,
-                _input_total
+                _input_total,
+                claimed
             );
         }
 
         // if unlock_time == 0, transfer the swapped tokens to the recipient address (msg.sender) - OUTPUT
         // if not, claim() needs to be called to get the token
         if (packed3.unlock_time == 0) {
+            pool.swap_status[msg.sender].claimed = true;
             IERC20(packed3.token_address).safeTransfer(msg.sender, swapped_tokens);
             emit ClaimSuccess(id, msg.sender, block.timestamp, swapped_tokens, packed3.token_address);
         }
@@ -338,11 +351,18 @@ contract HappyTokenPool is Initializable {
             bool unlocked,
             uint256 unlock_time,
             uint256 swapped,
-            uint128[] memory exchanged_tokens
+            uint128[] memory exchanged_tokens,
+            bool claimed
         )
     {
         Pool storage pool = pool_by_id[id];
         Packed3 memory packed3 = pool.packed3;
+        uint256 _swapped_amount = pool.swapped_map[msg.sender];
+        bool _claimed = false;
+        if ( pool.swap_status[msg.sender].claimed ||
+            ((_swapped_amount != 0) && (packed3.unlock_time == 0))) {
+            _claimed = true;
+        }
         return (
             pool.exchange_addrs,                                                // exchange_addrs 0x0 means destructed
             pool.packed2.total_tokens,                                          // remaining
@@ -350,8 +370,9 @@ contract HappyTokenPool is Initializable {
             block.timestamp > packed3.end_time + base_time,                     // expired
             block.timestamp > packed3.unlock_time + base_time,                  // unlocked
             packed3.unlock_time + base_time,                                    // unlock_time
-            pool.swapped_map[msg.sender],                                       // swapped number 
-            pool.exchanged_tokens                                               // exchanged tokens
+            _swapped_amount,                                                    // swapped number 
+            pool.exchanged_tokens,                                              // exchanged tokens
+            _claimed                                                            // claimed?
         );
     }
 
@@ -363,10 +384,12 @@ contract HappyTokenPool is Initializable {
                 continue;
             if (packed3.unlock_time + base_time > block.timestamp)
                 continue;
+            if (pool.swap_status[msg.sender].claimed)
+                continue;
             uint256 claimed_amount = pool.swapped_map[msg.sender];
             if (claimed_amount == 0)
                 continue;
-            pool.swapped_map[msg.sender] = 0;
+            pool.swap_status[msg.sender].claimed = true;
             IERC20(packed3.token_address).safeTransfer(msg.sender, claimed_amount);
             emit ClaimSuccess(ito_ids[i], msg.sender, block.timestamp, claimed_amount, packed3.token_address);
         }

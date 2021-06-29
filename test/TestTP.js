@@ -20,8 +20,9 @@ const {
 
 const itoJsonABI = require('../artifacts/contracts/ito.sol/HappyTokenPool.json');
 const itoInterface = new ethers.utils.Interface(itoJsonABI.abi);
-const itoJsonABI_V2 = require('../artifacts/contracts/ito_test_v2.sol/HappyTokenPool_V2.json');
-const itoInterface_V2 = new ethers.utils.Interface(itoJsonABI_V2.abi);
+
+const itoJsonABI_V1_0 = require('../artifacts/contracts/ito_v1.0.sol/HappyTokenPool_v1_0.json');
+const itoInterface_V1_0 = new ethers.utils.Interface(itoJsonABI_V1_0.abi);
 
 const proxyAdminABI = require('@openzeppelin/upgrades-core/artifacts/ProxyAdmin.json');
 
@@ -33,6 +34,8 @@ let snapshotId;
 let testTokenADeployed;
 let testTokenBDeployed;
 let testTokenCDeployed;
+
+let HappyTokenPool;
 let happyTokenPoolDeployed;
 let qualificationTesterDeployed;
 let HappyTokenPoolProxy;
@@ -64,7 +67,7 @@ describe('HappyTokenPool', () => {
         qualificationTesterDeployed = await qualificationTester.deployed();
         qualificationTesterDeployed2 = await qualificationTester2.deployed();
 
-        const HappyTokenPool = await ethers.getContractFactory('HappyTokenPool');
+        HappyTokenPool = await ethers.getContractFactory('HappyTokenPool');
         HappyTokenPoolProxy = await upgrades.deployProxy(HappyTokenPool, [base_timestamp]);
         happyTokenPoolDeployed = new ethers.Contract(HappyTokenPoolProxy.address, itoJsonABI.abi, creator);
     });
@@ -293,23 +296,19 @@ describe('HappyTokenPool', () => {
             await testTokenBDeployed.connect(signer).approve(happyTokenPoolDeployed.address, approve_amount);
             // await happyTokenPoolDeployed.connect(signer).test_allowance(testTokenBDeployed.address)
             const { id: pool_id } = await getResultFromPoolFill(happyTokenPoolDeployed, fpp);
-            const { remaining: remaining_before } = await getAvailability(
-                happyTokenPoolDeployed,
-                pool_id,
-                signer.address,
-            );
+            const availability_before = await getAvailability(happyTokenPoolDeployed, pool_id, signer.address);
+            expect(availability_before.claimed).to.be.eq(false);
             const { verification, validation } = getVerification(PASSWORD, signer.address);
             await happyTokenPoolDeployed
                 .connect(signer)
                 .swap(pool_id, verification, tokenB_address_index, approve_amount, [pool_id]);
-            const { remaining: remaining_now } = await getAvailability(
-                happyTokenPoolDeployed,
-                pool_id,
-                creator.address,
-            );
+            const availability_current = await getAvailability(happyTokenPoolDeployed, pool_id, creator.address);
             const ratio = fpp.exchange_ratios[3] / fpp.exchange_ratios[2]; // tokenA <=> tokenB
             const exchange_tokenA_amount = BigNumber(approve_amount).multipliedBy(ratio);
-            expect(remaining_before.sub(remaining_now).toString()).to.be.eq(exchange_tokenA_amount.toString());
+            expect(availability_before.remaining.sub(availability_current.remaining).toString()).to.be.eq(
+                exchange_tokenA_amount.toString(),
+            );
+            expect(availability_current.claimed).to.be.eq(false);
         });
 
         it('Should return remaining token correctly when none of ratio gcd is not equal to 1 and tokens are very small', async () => {
@@ -320,12 +319,9 @@ describe('HappyTokenPool', () => {
             fpp.lock_time = 0;
             const { id: pool_id } = await getResultFromPoolFill(happyTokenPoolDeployed, fpp);
             //await happyTokenPoolDeployed.connect(creator).setUnlockTime(pool_id, 0)
-            const { remaining: remaining_before } = await getAvailability(
-                happyTokenPoolDeployed,
-                pool_id,
-                signer.address,
-            );
-            expect(remaining_before.toString()).to.be.eq(fpp.total_tokens);
+            const result_before = await getAvailability(happyTokenPoolDeployed, pool_id, signer.address);
+            expect(result_before.remaining.toString()).to.be.eq(fpp.total_tokens);
+            expect(result_before.claimed).to.be.eq(false);
 
             const transfer_amount = BigNumber('2').toFixed();
             const approve_amount = BigNumber('2').toFixed();
@@ -336,13 +332,14 @@ describe('HappyTokenPool', () => {
             await happyTokenPoolDeployed
                 .connect(signer)
                 .swap(pool_id, verification, tokenB_address_index, approve_amount, [pool_id]);
-            const { remaining: remaining_now } = await getAvailability(happyTokenPoolDeployed, pool_id, signer.address);
+            const result_now = await getAvailability(happyTokenPoolDeployed, pool_id, signer.address);
             const tokenB_balance = await testTokenBDeployed.balanceOf(signer.address);
             const tokenA_balance = await testTokenADeployed.balanceOf(signer.address);
 
             expect(tokenA_balance.toString()).to.be.eq('1');
             expect(tokenB_balance.toString()).to.be.eq('0');
-            expect(remaining_now.toString()).to.be.eq('9');
+            expect(result_now.remaining.toString()).to.be.eq('9');
+            expect(result_now.claimed).to.be.eq(true);
         });
     });
 
@@ -517,7 +514,6 @@ describe('HappyTokenPool', () => {
             const approve_amount = BigNumber('1e10').toFixed();
             exchange_amount = approve_amount;
 
-            const pool_owner = signers[2];
             const pool_user = signers[2];
             let tokenCBalance = await testTokenCDeployed.balanceOf(pool_user.address);
             assert.isTrue(tokenCBalance.gt(exchange_amount));
@@ -529,14 +525,14 @@ describe('HappyTokenPool', () => {
             tokenCBalance = await testTokenCDeployed.balanceOf(pool_user.address);
             assert.isFalse(tokenCBalance.gt(exchange_amount));
 
-            await testTokenCDeployed.connect(pool_owner).approve(happyTokenPoolDeployed.address, approve_amount);
+            await testTokenCDeployed.connect(pool_user).approve(happyTokenPoolDeployed.address, approve_amount);
             const { id: pool_id } = await getResultFromPoolFill(happyTokenPoolDeployed, fpp);
 
-            expect(
+            await expect(
                 happyTokenPoolDeployed
                     .connect(pool_user)
                     .swap(pool_id, verification, tokenC_address_index, exchange_amount, [pool_id]),
-            ).to.be.rejectedWith(Error);
+            ).to.be.rejectedWith('revert ERC20: transfer amount exceeds balance');
 
             // Transfer test tokens back
             await testTokenCDeployed.connect(creator).transfer(pool_user.address, transferAmount);
@@ -548,9 +544,8 @@ describe('HappyTokenPool', () => {
         it('Should emit swapSuccess when swap successful', async () => {
             const approve_amount = BigNumber('1e10').toFixed();
             exchange_amount = approve_amount;
-            const pool_owner = signers[2];
             const pool_user = signers[2];
-            await testTokenCDeployed.connect(pool_owner).approve(happyTokenPoolDeployed.address, approve_amount);
+            await testTokenCDeployed.connect(pool_user).approve(happyTokenPoolDeployed.address, approve_amount);
             const { id: pool_id } = await getResultFromPoolFill(happyTokenPoolDeployed, fpp);
 
             const userTokenCBalanceBeforeSwap = await testTokenCDeployed.balanceOf(pool_user.address);
@@ -588,6 +583,9 @@ describe('HappyTokenPool', () => {
             expect(result)
                 .to.have.property('to_address')
                 .that.to.be.eq(testTokenADeployed.address);
+            expect(result)
+                .to.have.property('claimed')
+                .that.to.be.eq(false);
         });
 
         it('Should swap the maximum number of token equals to limit', async () => {
@@ -730,93 +728,6 @@ describe('HappyTokenPool', () => {
                 );
         });
 
-        it('Should proxy work properly', async () => {
-            const approve_amount = BigNumber('1e10').toFixed();
-            exchange_amount = approve_amount;
-            const pool_owner = signers[2];
-            const pool_user = signers[2];
-            await testTokenCDeployed.connect(pool_owner).approve(happyTokenPoolDeployed.address, approve_amount);
-            const { id: pool_id } = await getResultFromPoolFill(happyTokenPoolDeployed, fpp);
-
-            const userTokenCBalanceBeforeSwap = await testTokenCDeployed.balanceOf(pool_user.address);
-            const contractTokenCBalanceBeforeSwap = await testTokenCDeployed.balanceOf(happyTokenPoolDeployed.address);
-            {
-                {
-                    // make sure `others` can NOT upgrade
-                    const proxyAdmin = await getProxyAdmin(happyTokenPoolDeployed.address);
-                    const adminOnChain = await proxyAdmin.getProxyAdmin(happyTokenPoolDeployed.address);
-                    expect(proxyAdmin.address.toUpperCase()).that.to.be.eq(adminOnChain.toUpperCase());
-                    const owner = await proxyAdmin.owner();
-                    expect(owner.toUpperCase()).that.to.be.eq(creator.address.toUpperCase());
-                    await expect(
-                        proxyAdmin
-                            .connect(pool_user)
-                            .upgrade(happyTokenPoolDeployed.address, qualificationTesterDeployed.address),
-                    ).to.be.rejectedWith('caller is not the owner');
-                }
-
-                // upgrade contract
-                const itoContract_v2 = await ethers.getContractFactory('HappyTokenPool_V2');
-                await upgrades.upgradeProxy(HappyTokenPoolProxy.address, itoContract_v2);
-
-                // varaible values should persist
-                const base_time = await happyTokenPoolDeployed.base_time();
-                expect(base_time.toString()).that.to.be.eq(base_timestamp.toString());
-
-                await happyTokenPoolDeployed
-                    .connect(pool_user)
-                    .swap(pool_id, verification, tokenC_address_index, exchange_amount, [pool_id]);
-            }
-            const userTokenCBalanceAfterSwap = await testTokenCDeployed.balanceOf(pool_user.address);
-            const contractTokenCBalanceAfterSwap = await testTokenCDeployed.balanceOf(happyTokenPoolDeployed.address);
-
-            const ratio = fpp.exchange_ratios[5] / fpp.exchange_ratios[4]; // tokenA <=> tokenC
-            // after upgrade, `swap` behavior should change
-            // updated contract only swaps half of the input
-            const exchange_amount_v2 = exchange_amount / 2;
-            const exchanged_tokenA_amount = exchange_amount_v2 * ratio;
-
-            expect(contractTokenCBalanceAfterSwap.toString()).to.be.eq(
-                BigNumber(contractTokenCBalanceBeforeSwap.toString())
-                    .plus(BigNumber(exchange_amount_v2))
-                    .toFixed(),
-            );
-            expect(userTokenCBalanceAfterSwap.toString()).to.be.eq(
-                BigNumber(userTokenCBalanceBeforeSwap.toString())
-                    .minus(BigNumber(exchange_amount_v2))
-                    .toFixed(),
-            );
-
-            {
-                const happyTokenPoolDeployed_V2 = new ethers.Contract(
-                    HappyTokenPoolProxy.address,
-                    itoJsonABI_V2.abi,
-                    creator,
-                );
-                // filter with `upgraded` event signature
-                const logs = await ethers.provider.getLogs(happyTokenPoolDeployed_V2.filters.SwapSuccess());
-                const parsedLog = itoInterface_V2.parseLog(logs[0]);
-                const result = parsedLog.args;
-                expect(result).to.have.property('id').that.to.not.be.null;
-                expect(result).to.have.property('swapper').that.to.not.be.null;
-                expect(result.from_value.toString()).that.to.be.eq(String(exchange_amount_v2));
-                expect(result.to_value.toString()).that.to.be.eq(String(exchanged_tokenA_amount));
-                expect(result)
-                    .to.have.property('from_address')
-                    .that.to.be.eq(testTokenCDeployed.address);
-                expect(result)
-                    .to.have.property('to_address')
-                    .that.to.be.eq(testTokenADeployed.address);
-                // updated `SwapSuccess` should include `total_tokens`
-                expect(result).to.have.property('total_tokens').that.to.not.be.null;
-                expect(result.total_tokens.toString()).that.to.be.eq(
-                    BigNumber(fpp.total_tokens)
-                        .minus(exchanged_tokenA_amount)
-                        .toFixed(),
-                );
-            }
-        });
-
         describe('claim()', async () => {
             it('should does no affect when claimable is zero', async () => {
                 fpp.lock_time = 0;
@@ -893,41 +804,36 @@ describe('HappyTokenPool', () => {
                         .toFixed(),
                 );
 
-                const { swapped: claimablePrevious } = await getAvailability(
-                    happyTokenPoolDeployed,
-                    pool_id,
-                    pool_user.address,
-                );
+                const availabilityPrevious = await getAvailability(happyTokenPoolDeployed, pool_id, pool_user.address);
 
-                expect(claimablePrevious.toString())
+                expect(availabilityPrevious.swapped.toString())
                     .to.be.eq(approve_amount.div(fpp.exchange_ratios[tokenC_address_index * 2]).toString())
                     .and.to.be.eq('2500000');
+                expect(availabilityPrevious.claimed).to.be.false;
 
-                const { swapped: claimablePrevious2 } = await getAvailability(
+                const availabilityPrevious2 = await getAvailability(
                     happyTokenPoolDeployed,
                     pool_id2,
                     pool_user.address,
                 );
 
-                expect(claimablePrevious2.toString())
+                expect(availabilityPrevious2.swapped.toString())
                     .to.be.eq(approve_amount.multipliedBy(fpp.exchange_ratios[tokenB_address_index * 2 + 1]).toString())
                     .and.to.be.eq('20000000000000');
+                expect(availabilityPrevious2.claimed).to.be.false;
 
                 await helper.advanceTimeAndBlock(fpp.lock_time);
 
                 // contains duplicated pool-id and an invalid pool id
                 const invalid_pool_id = '0x1234567833dc44ce38f1024d3ea7d861f13ac29112db0e5b9814c54b12345678';
                 await happyTokenPoolDeployed.connect(pool_user).claim([pool_id, pool_id2, pool_id2, invalid_pool_id]);
-                const { swapped: claimableNow } = await getAvailability(
-                    happyTokenPoolDeployed,
-                    pool_id,
-                    pool_user.address,
-                );
-                const { swapped: claimableNow2 } = await getAvailability(
-                    happyTokenPoolDeployed,
-                    pool_id2,
-                    pool_user.address,
-                );
+
+                const availabilityNow = await getAvailability(happyTokenPoolDeployed, pool_id, pool_user.address);
+                expect(availabilityNow.claimed).to.be.true;
+
+                const availabilityNow2 = await getAvailability(happyTokenPoolDeployed, pool_id2, pool_user.address);
+                expect(availabilityNow2.claimed).to.be.true;
+
                 const userTokenABalanceAfterClaim = await testTokenADeployed.balanceOf(pool_user.address);
                 const contractTokenABalanceAfterClaim = await testTokenADeployed.balanceOf(
                     happyTokenPoolDeployed.address,
@@ -937,26 +843,29 @@ describe('HappyTokenPool', () => {
                 const ratio_b = fpp.exchange_ratios[3] / fpp.exchange_ratios[2];
                 // tokenC ==> tokenA
                 const ratio_c = fpp.exchange_ratios[5] / fpp.exchange_ratios[4];
-                const exchangedTokenA = approve_amount * ratio_b + approve_amount * ratio_c;
+                const exchangedTokenA_pool_1 = approve_amount * ratio_c;
+                const exchangedTokenA_pool_2 = approve_amount * ratio_b;
+                const exchangedTokenA_total = exchangedTokenA_pool_1 + exchangedTokenA_pool_2;
 
                 expect(userTokenABalanceAfterClaim.toString()).to.be.eq(
                     BigNumber(userTokenABalanceBeforeClaim.toString())
-                        .plus(BigNumber(exchangedTokenA))
+                        .plus(BigNumber(exchangedTokenA_total))
                         .toFixed(),
                 );
                 expect(contractTokenABalanceAfterClaim.toString()).to.be.eq(
                     BigNumber(contractTokenABalanceBeforeClaim.toString())
-                        .minus(BigNumber(exchangedTokenA))
+                        .minus(BigNumber(exchangedTokenA_total))
                         .toFixed(),
                 );
 
-                expect(claimableNow.toString())
-                    .to.be.eq('0')
-                    .and.to.be.not.eq(claimablePrevious.toString());
+                // "swapped amount" should not change
+                expect(availabilityNow.swapped.toString())
+                    .to.be.eq(exchangedTokenA_pool_1.toString())
+                    .and.to.be.eq(availabilityPrevious.swapped.toString());
 
-                expect(claimableNow2.toString())
-                    .to.be.eq('0')
-                    .and.to.be.not.eq(claimablePrevious2.toString());
+                expect(availabilityNow2.swapped.toString())
+                    .to.be.eq(exchangedTokenA_pool_2.toString())
+                    .and.to.be.eq(availabilityPrevious2.swapped.toString());
 
                 const logs = await ethers.provider.getLogs(happyTokenPoolDeployed.filters.ClaimSuccess());
 
@@ -967,9 +876,9 @@ describe('HappyTokenPool', () => {
                 parsedLog = itoInterface.parseLog(logs[1]);
                 const result2 = parsedLog.args;
 
-                expect(result.to_value.toString()).to.be.eq(claimablePrevious.toString());
+                expect(result.to_value.toString()).to.be.eq(availabilityPrevious.swapped.toString());
 
-                expect(result2.to_value.toString()).to.be.eq(claimablePrevious2.toString());
+                expect(result2.to_value.toString()).to.be.eq(availabilityPrevious2.swapped.toString());
             });
 
             it('should still be able to claim after destruct pool', async () => {
@@ -984,32 +893,24 @@ describe('HappyTokenPool', () => {
                     .connect(signers[2])
                     .swap(pool_id, verification, tokenC_address_index, approve_amount.toFixed(), [pool_id]);
 
-                const { swapped: claimablePrevious } = await getAvailability(
-                    happyTokenPoolDeployed,
-                    pool_id,
-                    signers[2].address,
-                );
+                const availabilityPrevious = await getAvailability(happyTokenPoolDeployed, pool_id, signers[2].address);
+                expect(availabilityPrevious.claimed).to.be.false;
 
                 await helper.advanceTimeAndBlock(fpp.lock_time);
 
                 await happyTokenPoolDeployed.connect(creator).destruct(pool_id);
 
                 await happyTokenPoolDeployed.connect(signers[2]).claim([pool_id]);
-                const { swapped: claimableNow } = await getAvailability(
-                    happyTokenPoolDeployed,
-                    pool_id,
-                    signers[2].address,
-                );
+                const availabilityNow = await getAvailability(happyTokenPoolDeployed, pool_id, signers[2].address);
 
-                expect(claimableNow.toString())
-                    .to.be.eq('0')
-                    .and.to.be.not.eq(claimablePrevious.toString());
+                expect(availabilityNow.swapped.toString()).and.to.be.eq(availabilityPrevious.swapped.toString());
+                expect(availabilityNow.claimed).to.be.true;
 
                 const logs = await ethers.provider.getLogs(happyTokenPoolDeployed.filters.ClaimSuccess());
                 const parsedLog = itoInterface.parseLog(logs[0]);
                 const result = parsedLog.args;
 
-                expect(result.to_value.toString()).to.be.eq(claimablePrevious.toString());
+                expect(result.to_value.toString()).to.be.eq(availabilityPrevious.swapped.toString());
             });
         });
 
@@ -1025,25 +926,18 @@ describe('HappyTokenPool', () => {
                     .connect(signers[2])
                     .swap(pool_id, verification, tokenC_address_index, approve_amount.toFixed(), [pool_id]);
 
-                const { swapped: claimablePrevious } = await getAvailability(
-                    happyTokenPoolDeployed,
-                    pool_id,
-                    signers[2].address,
-                );
+                const availabilityPrevious = await getAvailability(happyTokenPoolDeployed, pool_id, signers[2].address);
 
                 // should do nothing if pool is locked
                 {
                     await happyTokenPoolDeployed.connect(signers[2]).claim([pool_id]);
-                    const { swapped: claimableNow } = await getAvailability(
-                        happyTokenPoolDeployed,
-                        pool_id,
-                        signers[2].address,
-                    );
+                    const availabilityNow = await getAvailability(happyTokenPoolDeployed, pool_id, signers[2].address);
 
-                    expect(claimablePrevious.toString())
-                        .to.be.eq(claimableNow.toString())
+                    expect(availabilityPrevious.swapped.toString())
+                        .to.be.eq(availabilityNow.swapped.toString())
                         .and.to.be.eq(approve_amount.div(fpp.exchange_ratios[tokenC_address_index * 2]).toString())
                         .and.to.be.eq('2500000');
+                    expect(availabilityNow.claimed).to.be.false;
 
                     const logs = await ethers.provider.getLogs(happyTokenPoolDeployed.filters.ClaimSuccess());
 
@@ -1051,7 +945,9 @@ describe('HappyTokenPool', () => {
                 }
                 {
                     // can NOT set to 0
-                    expect(happyTokenPoolDeployed.connect(creator).setUnlockTime(pool_id, 0)).to.be.rejectedWith(Error);
+                    await expect(happyTokenPoolDeployed.connect(creator).setUnlockTime(pool_id, 0)).to.be.rejectedWith(
+                        Error,
+                    );
                 }
                 if (true) {
                     // 48 bits integer overflow, expect error
@@ -1068,7 +964,7 @@ describe('HappyTokenPool', () => {
                     const account_not_creator = signers[4];
                     expect(
                         happyTokenPoolDeployed.connect(account_not_creator).setUnlockTime(pool_id, new_unlock_time),
-                    ).to.be.rejectedWith(Error);
+                    ).to.be.rejectedWith('Pool Creator Only');
                 }
                 {
                     await happyTokenPoolDeployed.connect(creator).setUnlockTime(pool_id, new_unlock_time);
@@ -1083,45 +979,44 @@ describe('HappyTokenPool', () => {
                         expect(poolUnlockTime.toString()).and.to.be.eq(now_in_second.toString());
                     }
                     await happyTokenPoolDeployed.connect(signers[2]).claim([pool_id]);
-                    const { swapped: claimableNow } = await getAvailability(
-                        happyTokenPoolDeployed,
-                        pool_id,
-                        signers[2].address,
-                    );
-                    expect(claimableNow.toString())
-                        .to.be.eq('0')
-                        .and.to.be.not.eq(claimablePrevious.toString());
+                    const availabilityNow = await getAvailability(happyTokenPoolDeployed, pool_id, signers[2].address);
+                    expect(availabilityNow.swapped.toString()).and.to.be.eq(availabilityPrevious.swapped.toString());
+                    expect(availabilityNow.claimed).to.be.true;
 
                     const logs = await ethers.provider.getLogs(happyTokenPoolDeployed.filters.ClaimSuccess());
                     const parsedLog = itoInterface.parseLog(logs[0]);
                     const result = parsedLog.args;
-                    expect(result.to_value.toString()).to.be.eq(claimablePrevious.toString());
+                    expect(result.to_value.toString()).to.be.eq(availabilityPrevious.swapped.toString());
                 }
             });
         });
 
         it('should everything work when unlock_time is 0(no lock)', async () => {
             const approve_amount = BigNumber('1e10');
-            const pool_owner = signers[2];
+            const pool_user = signers[2];
             await testTokenCDeployed
-                .connect(pool_owner)
+                .connect(pool_user)
                 .approve(happyTokenPoolDeployed.address, approve_amount.toFixed());
 
             fpp.exchange_ratios = [1, 1, 1, 1, 1, 1];
             fpp.lock_time = 0;
             const { id: pool_id } = await getResultFromPoolFill(happyTokenPoolDeployed, fpp);
 
-            const userTokenABalanceBeforeSwap = await testTokenADeployed.balanceOf(pool_owner.address);
-            const userTokenCBalanceBeforeSwap = await testTokenCDeployed.balanceOf(pool_owner.address);
+            const userTokenABalanceBeforeSwap = await testTokenADeployed.balanceOf(pool_user.address);
+            const userTokenCBalanceBeforeSwap = await testTokenCDeployed.balanceOf(pool_user.address);
             const contractTokenABalanceBeforeSwap = await testTokenADeployed.balanceOf(happyTokenPoolDeployed.address);
             const contractTokenCBalanceBeforeSwap = await testTokenCDeployed.balanceOf(happyTokenPoolDeployed.address);
 
             await happyTokenPoolDeployed
-                .connect(pool_owner)
+                .connect(pool_user)
                 .swap(pool_id, verification, tokenC_address_index, approve_amount.toFixed(), [pool_id]);
-
-            const userTokenABalanceAfterSwap = await testTokenADeployed.balanceOf(pool_owner.address);
-            const userTokenCBalanceAfterSwap = await testTokenCDeployed.balanceOf(pool_owner.address);
+            {
+                const availability = await getAvailability(happyTokenPoolDeployed, pool_id, pool_user.address);
+                expect(availability.swapped.toString()).to.be.eq(approve_amount.toString());
+                expect(availability.claimed).to.be.true;
+            }
+            const userTokenABalanceAfterSwap = await testTokenADeployed.balanceOf(pool_user.address);
+            const userTokenCBalanceAfterSwap = await testTokenCDeployed.balanceOf(pool_user.address);
             const contractTokenABalanceAfterSwap = await testTokenADeployed.balanceOf(happyTokenPoolDeployed.address);
             const contractTokenCBalanceAfterSwap = await testTokenCDeployed.balanceOf(happyTokenPoolDeployed.address);
 
@@ -1146,29 +1041,61 @@ describe('HappyTokenPool', () => {
                     .minus(BigNumber(approve_amount))
                     .toFixed(),
             );
-
+            {
+                const logs = await ethers.provider.getLogs(happyTokenPoolDeployed.filters.SwapSuccess());
+                const parsedLog = itoInterface.parseLog(logs[0]);
+                const result = parsedLog.args;
+                expect(result)
+                    .to.have.property('swapper')
+                    .that.to.be.eq(pool_user.address);
+                expect(result)
+                    .to.have.property('claimed')
+                    .that.to.be.eq(true);
+            }
+            {
+                const logs = await ethers.provider.getLogs(happyTokenPoolDeployed.filters.ClaimSuccess());
+                const parsedLog = itoInterface.parseLog(logs[0]);
+                const result = parsedLog.args;
+                expect(result)
+                    .to.have.property('claimer')
+                    .that.to.be.eq(pool_user.address);
+            }
+            // can not swap again
+            {
+                await expect(
+                    happyTokenPoolDeployed
+                        .connect(pool_user)
+                        .swap(pool_id, verification, tokenC_address_index, approve_amount.toFixed(), [pool_id]),
+                ).to.be.rejectedWith('Already swapped');
+            }
             // can not setUnlockTime when pool lock_time is 0
             {
                 const now_in_second = Math.floor(Date.now() / 1000);
                 const new_unlock_time = now_in_second - base_timestamp;
-                expect(
-                    happyTokenPoolDeployed.connect(pool_owner).setUnlockTime(pool_id, new_unlock_time),
+                await expect(
+                    happyTokenPoolDeployed.connect(creator).setUnlockTime(pool_id, new_unlock_time),
                 ).to.be.rejectedWith(Error);
             }
+            // can not claim
             {
-                const userTokenABalanceAfterClaim = await testTokenADeployed.balanceOf(pool_owner.address);
-                const userTokenCBalanceAfterClaim = await testTokenCDeployed.balanceOf(pool_owner.address);
+                await happyTokenPoolDeployed.connect(pool_user).claim([pool_id]);
+                const userTokenABalanceAfterClaim = await testTokenADeployed.balanceOf(pool_user.address);
+                const userTokenCBalanceAfterClaim = await testTokenCDeployed.balanceOf(pool_user.address);
                 const contractTokenABalanceAfterClaim = await testTokenADeployed.balanceOf(
                     happyTokenPoolDeployed.address,
                 );
                 const contractTokenCBalanceAfterClaim = await testTokenCDeployed.balanceOf(
                     happyTokenPoolDeployed.address,
                 );
-                await happyTokenPoolDeployed.connect(pool_owner).claim([pool_id]);
                 assert.isTrue(userTokenABalanceAfterSwap.eq(userTokenABalanceAfterClaim));
                 assert.isTrue(userTokenCBalanceAfterSwap.eq(userTokenCBalanceAfterClaim));
                 assert.isTrue(contractTokenABalanceAfterSwap.eq(contractTokenABalanceAfterClaim));
-                assert.isTrue(contractTokenCBalanceAfterSwap.eq(contractTokenCBalanceAfterSwap));
+                assert.isTrue(contractTokenCBalanceAfterSwap.eq(contractTokenCBalanceAfterClaim));
+            }
+            {
+                const availability = await getAvailability(happyTokenPoolDeployed, pool_id, pool_user.address);
+                expect(availability.swapped.toString()).to.be.eq(approve_amount.toString());
+                expect(availability.claimed).to.be.true;
             }
         });
     });
@@ -1383,7 +1310,7 @@ describe('HappyTokenPool', () => {
 
             // "none-pool owner" can not withdraw
             const account_not_creator = signers[4];
-            expect(
+            await expect(
                 happyTokenPoolDeployed.connect(account_not_creator).withdraw(pool_id, ETH_address_index),
             ).to.be.rejectedWith(Error);
 
@@ -1412,6 +1339,492 @@ describe('HappyTokenPool', () => {
 
             expect(logWithdrawTokenB.withdraw_balance.toString()).that.to.be.eq(BigNumber('200e18').toFixed());
             expect(logWithdrawETH.withdraw_balance.toString()).that.to.be.eq(BigNumber('3e14').toFixed());
+        });
+    });
+
+    describe('smart contract upgrade', async () => {
+        let pool_user;
+        let verification;
+        let happyTokenPoolDeployed_v1_0;
+        let exchange_amount;
+
+        before(async () => {
+            pool_user = signers[2];
+            const transfer_amount = BigNumber('1e26').toFixed();
+            await testTokenBDeployed.connect(creator).transfer(pool_user.address, transfer_amount);
+            await testTokenCDeployed.connect(creator).transfer(pool_user.address, transfer_amount);
+        });
+
+        beforeEach(async () => {
+            const HappyTokenPool_v1_0 = await ethers.getContractFactory('HappyTokenPool_v1_0');
+            const HappyTokenPoolProxy_v1_0 = await upgrades.deployProxy(HappyTokenPool_v1_0, [base_timestamp]);
+            happyTokenPoolDeployed_v1_0 = new ethers.Contract(
+                HappyTokenPoolProxy_v1_0.address,
+                itoJsonABI_V1_0.abi,
+                creator,
+            );
+
+            await testTokenADeployed
+                .connect(creator)
+                .approve(happyTokenPoolDeployed_v1_0.address, BigNumber('1e26').toFixed());
+            const r = getVerification(PASSWORD, pool_user.address);
+            verification = r.verification;
+
+            exchange_amount = BigNumber('1e10').toFixed();
+        });
+
+        it('Should non-owner not be able to update implementation', async () => {
+            // make sure `others` can NOT upgrade
+            const proxyAdmin = await getProxyAdmin(happyTokenPoolDeployed_v1_0.address);
+            const adminOnChain = await proxyAdmin.getProxyAdmin(happyTokenPoolDeployed_v1_0.address);
+            expect(proxyAdmin.address.toUpperCase()).that.to.be.eq(adminOnChain.toUpperCase());
+            const owner = await proxyAdmin.owner();
+            expect(owner.toUpperCase()).that.to.be.eq(creator.address.toUpperCase());
+            await expect(
+                proxyAdmin
+                    .connect(pool_user)
+                    .upgrade(happyTokenPoolDeployed_v1_0.address, qualificationTesterDeployed.address),
+            ).to.be.rejectedWith('caller is not the owner');
+        });
+
+        it('Should ITO v1.0 be compatible with latest, upgrade after claim', async () => {
+            const approve_amount = BigNumber('1e10').toFixed();
+            exchange_amount = approve_amount;
+            const { id: pool_id } = await getResultFromPoolFill(happyTokenPoolDeployed_v1_0, fpp);
+            const userTokenABalanceBeforeSwap = await testTokenADeployed.balanceOf(pool_user.address);
+            const contractTokenABalanceBeforeSwap = await testTokenADeployed.balanceOf(
+                happyTokenPoolDeployed_v1_0.address,
+            );
+            const ratio = fpp.exchange_ratios[5] / fpp.exchange_ratios[4]; // tokenA <=> tokenC
+            const exchanged_tokenA_amount = exchange_amount * ratio;
+            {
+                await testTokenCDeployed
+                    .connect(pool_user)
+                    .approve(happyTokenPoolDeployed_v1_0.address, approve_amount);
+
+                const userTokenCBalanceBeforeSwap = await testTokenCDeployed.balanceOf(pool_user.address);
+                const contractTokenCBalanceBeforeSwap = await testTokenCDeployed.balanceOf(
+                    happyTokenPoolDeployed_v1_0.address,
+                );
+                await happyTokenPoolDeployed_v1_0
+                    .connect(pool_user)
+                    .swap(pool_id, verification, tokenC_address_index, exchange_amount, [pool_id]);
+                {
+                    const availability = await getAvailability(happyTokenPoolDeployed_v1_0, pool_id, pool_user.address);
+                    expect(availability.swapped.toString()).to.be.eq(exchanged_tokenA_amount.toString());
+                    expect(availability).to.not.have.property('claimed');
+                }
+                // Check SwapSuccess event
+                {
+                    const logs = await ethers.provider.getLogs(happyTokenPoolDeployed_v1_0.filters.SwapSuccess());
+                    const parsedLog = itoInterface_V1_0.parseLog(logs[0]);
+                    const result = parsedLog.args;
+                    expect(result).to.have.property('id').that.to.not.be.null;
+                    expect(result).to.have.property('swapper').that.to.not.be.null;
+                    expect(result.from_value.toString()).that.to.be.eq(String(exchange_amount));
+                    expect(result.to_value.toString()).that.to.be.eq(String(exchanged_tokenA_amount));
+                    expect(result)
+                        .to.have.property('from_address')
+                        .that.to.be.eq(testTokenCDeployed.address);
+                    expect(result)
+                        .to.have.property('to_address')
+                        .that.to.be.eq(testTokenADeployed.address);
+                    expect(result).to.not.have.property('claimed');
+                }
+                // check token C balance after swap
+                {
+                    const userTokenCBalanceAfterSwap = await testTokenCDeployed.balanceOf(pool_user.address);
+                    const contractTokenCBalanceAfterSwap = await testTokenCDeployed.balanceOf(
+                        happyTokenPoolDeployed_v1_0.address,
+                    );
+                    expect(contractTokenCBalanceAfterSwap.toString()).to.be.eq(
+                        BigNumber(contractTokenCBalanceBeforeSwap.toString())
+                            .plus(BigNumber(exchange_amount))
+                            .toFixed(),
+                    );
+                    expect(userTokenCBalanceAfterSwap.toString()).to.be.eq(
+                        BigNumber(userTokenCBalanceBeforeSwap.toString())
+                            .minus(BigNumber(exchange_amount))
+                            .toFixed(),
+                    );
+                }
+                //-------------------------------------------------------------------------------------------------------------
+                await helper.advanceTimeAndBlock(fpp.lock_time);
+                await happyTokenPoolDeployed_v1_0.connect(pool_user).claim([pool_id]);
+                {
+                    const availability = await getAvailability(happyTokenPoolDeployed_v1_0, pool_id, pool_user.address);
+                    // previous behavior(tag: v1.0), changed already
+                    expect(availability.swapped.toString()).to.be.eq('0');
+                    expect(availability).to.not.have.property('claimed');
+                }
+                // check token A balance after claim
+                {
+                    const userTokenABalanceAfterClaim = await testTokenADeployed.balanceOf(pool_user.address);
+                    const contractTokenABalanceAfterClaim = await testTokenADeployed.balanceOf(
+                        happyTokenPoolDeployed_v1_0.address,
+                    );
+                    expect(contractTokenABalanceAfterClaim.toString()).to.be.eq(
+                        BigNumber(contractTokenABalanceBeforeSwap.toString())
+                            .minus(BigNumber(exchanged_tokenA_amount))
+                            .toFixed(),
+                    );
+                    expect(userTokenABalanceAfterClaim.toString()).to.be.eq(
+                        BigNumber(userTokenABalanceBeforeSwap.toString())
+                            .plus(BigNumber(exchanged_tokenA_amount))
+                            .toFixed(),
+                    );
+                }
+            }
+
+            // upgrade contract to latest
+            await upgrades.upgradeProxy(happyTokenPoolDeployed_v1_0.address, HappyTokenPool);
+            const deployedUpgraded = new ethers.Contract(happyTokenPoolDeployed_v1_0.address, itoJsonABI.abi, creator);
+            {
+                const availability = await getAvailability(deployedUpgraded, pool_id, pool_user.address);
+                // minor problem
+                expect(availability.swapped.toString()).to.be.eq('0');
+                expect(availability.claimed).to.be.false;
+                await deployedUpgraded.connect(pool_user).claim([pool_id]);
+                // claim-again, check token A balance
+                {
+                    await happyTokenPoolDeployed_v1_0.connect(pool_user).claim([pool_id]);
+                    const userTokenABalanceAfterClaim = await testTokenADeployed.balanceOf(pool_user.address);
+                    const contractTokenABalanceAfterClaim = await testTokenADeployed.balanceOf(
+                        happyTokenPoolDeployed_v1_0.address,
+                    );
+                    expect(contractTokenABalanceAfterClaim.toString()).to.be.eq(
+                        BigNumber(contractTokenABalanceBeforeSwap.toString())
+                            .minus(BigNumber(exchanged_tokenA_amount))
+                            .toFixed(),
+                    );
+                    expect(userTokenABalanceAfterClaim.toString()).to.be.eq(
+                        BigNumber(userTokenABalanceBeforeSwap.toString())
+                            .plus(BigNumber(exchanged_tokenA_amount))
+                            .toFixed(),
+                    );
+                }
+            }
+        });
+
+        it('Should ITO v1.0 be compatible with latest, upgrade before claim', async () => {
+            const approve_amount = BigNumber('1e10').toFixed();
+            exchange_amount = approve_amount;
+            const { id: pool_id } = await getResultFromPoolFill(happyTokenPoolDeployed_v1_0, fpp);
+            const userTokenABalanceBeforeSwap = await testTokenADeployed.balanceOf(pool_user.address);
+            const contractTokenABalanceBeforeSwap = await testTokenADeployed.balanceOf(
+                happyTokenPoolDeployed_v1_0.address,
+            );
+            const ratio = fpp.exchange_ratios[5] / fpp.exchange_ratios[4]; // tokenA <=> tokenC
+            const exchanged_tokenA_amount = exchange_amount * ratio;
+            {
+                await testTokenCDeployed
+                    .connect(pool_user)
+                    .approve(happyTokenPoolDeployed_v1_0.address, approve_amount);
+
+                const userTokenCBalanceBeforeSwap = await testTokenCDeployed.balanceOf(pool_user.address);
+                const contractTokenCBalanceBeforeSwap = await testTokenCDeployed.balanceOf(
+                    happyTokenPoolDeployed_v1_0.address,
+                );
+                await happyTokenPoolDeployed_v1_0
+                    .connect(pool_user)
+                    .swap(pool_id, verification, tokenC_address_index, exchange_amount, [pool_id]);
+                {
+                    const availability = await getAvailability(happyTokenPoolDeployed_v1_0, pool_id, pool_user.address);
+                    expect(availability.swapped.toString()).to.be.eq(exchanged_tokenA_amount.toString());
+                    expect(availability).to.not.have.property('claimed');
+                }
+                // Check SwapSuccess event
+                {
+                    const logs = await ethers.provider.getLogs(happyTokenPoolDeployed_v1_0.filters.SwapSuccess());
+                    const parsedLog = itoInterface_V1_0.parseLog(logs[0]);
+                    const result = parsedLog.args;
+                    expect(result).to.have.property('id').that.to.not.be.null;
+                    expect(result).to.have.property('swapper').that.to.not.be.null;
+                    expect(result.from_value.toString()).that.to.be.eq(String(exchange_amount));
+                    expect(result.to_value.toString()).that.to.be.eq(String(exchanged_tokenA_amount));
+                    expect(result)
+                        .to.have.property('from_address')
+                        .that.to.be.eq(testTokenCDeployed.address);
+                    expect(result)
+                        .to.have.property('to_address')
+                        .that.to.be.eq(testTokenADeployed.address);
+                    expect(result).to.not.have.property('claimed');
+                }
+                // check token C balance after swap
+                {
+                    const userTokenCBalanceAfterSwap = await testTokenCDeployed.balanceOf(pool_user.address);
+                    const contractTokenCBalanceAfterSwap = await testTokenCDeployed.balanceOf(
+                        happyTokenPoolDeployed_v1_0.address,
+                    );
+                    expect(contractTokenCBalanceAfterSwap.toString()).to.be.eq(
+                        BigNumber(contractTokenCBalanceBeforeSwap.toString())
+                            .plus(BigNumber(exchange_amount))
+                            .toFixed(),
+                    );
+                    expect(userTokenCBalanceAfterSwap.toString()).to.be.eq(
+                        BigNumber(userTokenCBalanceBeforeSwap.toString())
+                            .minus(BigNumber(exchange_amount))
+                            .toFixed(),
+                    );
+                }
+                {
+                    const availability = await getAvailability(happyTokenPoolDeployed_v1_0, pool_id, pool_user.address);
+                    expect(availability.swapped.toString()).to.be.eq(exchanged_tokenA_amount.toString());
+                    expect(availability).to.not.have.property('claimed');
+                }
+            }
+            //-------------------------------------------------------------------------------------------------------------
+            // upgrade contract to latest
+            await upgrades.upgradeProxy(happyTokenPoolDeployed_v1_0.address, HappyTokenPool);
+            const deployedUpgraded = new ethers.Contract(happyTokenPoolDeployed_v1_0.address, itoJsonABI.abi, creator);
+            //-------------------------------------------------------------------------------------------------------------
+            {
+                await helper.advanceTimeAndBlock(fpp.lock_time);
+                await deployedUpgraded.connect(pool_user).claim([pool_id]);
+                {
+                    const availability = await getAvailability(deployedUpgraded, pool_id, pool_user.address);
+                    expect(availability.swapped.toString()).to.be.eq(exchanged_tokenA_amount.toString());
+                    expect(availability.claimed).to.be.true;
+                }
+                // check token A balance after claim
+                {
+                    const userTokenABalanceAfterClaim = await testTokenADeployed.balanceOf(pool_user.address);
+                    const contractTokenABalanceAfterClaim = await testTokenADeployed.balanceOf(
+                        deployedUpgraded.address,
+                    );
+                    expect(contractTokenABalanceAfterClaim.toString()).to.be.eq(
+                        BigNumber(contractTokenABalanceBeforeSwap.toString())
+                            .minus(BigNumber(exchanged_tokenA_amount))
+                            .toFixed(),
+                    );
+                    expect(userTokenABalanceAfterClaim.toString()).to.be.eq(
+                        BigNumber(userTokenABalanceBeforeSwap.toString())
+                            .plus(BigNumber(exchanged_tokenA_amount))
+                            .toFixed(),
+                    );
+                }
+            }
+
+            {
+                const availability = await getAvailability(deployedUpgraded, pool_id, pool_user.address);
+                expect(availability.swapped.toString()).to.be.eq(exchanged_tokenA_amount.toString());
+                expect(availability.claimed).to.be.true;
+                await deployedUpgraded.connect(pool_user).claim([pool_id]);
+                // claim-again, check token A balance
+                {
+                    await happyTokenPoolDeployed_v1_0.connect(pool_user).claim([pool_id]);
+                    const userTokenABalanceAfterClaim = await testTokenADeployed.balanceOf(pool_user.address);
+                    const contractTokenABalanceAfterClaim = await testTokenADeployed.balanceOf(
+                        happyTokenPoolDeployed_v1_0.address,
+                    );
+                    expect(contractTokenABalanceAfterClaim.toString()).to.be.eq(
+                        BigNumber(contractTokenABalanceBeforeSwap.toString())
+                            .minus(BigNumber(exchanged_tokenA_amount))
+                            .toFixed(),
+                    );
+                    expect(userTokenABalanceAfterClaim.toString()).to.be.eq(
+                        BigNumber(userTokenABalanceBeforeSwap.toString())
+                            .plus(BigNumber(exchanged_tokenA_amount))
+                            .toFixed(),
+                    );
+                }
+            }
+        });
+
+        it('Should ITO v1.0 be compatible with latest, unlocktime == 0, upgrade after swap', async () => {
+            fpp.lock_time = 0;
+            const approve_amount = BigNumber('1e10').toFixed();
+            exchange_amount = approve_amount;
+            const { id: pool_id } = await getResultFromPoolFill(happyTokenPoolDeployed_v1_0, fpp);
+            const userTokenABalanceBeforeSwap = await testTokenADeployed.balanceOf(pool_user.address);
+            const contractTokenABalanceBeforeSwap = await testTokenADeployed.balanceOf(
+                happyTokenPoolDeployed_v1_0.address,
+            );
+            const ratio = fpp.exchange_ratios[5] / fpp.exchange_ratios[4]; // tokenA <=> tokenC
+            const exchanged_tokenA_amount = exchange_amount * ratio;
+            await testTokenCDeployed.connect(pool_user).approve(happyTokenPoolDeployed_v1_0.address, approve_amount);
+            {
+                const userTokenCBalanceBeforeSwap = await testTokenCDeployed.balanceOf(pool_user.address);
+                const contractTokenCBalanceBeforeSwap = await testTokenCDeployed.balanceOf(
+                    happyTokenPoolDeployed_v1_0.address,
+                );
+                await happyTokenPoolDeployed_v1_0
+                    .connect(pool_user)
+                    .swap(pool_id, verification, tokenC_address_index, exchange_amount, [pool_id]);
+                {
+                    const availability = await getAvailability(happyTokenPoolDeployed_v1_0, pool_id, pool_user.address);
+                    expect(availability.swapped.toString()).to.be.eq(exchanged_tokenA_amount.toString());
+                    expect(availability).to.not.have.property('claimed');
+                }
+
+                // check token C balance after swap
+                {
+                    const userTokenCBalanceAfterSwap = await testTokenCDeployed.balanceOf(pool_user.address);
+                    const contractTokenCBalanceAfterSwap = await testTokenCDeployed.balanceOf(
+                        happyTokenPoolDeployed_v1_0.address,
+                    );
+                    expect(contractTokenCBalanceAfterSwap.toString()).to.be.eq(
+                        BigNumber(contractTokenCBalanceBeforeSwap.toString())
+                            .plus(BigNumber(exchange_amount))
+                            .toFixed(),
+                    );
+                    expect(userTokenCBalanceAfterSwap.toString()).to.be.eq(
+                        BigNumber(userTokenCBalanceBeforeSwap.toString())
+                            .minus(BigNumber(exchange_amount))
+                            .toFixed(),
+                    );
+                }
+                // check token A balance after swap
+                {
+                    const userTokenABalanceAfterClaim = await testTokenADeployed.balanceOf(pool_user.address);
+                    const contractTokenABalanceAfterClaim = await testTokenADeployed.balanceOf(
+                        happyTokenPoolDeployed_v1_0.address,
+                    );
+                    expect(contractTokenABalanceAfterClaim.toString()).to.be.eq(
+                        BigNumber(contractTokenABalanceBeforeSwap.toString())
+                            .minus(BigNumber(exchanged_tokenA_amount))
+                            .toFixed(),
+                    );
+                    expect(userTokenABalanceAfterClaim.toString()).to.be.eq(
+                        BigNumber(userTokenABalanceBeforeSwap.toString())
+                            .plus(BigNumber(exchanged_tokenA_amount))
+                            .toFixed(),
+                    );
+                }
+                {
+                    const availability = await getAvailability(happyTokenPoolDeployed_v1_0, pool_id, pool_user.address);
+                    expect(availability.swapped.toString()).to.be.eq(exchanged_tokenA_amount.toString());
+                    expect(availability).to.not.have.property('claimed');
+                }
+            }
+            //-------------------------------------------------------------------------------------------------------------
+            // upgrade contract to latest
+            await upgrades.upgradeProxy(happyTokenPoolDeployed_v1_0.address, HappyTokenPool);
+            const deployedUpgraded = new ethers.Contract(happyTokenPoolDeployed_v1_0.address, itoJsonABI.abi, creator);
+            //-------------------------------------------------------------------------------------------------------------
+            {
+                await deployedUpgraded.connect(pool_user).claim([pool_id]);
+                {
+                    const availability = await getAvailability(deployedUpgraded, pool_id, pool_user.address);
+                    expect(availability.swapped.toString()).to.be.eq(exchanged_tokenA_amount.toString());
+                    expect(availability.claimed).to.be.true;
+                }
+                // check token A balance after claim
+                {
+                    const userTokenABalanceAfterClaim = await testTokenADeployed.balanceOf(pool_user.address);
+                    const contractTokenABalanceAfterClaim = await testTokenADeployed.balanceOf(
+                        deployedUpgraded.address,
+                    );
+                    expect(contractTokenABalanceAfterClaim.toString()).to.be.eq(
+                        BigNumber(contractTokenABalanceBeforeSwap.toString())
+                            .minus(BigNumber(exchanged_tokenA_amount))
+                            .toFixed(),
+                    );
+                    expect(userTokenABalanceAfterClaim.toString()).to.be.eq(
+                        BigNumber(userTokenABalanceBeforeSwap.toString())
+                            .plus(BigNumber(exchanged_tokenA_amount))
+                            .toFixed(),
+                    );
+                }
+            }
+        });
+
+        it('Should ITO v1.0 be compatible with latest, unlocktime == 0, upgrade before swap', async () => {
+            fpp.lock_time = 0;
+            const approve_amount = BigNumber('1e10').toFixed();
+            exchange_amount = approve_amount;
+            const { id: pool_id } = await getResultFromPoolFill(happyTokenPoolDeployed_v1_0, fpp);
+            const userTokenABalanceBeforeSwap = await testTokenADeployed.balanceOf(pool_user.address);
+            const contractTokenABalanceBeforeSwap = await testTokenADeployed.balanceOf(
+                happyTokenPoolDeployed_v1_0.address,
+            );
+            const ratio = fpp.exchange_ratios[5] / fpp.exchange_ratios[4]; // tokenA <=> tokenC
+            const exchanged_tokenA_amount = exchange_amount * ratio;
+            await testTokenCDeployed.connect(pool_user).approve(happyTokenPoolDeployed_v1_0.address, approve_amount);
+            //-------------------------------------------------------------------------------------------------------------
+            // upgrade contract to latest
+            await upgrades.upgradeProxy(happyTokenPoolDeployed_v1_0.address, HappyTokenPool);
+            const deployedUpgraded = new ethers.Contract(happyTokenPoolDeployed_v1_0.address, itoJsonABI.abi, creator);
+            //-------------------------------------------------------------------------------------------------------------
+            {
+                const userTokenCBalanceBeforeSwap = await testTokenCDeployed.balanceOf(pool_user.address);
+                const contractTokenCBalanceBeforeSwap = await testTokenCDeployed.balanceOf(
+                    happyTokenPoolDeployed_v1_0.address,
+                );
+                await happyTokenPoolDeployed_v1_0
+                    .connect(pool_user)
+                    .swap(pool_id, verification, tokenC_address_index, exchange_amount, [pool_id]);
+                {
+                    const availability = await getAvailability(deployedUpgraded, pool_id, pool_user.address);
+                    expect(availability.swapped.toString()).to.be.eq(exchanged_tokenA_amount.toString());
+                    expect(availability.claimed).to.be.true;
+                }
+
+                // check token C balance after swap
+                {
+                    const userTokenCBalanceAfterSwap = await testTokenCDeployed.balanceOf(pool_user.address);
+                    const contractTokenCBalanceAfterSwap = await testTokenCDeployed.balanceOf(
+                        happyTokenPoolDeployed_v1_0.address,
+                    );
+                    expect(contractTokenCBalanceAfterSwap.toString()).to.be.eq(
+                        BigNumber(contractTokenCBalanceBeforeSwap.toString())
+                            .plus(BigNumber(exchange_amount))
+                            .toFixed(),
+                    );
+                    expect(userTokenCBalanceAfterSwap.toString()).to.be.eq(
+                        BigNumber(userTokenCBalanceBeforeSwap.toString())
+                            .minus(BigNumber(exchange_amount))
+                            .toFixed(),
+                    );
+                }
+                // check token A balance after swap
+                {
+                    const userTokenABalanceAfterClaim = await testTokenADeployed.balanceOf(pool_user.address);
+                    const contractTokenABalanceAfterClaim = await testTokenADeployed.balanceOf(
+                        happyTokenPoolDeployed_v1_0.address,
+                    );
+                    expect(contractTokenABalanceAfterClaim.toString()).to.be.eq(
+                        BigNumber(contractTokenABalanceBeforeSwap.toString())
+                            .minus(BigNumber(exchanged_tokenA_amount))
+                            .toFixed(),
+                    );
+                    expect(userTokenABalanceAfterClaim.toString()).to.be.eq(
+                        BigNumber(userTokenABalanceBeforeSwap.toString())
+                            .plus(BigNumber(exchanged_tokenA_amount))
+                            .toFixed(),
+                    );
+                }
+                {
+                    const availability = await getAvailability(deployedUpgraded, pool_id, pool_user.address);
+                    expect(availability.swapped.toString()).to.be.eq(exchanged_tokenA_amount.toString());
+                    expect(availability.claimed).to.be.true;
+                }
+            }
+            {
+                await deployedUpgraded.connect(pool_user).claim([pool_id]);
+                {
+                    const availability = await getAvailability(deployedUpgraded, pool_id, pool_user.address);
+                    expect(availability.swapped.toString()).to.be.eq(exchanged_tokenA_amount.toString());
+                    expect(availability.claimed).to.be.true;
+                }
+                // check token A balance after claim
+                {
+                    const userTokenABalanceAfterClaim = await testTokenADeployed.balanceOf(pool_user.address);
+                    const contractTokenABalanceAfterClaim = await testTokenADeployed.balanceOf(
+                        deployedUpgraded.address,
+                    );
+                    expect(contractTokenABalanceAfterClaim.toString()).to.be.eq(
+                        BigNumber(contractTokenABalanceBeforeSwap.toString())
+                            .minus(BigNumber(exchanged_tokenA_amount))
+                            .toFixed(),
+                    );
+                    expect(userTokenABalanceAfterClaim.toString()).to.be.eq(
+                        BigNumber(userTokenABalanceBeforeSwap.toString())
+                            .plus(BigNumber(exchanged_tokenA_amount))
+                            .toFixed(),
+                    );
+                }
+            }
         });
     });
 
