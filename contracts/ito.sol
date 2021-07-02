@@ -352,7 +352,10 @@ contract HappyTokenPool is Initializable {
             uint256 unlock_time,
             uint256 swapped,
             uint128[] memory exchanged_tokens,
-            bool claimed
+            bool claimed,
+            uint256 start_time,
+            uint256 end_time,
+            address qualification_addr
         )
     {
         Pool storage pool = pool_by_id[id];
@@ -372,7 +375,10 @@ contract HappyTokenPool is Initializable {
             packed3.unlock_time + base_time,                                    // unlock_time
             _swapped_amount,                                                    // swapped number 
             pool.exchanged_tokens,                                              // exchanged tokens
-            _claimed                                                            // claimed?
+            _claimed,                                                           // claimed?
+            packed3.start_time + base_time,
+            packed3.end_time + base_time,
+            pool.packed1.qualification_addr
         );
     }
 

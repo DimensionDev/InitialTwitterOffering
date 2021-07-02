@@ -9,8 +9,8 @@ const deployedContracts: MyMapLikeType = {
     rinkeby: '0x0A5A7372eDf3349C46ea5E58A887BA7337fdF261',
     bsc_test: '0xbc558E7683F79FAAE236c1083671396cbB2Ac242',
     bsc_mainnet: '0x96c7D011cdFD467f551605f0f5Fce279F86F4186',
-    matic_mumbai_test: '0xF9F7C1496c21bC0180f4B64daBE0754ebFc8A8c0',
-    matic_mainnet: '0x4df24eB095A73CeCDe7c89233CeE1efCc7C1c685',
+    matic_mumbai_test: '0x4df24eB095A73CeCDe7c89233CeE1efCc7C1c685',
+    matic_mainnet: '0xF9F7C1496c21bC0180f4B64daBE0754ebFc8A8c0',
 };
 
 const func: DeployFunction = async function(hre: HardhatRuntimeEnvironment) {

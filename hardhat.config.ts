@@ -84,10 +84,10 @@ const networks = {
         // blockGasLimit 8000000
     },
     matic_mumbai_test: {
-        url: 'https://rpc-mumbai.maticvigil.com',
+        url: 'https://matic-mumbai.chainstacklabs.com',
         accounts: project_secret.private_key_list,
         chainId: 80001,
-        gasPrice: ethers.utils.parseUnits('10', 'gwei').toNumber(),
+        gasPrice: ethers.utils.parseUnits('30', 'gwei').toNumber(),
         // blockGasLimit 8000000
     },
     matic_mainnet: {
