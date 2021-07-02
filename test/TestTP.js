@@ -309,6 +309,11 @@ describe('HappyTokenPool', () => {
                 exchange_tokenA_amount.toString(),
             );
             expect(availability_current.claimed).to.be.eq(false);
+
+            expect(availability_current.start_time.toString()).to.be.eq((fpp.start_time + base_timestamp).toString());
+            expect(availability_current.end_time.toString()).to.be.eq((fpp.end_time + base_timestamp).toString());
+            expect(availability_current.unlock_time.toString()).to.be.eq((fpp.lock_time + base_timestamp).toString());
+            expect(availability_current.qualification_addr).to.be.eq(fpp.qualification);
         });
 
         it('Should return remaining token correctly when none of ratio gcd is not equal to 1 and tokens are very small', async () => {
