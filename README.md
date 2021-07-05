@@ -14,20 +14,25 @@ Participants only need to approve one of the specified tokens according to the `
 
 This is a standard truffle project.
 To install:
+
+```bash
+npm ci
 ```
-npm i
-```
+
 To build the project:
-```
+
+```bash
 npm run compile
 ```
 
 To test the project:
-```
+
+```bash
 npm test
 ```
 
 To debug:
+
 ```solidity
 //...
 import "hardhat/console.sol";
@@ -43,30 +48,58 @@ function debug_param (address _token_addr) public {
 
 The ITO smart contract adopts the `Proxy Upgrade Pattern` to improve user experience. Hence, the addresses in this section are actually the deployed `TransparentUpgradeableProxy` smart contract addresses.
 
-| Chain | Address |
-| ----- | ------- |
-| Mainnet | [0xc2CFbF22](https://etherscan.io/address/0xc2CFbF22d6Dc87D0eE18d38d73733524c109Ff46) |
-| Ropsten | [0xBD4c3Cf0](https://ropsten.etherscan.io/address/0xBD4c3Cf084B6F4d25430Ee5d44436e860Cc58Ee4) |
-| Rinkeby | [0x0A5A7372](https://rinkeby.etherscan.io/address/0x0A5A7372eDf3349C46ea5E58A887BA7337fdF261) |
-| BSC | [0x96c7D011](https://bscscan.com/address/0x96c7D011cdFD467f551605f0f5Fce279F86F4186) |
-| BSC-testnet | [0xbc558E76](https://testnet.bscscan.com/address/0xbc558E7683F79FAAE236c1083671396cbB2Ac242) |
-| Matic | [0xF9F7C149](https://polygonscan.com/address/0xF9F7C1496c21bC0180f4B64daBE0754ebFc8A8c0) |
-| Matic-mumbai | [0x4df24eB0](https://polygon-explorer-mumbai.chainstacklabs.com/address/0x4df24eB095A73CeCDe7c89233CeE1efCc7C1c685) |
+| Chain   | Address                    |
+| ------- | -------------------------- |
+| Mainnet | [0xc2CFbF22][ito-c2cfbf22] |
+| Ropsten | [0xBD4c3Cf0][ito-bd4c3cf0] |
+| BSC     | [0x96c7D011][ito-96c7d011] |
+| Matic   | [0xF9F7C149][ito-f9f7c149] |
+
+[ito-c2cfbf22]: https://etherscan.io/address/0xc2CFbF22d6Dc87D0eE18d38d73733524c109Ff46
+[ito-bd4c3cf0]: https://ropsten.etherscan.io/address/0xBD4c3Cf084B6F4d25430Ee5d44436e860Cc58Ee4
+[ito-96c7d011]: https://bscscan.com/address/0x96c7D011cdFD467f551605f0f5Fce279F86F4186
+[ito-f9f7c149]: https://polygonscan.com/address/0xF9F7C1496c21bC0180f4B64daBE0754ebFc8A8c0
+
+### Implementation block number (required by frontend developers)
+
+| Chain   | v1.0                               | v1.01                               |
+| ------- | ---------------------------------- | ----------------------------------- |
+| Mainnet | [12689616][mainnet-block-12689616] | [12766513][mainnet-block-12766513]  |
+| Ropsten | [10468221][ropsten-block-10468221] | [10572050][ropsten-block-10572050]  |
+| BSC     | [8508077][bsc-block-8508077]       | [8885927][bsc-block-8885927]        |
+| Matic   | [16002769][polygon-block-16002769] | [16516643][polygon-block-16516643 ] |
+
+[mainnet-block-12689616]: https://etherscan.io/block/12689616
+[ropsten-block-10468221]: https://ropsten.etherscan.io/block/10468221
+[bsc-block-8508077]: https://bscscan.com/block/8508077
+[polygon-block-16002769 ]: https://polygonscan.com/block/16002769
+
+[mainnet-block-12766513]: https://etherscan.io/block/12766513
+[ropsten-block-10572050]: https://ropsten.etherscan.io/block/10572050
+[bsc-block-8885927]: https://bscscan.com/block/8885927
+[polygon-block-16516643]: https://polygonscan.com/block/16516643
 
 ### ProxyAdmin
 
 Besides, we also deployed the `ProxyAdmin` to manage the `proxy`.
 
-| Chain | Address |
-| ----- | ------- |
-| Mainnet | [0x7aa4F9C7](https://etherscan.io/address/0x7aa4F9C72985Da8309aa97894070Dd855E63C544) |
-| Ropsten | [0xa01c3cbe](https://ropsten.etherscan.io/address/0xa01c3cbeF7088cb4d22a990E1356F39bce7Ca3f2) |
-| Rinkeby | [0x0061E06c](https://rinkeby.etherscan.io/address/0x0061E06c9f640a03C4981f43762d2AE5e03873c5) |
-| BSC | [0x83D6b366](https://bscscan.com/address/0x83D6b366f21e413f214EB077D5378478e71a5eD2) |
-| BSC-testnet | [0xF7072bB9](https://testnet.bscscan.com/address/0xF7072bB93458250E38C6c4523882C6e2b5fe8ec0) |
-| Matic | [0xAb7B1bE4](https://polygonscan.com/address/0xAb7B1bE4233A04e5C43a810E75657ECED8E5463B) |
-| Matic-mumbai | [0xDB80b907](https://polygon-explorer-mumbai.chainstacklabs.com/address/0xDB80b9076F24EEee87425Fe70eA64222d9bD6A2a) |
+| Chain        | Address                      |
+| ------------ | ---------------------------- |
+| Mainnet      | [0x7aa4F9C7][proxy-7aa4f9c7] |
+| Ropsten      | [0xa01c3cbe][proxy-a01c3cbe] |
+| Rinkeby      | [0x0061E06c][proxy-0061e06c] |
+| BSC          | [0x83D6b366][proxy-83d6b366] |
+| BSC-testnet  | [0xF7072bB9][proxy-f7072bb9] |
+| Matic        | [0xAb7B1bE4][proxy-ab7b1be4] |
+| Matic-mumbai | [0xDB80b907][proxy-db80b907] |
 
+[proxy-7aa4f9c7]: https://etherscan.io/address/0x7aa4F9C72985Da8309aa97894070Dd855E63C544
+[proxy-a01c3cbe]: https://ropsten.etherscan.io/address/0xa01c3cbeF7088cb4d22a990E1356F39bce7Ca3f2
+[proxy-0061e06c]: https://rinkeby.etherscan.io/address/0x0061E06c9f640a03C4981f43762d2AE5e03873c5
+[proxy-83d6b366]: https://bscscan.com/address/0x83D6b366f21e413f214EB077D5378478e71a5eD2
+[proxy-f7072bb9]: https://testnet.bscscan.com/address/0xF7072bB93458250E38C6c4523882C6e2b5fe8ec0
+[proxy-ab7b1be4]: https://polygonscan.com/address/0xAb7B1bE4233A04e5C43a810E75657ECED8E5463B
+[proxy-db80b907]: https://polygon-explorer-mumbai.chainstacklabs.com/address/0xDB80b9076F24EEee87425Fe70eA64222d9bD6A2a
 
 ## Qualification
 
@@ -76,25 +109,35 @@ To prevent a malicious attack, you can set a `swap_start_time` in your custom qu
 
 ### Empty Qualification Contract
 
-| Chain | Address |
-| ----- | ------- |
-| Mainnet | [0x4dC5f343](https://etherscan.io/address/0x4dC5f343Fe57E4fbDA1B454d125D396A3181272c) |
-| Ropsten | [0xd5e6434b](https://ropsten.etherscan.io/address/0xd5e6434bde165062b3d9572DEFd6393c7B3E2902) |
-| Rinkeby | [0x8440b99B](https://rinkeby.etherscan.io/address/0x8440b99B1Df5D4B61957c8Ce0a199487Be3De270) |
-| BSC | [0xAb7B1bE4](https://bscscan.com/address/0xAb7B1bE4233A04e5C43a810E75657ECED8E5463B) |
-| BSC-testnet | [0xaaC2362f](https://testnet.bscscan.com/address/0xaaC2362f2DC523E9B37B1EE2eA57110e1Bd63F59) |
-| Matic | [0x2cf91AD8](https://polygonscan.com/address/0x2cf91AD8C175305EBe6970Bd8f81231585EFbd77) |
-| Matic-mumbai | [0x8AB2579C](https://polygon-explorer-mumbai.chainstacklabs.com/address/0x8AB2579C91E4f1688e1787288d969450BF6d478d) |
+| Chain        | Address                     |
+| ------------ | --------------------------- |
+| Mainnet      | [0x4dC5f343][iqlf-4dc5f343] |
+| Ropsten      | [0xd5e6434b][iqlf-d5e6434b] |
+| Rinkeby      | [0x8440b99B][iqlf-8440b99b] |
+| BSC          | [0xAb7B1bE4][iqlf-ab7b1be4] |
+| BSC-testnet  | [0xaaC2362f][iqlf-aac2362f] |
+| Matic        | [0x2cf91AD8][iqlf-2cf91ad8] |
+| Matic-mumbai | [0x8AB2579C][iqlf-8ab2579c] |
+
+[iqlf-4dc5f343]: https://etherscan.io/address/0x4dC5f343Fe57E4fbDA1B454d125D396A3181272c
+[iqlf-d5e6434b]: https://ropsten.etherscan.io/address/0xd5e6434bde165062b3d9572DEFd6393c7B3E2902
+[iqlf-8440b99b]: https://rinkeby.etherscan.io/address/0x8440b99B1Df5D4B61957c8Ce0a199487Be3De270
+[iqlf-ab7b1be4]: https://bscscan.com/address/0xAb7B1bE4233A04e5C43a810E75657ECED8E5463B
+[iqlf-aac2362f]: https://testnet.bscscan.com/address/0xaaC2362f2DC523E9B37B1EE2eA57110e1Bd63F59
+[iqlf-2cf91ad8]: https://polygonscan.com/address/0x2cf91AD8C175305EBe6970Bd8f81231585EFbd77
+[iqlf-8ab2579c]: https://polygon-explorer-mumbai.chainstacklabs.com/address/0x8AB2579C91E4f1688e1787288d969450BF6d478d
 
 ## Security Audit
 
 The Solidity code in this repository has been audited by blockchain security experts from SlowMist. If you are interested, here are the audit reports:
-- [Audit Report](audits/SlowMist_Audit_Report_English.pdf) 
-- [审计报告](audits/SlowMist_Audit_Report_Chinese.pdf) 
+
+- [Audit Report](audits/SlowMist_Audit_Report_English.pdf)
+- [审计报告](audits/SlowMist_Audit_Report_Chinese.pdf)
 
 ## Contribute
 
 Any contribution is welcomed to make it more secure and powerful. Had you any questions, please do not hesitate to create an issue to let us know.
 
 ## License
+
 InitialTwitterOffering is released under the [MIT LICENSE](LICENSE).
