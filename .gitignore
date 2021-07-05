@@ -8,3 +8,5 @@ coverage.json
 #Hardhat files
 cache
 artifacts
+project.secret.js
+.env

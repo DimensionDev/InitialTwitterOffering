@@ -20,6 +20,8 @@ const deployedContracts: MyMapLikeType = {
     fantom: '0x981be454a930479d92C91a0092D204b64845A5D6',
     celo: '0x54a0A221C25Fc0a347EC929cFC5db0be17fA2a2B',
     avalanche: '0x02Ea0720254F7fa4eca7d09A1b9C783F1020EbEF',
+    optimism: '0x71834a3FDeA3E70F14a93ED85c6be70925D0CAd9',
+    optimism_kovan: '0x88edAC7aEDEeAfaD15439010B0bdC0D067763571',
 };
 
 const func: DeployFunction = async function(hre: HardhatRuntimeEnvironment) {
@@ -29,9 +31,9 @@ const func: DeployFunction = async function(hre: HardhatRuntimeEnvironment) {
     const network: string = hre.hardhatArguments.network ? hre.hardhatArguments.network : 'ropsten';
     const proxyAddress = deployedContracts[network];
 
-    if (true) {
+    if (false) {
         // deploy, we normally do this only once
-        if (false) {
+        if (true) {
             const HappyTokenPoolImpl = await ethers.getContractFactory('HappyTokenPool');
             const HappyTokenPoolProxy = await upgrades.deployProxy(HappyTokenPoolImpl, [base_timestamp]);
             await HappyTokenPoolProxy.deployed();
@@ -45,7 +47,7 @@ const func: DeployFunction = async function(hre: HardhatRuntimeEnvironment) {
             });
         }
 
-        if (true) {
+        if (false) {
             const tx = await deploy('QLF', {
                 from: deployer,
                 args: [0],
