@@ -54,7 +54,7 @@ contract HappyTokenPool is Initializable {
                                     // represents 1 tokenA to swap 10 target token
                                     // note: each ratio pair needs to be coprime
         mapping(address => uint256) swapped_map;      // swapped amount of an address
-        mapping(address => SwapStatus) swap_status;      // swapped amount of an address
+        mapping(address => SwapStatus) swap_status;
     }
 
     // swap pool filling success event
