@@ -60,7 +60,9 @@ The ITO smart contract adopts the `Proxy Upgrade Pattern` to improve user experi
 | Goerli           | [0x39Ad21f8](https://goerli.etherscan.io/address/0x39Ad21f89560D16b30652D5991915e78a8265aeF)                   |
 | Fantom           | [0x981be454](https://ftmscan.com/address/0x981be454a930479d92C91a0092D204b64845A5D6)                           |
 | Celo             | [0x54a0A221](https://explorer.celo.org/address/0x54a0A221C25Fc0a347EC929cFC5db0be17fA2a2B/transactions)        |
-| Avalanche        | [0x02Ea0720](https://snowtrace.io/address/0x02Ea0720254F7fa4eca7d09A1b9C783F1020EbEF)        |
+| Avalanche        | [0x02Ea0720](https://snowtrace.io/address/0x02Ea0720254F7fa4eca7d09A1b9C783F1020EbEF)                          |
+| Kovan-optimistic | [0x88edAC7a](https://kovan-optimistic.etherscan.io/address/0x88edAC7aEDEeAfaD15439010B0bdC0D067763571)         |
+| Optimistic       | [0x71834a3F](https://optimistic.etherscan.io/address/0x71834a3FDeA3E70F14a93ED85c6be70925D0CAd9)               |
 
 ### Implementation block number (required by frontend developers)
 
@@ -77,6 +79,8 @@ The ITO smart contract adopts the `Proxy Upgrade Pattern` to improve user experi
 | Fantom           | N/A                                | [25071597][fantom-25071597 ]        |
 | Celo             | N/A                                | [10406511][celo-10406511 ]          |
 | Avalanche        | N/A                                | [8289892][avalanche-8289892 ]       |
+| Kovan-optimistic | N/A                                | [47716][kovan-optimistic-47716 ]    |
+| Optimistic       | N/A                                | [8994][optimistic-8994 ]            |
 
 [mainnet-block-12689616]: https://etherscan.io/block/12689616
 [ropsten-block-10468221]: https://ropsten.etherscan.io/block/10468221
@@ -94,7 +98,8 @@ The ITO smart contract adopts the `Proxy Upgrade Pattern` to improve user experi
 [fantom-25071597]: https://ftmscan.com/block/25071597
 [celo-10406511]: https://explorer.celo.org/block/10406511/transactions
 [avalanche-8289892]: https://snowtrace.io/block/8289892
-
+[kovan-optimistic-47716]: https://kovan-optimistic.etherscan.io/batch/47716
+[optimistic-8994]: https://optimistic.etherscan.io/batch/8994
 
 ## Qualification
 
@@ -104,22 +109,24 @@ To prevent a malicious attack, you can set a `swap_start_time` in your custom qu
 
 ### Dummy Qualification Contract
 
-| Chain            | Address                         |
-| ---------------- | ------------------------------- |
-| Mainnet          | [0x4dC5f343][iqlf-4dc5f343]     |
-| Ropsten          | [0xd5e6434b][iqlf-d5e6434b]     |
-| Rinkeby          | [0x8440b99B][iqlf-8440b99b]     |
-| BSC              | [0xAb7B1bE4][iqlf-ab7b1be4]     |
-| BSC-testnet      | [0xaaC2362f][iqlf-aac2362f]     |
-| Matic            | [0x2cf91AD8][iqlf-2cf91ad8]     |
-| Matic-mumbai     | [0x8AB2579C][iqlf-8ab2579c]     |
-| Rinkeby-Arbitrum | [0xEbd753E6][iqlf-Ebd753E6]     |
-| Arbitrum         | [0x913975af][iqlf-913975af]     |
-| xDai             | [0x71834a3F][iqlf-71834a3F]     |
-| Goerli           | [0x957DCb39][goerli-0x957DCb39] |
-| Fantom           | [0x957DCb39][fantom-0x83D6b366] |
-| Celo             | [0x2cB220F9][celo-0x2cB220F9]   |
-| Avalanche        | [0x54a0A221][avalanche-0x54a0A221]   |
+| Chain            | Address                                   |
+| ---------------- | ----------------------------------------- |
+| Mainnet          | [0x4dC5f343][iqlf-4dc5f343]               |
+| Ropsten          | [0xd5e6434b][iqlf-d5e6434b]               |
+| Rinkeby          | [0x8440b99B][iqlf-8440b99b]               |
+| BSC              | [0xAb7B1bE4][iqlf-ab7b1be4]               |
+| BSC-testnet      | [0xaaC2362f][iqlf-aac2362f]               |
+| Matic            | [0x2cf91AD8][iqlf-2cf91ad8]               |
+| Matic-mumbai     | [0x8AB2579C][iqlf-8ab2579c]               |
+| Rinkeby-Arbitrum | [0xEbd753E6][iqlf-Ebd753E6]               |
+| Arbitrum         | [0x913975af][iqlf-913975af]               |
+| xDai             | [0x71834a3F][iqlf-71834a3F]               |
+| Goerli           | [0x957DCb39][goerli-0x957DCb39]           |
+| Fantom           | [0x957DCb39][fantom-0x83D6b366]           |
+| Celo             | [0x2cB220F9][celo-0x2cB220F9]             |
+| Avalanche        | [0x54a0A221][avalanche-0x54a0A221]        |
+| Kovan-optimistic | [0x57E2AAB7][kovan-optimistic-0x57E2AAB7] |
+| Optimistic       | [0x913975af][Optimistic-0x913975af]       |
 
 [iqlf-4dc5f343]: https://etherscan.io/address/0x4dC5f343Fe57E4fbDA1B454d125D396A3181272c
 [iqlf-d5e6434b]: https://ropsten.etherscan.io/address/0xd5e6434bde165062b3d9572DEFd6393c7B3E2902
@@ -135,6 +142,8 @@ To prevent a malicious attack, you can set a `swap_start_time` in your custom qu
 [fantom-0x83D6b366](https://ftmscan.com/address/0x83D6b366f21e413f214EB077D5378478e71a5eD2#code)
 [celo-0x2cB220F9](https://explorer.celo.org/address/0x2cB220F925E603A04BEE05F210252120deBA29d7/contracts)
 [avalanche-0x54a0A221](https://snowtrace.io/address/0x54a0A221C25Fc0a347EC929cFC5db0be17fA2a2B#code)
+[kovan-optimistic-0x57E2AAB7](https://kovan-optimistic.etherscan.io/address/0x57E2AAB712E9c61CA55A6402223DbEe3d4eE09aa)
+[Optimistic-0x913975af](https://optimistic.etherscan.io/address/0x913975af2Bb8a6Be4100D7dc5e9765B77F6A5d6c)
 
 ## Security Audit
 
