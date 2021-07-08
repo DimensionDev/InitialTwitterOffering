@@ -9,6 +9,8 @@
         "test:coverage": "hardhat coverage",
         "lint": "npx hardhat check",
         "compile": "hardhat compile",
+        "deploy:arbitrum_rinkeby": "hardhat --network arbitrum_rinkeby deploy",
+        "deploy:arbitrum": "hardhat --network arbitrum deploy",
         "deploy:mainnet": "hardhat --network mainnet deploy",
         "deploy:ropsten": "hardhat --network ropsten deploy",
         "deploy:rinkeby": "hardhat --network rinkeby deploy",
