@@ -11,6 +11,8 @@ const deployedContracts: MyMapLikeType = {
     bsc_mainnet: '0x96c7D011cdFD467f551605f0f5Fce279F86F4186',
     matic_mumbai_test: '0x4df24eB095A73CeCDe7c89233CeE1efCc7C1c685',
     matic_mainnet: '0xF9F7C1496c21bC0180f4B64daBE0754ebFc8A8c0',
+    arbitrum: '0x71834a3FDeA3E70F14a93ED85c6be70925D0CAd9',
+    arbitrum_rinkeby: '0x9b3649eC8C9f68484acC76D437B145a4e58Bf2A2',
 };
 
 const func: DeployFunction = async function(hre: HardhatRuntimeEnvironment) {
