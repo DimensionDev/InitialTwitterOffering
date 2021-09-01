@@ -13,6 +13,7 @@ const deployedContracts: MyMapLikeType = {
     matic_mainnet: '0xF9F7C1496c21bC0180f4B64daBE0754ebFc8A8c0',
     arbitrum: '0x71834a3FDeA3E70F14a93ED85c6be70925D0CAd9',
     arbitrum_rinkeby: '0x9b3649eC8C9f68484acC76D437B145a4e58Bf2A2',
+    xdai: '0x913975af2Bb8a6Be4100D7dc5e9765B77F6A5d6c',
 };
 
 const func: DeployFunction = async function(hre: HardhatRuntimeEnvironment) {
@@ -28,17 +29,17 @@ const func: DeployFunction = async function(hre: HardhatRuntimeEnvironment) {
         const HappyTokenPoolProxy = await upgrades.deployProxy(HappyTokenPoolImpl, [1616976000]);
         await HappyTokenPoolProxy.deployed();
         console.log('HappyTokenPoolProxy: ' + HappyTokenPoolProxy.address);
+
+        await deploy('QLF', {
+            from: deployer,
+            args: [0],
+            log: true,
+        });
     } else {
         // upgrade contract
         const HappyTokenPoolImpl = await ethers.getContractFactory('HappyTokenPool');
         await upgrades.upgradeProxy(proxyAddress, HappyTokenPoolImpl);
     }
-
-    await deploy('QLF', {
-        from: deployer,
-        args: [0],
-        log: true,
-    });
 };
 
 func.tags = ['HappyTokenPool'];
