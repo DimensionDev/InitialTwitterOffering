@@ -88,8 +88,10 @@ describe('HappyTokenPool', () => {
             qualification: qualificationTesterDeployed.address,
         };
         const nowTimeStamp = Math.floor(new Date().getTime() / 1000);
-        assert(base_timestamp + fpp.end_time > nowTimeStamp, 'Need adjust fpp.end_time');
-        assert(fpp.lock_time > fpp.start_time, 'Need adjust fpp.lock_time');
+        // 120 days
+        fpp.end_time = nowTimeStamp + 10368000 - base_timestamp;
+        // 120 days
+        fpp.lock_time = nowTimeStamp + 12960000 - base_timestamp;
     });
 
     afterEach(async () => {

@@ -48,21 +48,15 @@ function debug_param (address _token_addr) public {
 
 The ITO smart contract adopts the `Proxy Upgrade Pattern` to improve user experience. Hence, the addresses in this section are actually the deployed `TransparentUpgradeableProxy` smart contract addresses.
 
-| Chain            | Address                    |
-| ---------------- | -------------------------- |
-| Mainnet          | [0xc2CFbF22][ito-c2cfbf22] |
-| Ropsten          | [0xBD4c3Cf0][ito-bd4c3cf0] |
-| BSC              | [0x96c7D011][ito-96c7d011] |
-| Matic            | [0xF9F7C149][ito-f9f7c149] |
-| Rinkeby-Arbitrum | [0x9b3649eC][ito-9b3649eC] |
-| Arbitrum         | [0x71834a3F][ito-71834a3F] |
-
-[ito-c2cfbf22]: https://etherscan.io/address/0xc2CFbF22d6Dc87D0eE18d38d73733524c109Ff46
-[ito-bd4c3cf0]: https://ropsten.etherscan.io/address/0xBD4c3Cf084B6F4d25430Ee5d44436e860Cc58Ee4
-[ito-96c7d011]: https://bscscan.com/address/0x96c7D011cdFD467f551605f0f5Fce279F86F4186
-[ito-f9f7c149]: https://polygonscan.com/address/0xF9F7C1496c21bC0180f4B64daBE0754ebFc8A8c0
-[ito-9b3649eC]: https://rinkeby-explorer.arbitrum.io/address/0x9b3649eC8C9f68484acC76D437B145a4e58Bf2A2
-[ito-71834a3F]: https://explorer.arbitrum.io/address/0x71834a3FDeA3E70F14a93ED85c6be70925D0CAd9
+| Chain            | Address                                                                                                        |
+| ---------------- | -------------------------------------------------------------------------------------------------------------- |
+| Mainnet          | [0xc2CFbF22](https://etherscan.io/address/0xc2CFbF22d6Dc87D0eE18d38d73733524c109Ff46)                          |
+| Ropsten          | [0xBD4c3Cf0](https://ropsten.etherscan.io/address/0xBD4c3Cf084B6F4d25430Ee5d44436e860Cc58Ee4)                  |
+| BSC              | [0x96c7D011](https://bscscan.com/address/0x96c7D011cdFD467f551605f0f5Fce279F86F4186)                           |
+| Matic            | [0xF9F7C149](https://polygonscan.com/address/0xF9F7C1496c21bC0180f4B64daBE0754ebFc8A8c0)                       |
+| Rinkeby-Arbitrum | [0x9b3649eC](https://rinkeby-explorer.arbitrum.io/address/0x9b3649eC8C9f68484acC76D437B145a4e58Bf2A2)          |
+| Arbitrum         | [0x71834a3F](https://explorer.arbitrum.io/address/0x71834a3FDeA3E70F14a93ED85c6be70925D0CAd9)                  |
+| xDai             | [0x913975af](https://blockscout.com/xdai/mainnet/address/0x913975af2Bb8a6Be4100D7dc5e9765B77F6A5d6c/contracts) |
 
 ### Implementation block number (required by frontend developers)
 
@@ -74,6 +68,7 @@ The ITO smart contract adopts the `Proxy Upgrade Pattern` to improve user experi
 | Matic            | [16002769][polygon-block-16002769] | [16516643][polygon-block-16516643 ] |
 | Rinkeby-Arbitrum | N/A                                | [708696][rinkeby-arbitrum-708696 ]  |
 | Arbitrum         | N/A                                | [102022][arbitrum-102022 ]          |
+| xDai             | N/A                                | [17865755][xdai-17865755 ]          |
 
 [mainnet-block-12689616]: https://etherscan.io/block/12689616
 [ropsten-block-10468221]: https://ropsten.etherscan.io/block/10468221
@@ -86,6 +81,7 @@ The ITO smart contract adopts the `Proxy Upgrade Pattern` to improve user experi
 [polygon-block-16516643]: https://polygonscan.com/block/16516643
 [rinkeby-arbitrum-708696]: https://rinkeby-explorer.arbitrum.io/block/708696
 [arbitrum-102022]: https://explorer.arbitrum.io/block/102022
+[xdai-17865755]: https://blockscout.com/xdai/mainnet/blocks/17865755/transactions
 
 ### ProxyAdmin
 
@@ -100,6 +96,7 @@ Besides, we also deployed the `ProxyAdmin` to manage the `proxy`.
 | BSC-testnet  | [0xF7072bB9][proxy-f7072bb9] |
 | Matic        | [0xAb7B1bE4][proxy-ab7b1be4] |
 | Matic-mumbai | [0xDB80b907][proxy-db80b907] |
+| xDai         | [0x6cc1b105][proxy-6cc1b105] |
 
 [proxy-7aa4f9c7]: https://etherscan.io/address/0x7aa4F9C72985Da8309aa97894070Dd855E63C544
 [proxy-a01c3cbe]: https://ropsten.etherscan.io/address/0xa01c3cbeF7088cb4d22a990E1356F39bce7Ca3f2
@@ -108,6 +105,7 @@ Besides, we also deployed the `ProxyAdmin` to manage the `proxy`.
 [proxy-f7072bb9]: https://testnet.bscscan.com/address/0xF7072bB93458250E38C6c4523882C6e2b5fe8ec0
 [proxy-ab7b1be4]: https://polygonscan.com/address/0xAb7B1bE4233A04e5C43a810E75657ECED8E5463B
 [proxy-db80b907]: https://polygon-explorer-mumbai.chainstacklabs.com/address/0xDB80b9076F24EEee87425Fe70eA64222d9bD6A2a
+[proxy-6cc1b105]: https://blockscout.com/xdai/mainnet/address/0x6cc1b1058F9153358278C35E0b2D382f1585854B/transactions
 
 ## Qualification
 
@@ -128,6 +126,7 @@ To prevent a malicious attack, you can set a `swap_start_time` in your custom qu
 | Matic-mumbai     | [0x8AB2579C][iqlf-8ab2579c] |
 | Rinkeby-Arbitrum | [0xEbd753E6][iqlf-Ebd753E6] |
 | Arbitrum         | [0x913975af][iqlf-913975af] |
+| xDai             | [0x71834a3F][iqlf-71834a3F] |
 
 [iqlf-4dc5f343]: https://etherscan.io/address/0x4dC5f343Fe57E4fbDA1B454d125D396A3181272c
 [iqlf-d5e6434b]: https://ropsten.etherscan.io/address/0xd5e6434bde165062b3d9572DEFd6393c7B3E2902
@@ -138,6 +137,7 @@ To prevent a malicious attack, you can set a `swap_start_time` in your custom qu
 [iqlf-8ab2579c]: https://polygon-explorer-mumbai.chainstacklabs.com/address/0x8AB2579C91E4f1688e1787288d969450BF6d478d
 [iqlf-Ebd753E6]: https://rinkeby-explorer.arbitrum.io/address/0xEbd753E66649C824241E63894301BA8Db5DBF5Bb
 [iqlf-913975af]: https://explorer.arbitrum.io/address/0x913975af2Bb8a6Be4100D7dc5e9765B77F6A5d6c
+[iqlf-71834a3F]: https://blockscout.com/xdai/mainnet/address/0x71834a3FDeA3E70F14a93ED85c6be70925D0CAd9/transactions
 
 ## Security Audit
 
