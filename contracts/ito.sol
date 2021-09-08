@@ -460,5 +460,9 @@ contract HappyTokenPool is Initializable {
         // Gas Refund
         pool.packed1 = Packed1(DEFAULT_ADDRESS, 0);
         pool.packed2 = Packed2(0, 0);
+        for (uint256 i = 0; i < pool.exchange_addrs.length; i++) {
+            pool.ratios[i*2] = 0;
+            pool.ratios[i*2+1] = 0;
+        }
     }
 }
