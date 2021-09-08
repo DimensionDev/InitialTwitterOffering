@@ -1155,6 +1155,7 @@ describe('HappyTokenPool', () => {
             );
 
             const exchange_tokenC_amount = BigNumber('2000e18').toFixed();
+            const exchange_tokenC_pool_limit = BigNumber('1000e18').toFixed();
             await approveThenSwapToken(
                 testTokenCDeployed,
                 signers[6],
@@ -1218,11 +1219,20 @@ describe('HappyTokenPool', () => {
                 BigNumber(previous_tokenC_balance.toString())
                     .minus(BigNumber(transfer_amount))
                     .plus(
-                        BigNumber('1000e18'), // 2000e18 exceeds limit
+                        BigNumber(exchange_tokenC_pool_limit), // 2000e18 exceeds limit
                     )
                     .toFixed(),
             );
-
+            {
+                // `exchanged_tokens` and `exchange_addrs` should still be available
+                const result = await getAvailability(happyTokenPoolDeployed, pool_id, signers[1].address);
+                expect(result.exchange_addrs).to.eql(fpp.exchange_addrs);
+                expect(result.exchanged_tokens.map(bn => bn.toString())).to.eql([
+                    exchange_ETH_amount,
+                    exchange_tokenB_amount,
+                    exchange_tokenC_pool_limit,
+                ]);
+            }
             {
                 // destruct again, do nothing
                 const contractTokenABalanceBeforeDestructAgain = await testTokenADeployed.balanceOf(

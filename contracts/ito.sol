@@ -55,6 +55,7 @@ contract HappyTokenPool is Initializable {
                                     // note: each ratio pair needs to be coprime
         mapping(address => uint256) swapped_map;      // swapped amount of an address
         mapping(address => SwapStatus) swap_status;
+        bool destructed;
     }
 
     // swap pool filling success event
@@ -160,6 +161,7 @@ contract HappyTokenPool is Initializable {
         pool.packed3 = Packed3(_token_addr, uint32(_start), uint32(_end), uint32(_unlock_time));
         pool.creator = msg.sender;
         pool.exchange_addrs = _exchange_addrs;
+        pool.destructed = false;
 
         // Init each token swapped amount to 0
         for (uint256 i = 0; i < _exchange_addrs.length; i++) {
@@ -431,6 +433,11 @@ contract HappyTokenPool is Initializable {
         // only after expiration or the pool is empty
         require(expiration <= block.timestamp || remaining_tokens == 0, "Not expired yet");
 
+        if (pool.destructed) {
+            return;
+        }
+        pool.destructed = true;
+
         // if any left in the pool
         if (remaining_tokens != 0) {
             IERC20(packed3.token_address).safeTransfer(msg.sender, remaining_tokens);
@@ -453,11 +460,5 @@ contract HappyTokenPool is Initializable {
         // Gas Refund
         pool.packed1 = Packed1(DEFAULT_ADDRESS, 0);
         pool.packed2 = Packed2(0, 0);
-        for (uint256 i = 0; i < pool.exchange_addrs.length; i++) {
-            pool.exchange_addrs[i] = DEFAULT_ADDRESS;
-            pool.exchanged_tokens[i] = 0;
-            pool.ratios[i*2] = 0;
-            pool.ratios[i*2+1] = 0;
-        }
     }
 }
