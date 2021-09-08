@@ -460,36 +460,4 @@ contract HappyTokenPool is Initializable {
             pool.ratios[i*2+1] = 0;
         }
     }
-
-    /**
-     * withdraw() transfers out a single token after a pool is expired or empty 
-     * id                    swap pool id
-     * addr_i                withdraw token index
-     * this function can only be called by the pool creator. after validation, it transfers the addr_i th token 
-     * out to the pool creator address.
-    **/
-
-    function withdraw (bytes32 id, uint256 addr_i) public {
-        Pool storage pool = pool_by_id[id];
-        require(msg.sender == pool.creator, "Only the pool creator can withdraw.");
-
-        uint256 withdraw_balance = pool.exchanged_tokens[addr_i];
-        require(withdraw_balance > 0, "None of this token left");
-        uint256 expiration = pool.packed3.end_time + base_time;
-        uint256 remaining_tokens = pool.packed2.total_tokens;
-        // only after expiration or the pool is empty
-        require(expiration <= block.timestamp || remaining_tokens == 0, "Not expired yet");
-        address token_address = pool.exchange_addrs[addr_i];
-
-        // clear the record
-        pool.exchanged_tokens[addr_i] = 0;
-
-        // ERC20
-        if (token_address != DEFAULT_ADDRESS)
-            IERC20(token_address).safeTransfer(msg.sender, withdraw_balance);
-        // ETH
-        else
-            payable(msg.sender).transfer(withdraw_balance);
-        emit WithdrawSuccess(id, token_address, withdraw_balance);
-    }
 }
