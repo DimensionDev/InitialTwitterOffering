@@ -34,6 +34,7 @@ let snapshotId;
 let testTokenADeployed;
 let testTokenBDeployed;
 let testTokenCDeployed;
+let multiCallContract;
 
 let HappyTokenPool;
 let happyTokenPoolDeployed;
@@ -70,6 +71,11 @@ describe('HappyTokenPool', () => {
         HappyTokenPool = await ethers.getContractFactory('HappyTokenPool');
         HappyTokenPoolProxy = await upgrades.deployProxy(HappyTokenPool, [base_timestamp]);
         happyTokenPoolDeployed = new ethers.Contract(HappyTokenPoolProxy.address, itoJsonABI.abi, creator);
+        {
+            const factory = await ethers.getContractFactory('Multicall');
+            const nContract = await factory.deploy();
+            multiCallContract = await nContract.deployed();
+        }
     });
 
     beforeEach(async () => {
@@ -679,6 +685,31 @@ describe('HappyTokenPool', () => {
                 expect(result_c.to_value.toString()).that.to.not.be.eq(fpp.limit);
                 expect(result_c.to_value.toString()).that.to.be.eq(BigNumber('2e19').toFixed());
             }
+        });
+
+        it('Should swap tx from contracts not work', async () => {
+            fpp.total_tokens = BigNumber('100e18').toFixed();
+            fpp.limit = BigNumber('50e18').toFixed();
+            const { id: pool_id } = await getResultFromPoolFill(happyTokenPoolDeployed, fpp);
+
+            // 0.004 ETH => 40 TESTA
+            approve_amount = BigNumber('4e15').toFixed();
+            exchange_amount = approve_amount;
+            var vr = getVerification(PASSWORD, multiCallContract.address);
+            const encodedSwapData = itoInterface.encodeFunctionData('swap', [
+                pool_id,
+                vr.verification,
+                0,
+                exchange_amount,
+                [pool_id],
+            ]);
+            await expect(
+                multiCallContract
+                    .connect(signers[4])
+                    .aggregate([[happyTokenPoolDeployed.address, encodedSwapData, approve_amount]], {
+                        value: approve_amount,
+                    }),
+            ).to.be.rejectedWith('Multicall: call failed');
         });
 
         it('Should swap the remaining token when the amount of swap token is greater than total token', async () => {
