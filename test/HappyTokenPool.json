@@ -271,29 +271,9 @@
           "type": "bool"
         },
         {
-          "internalType": "bool",
-          "name": "unlocked",
-          "type": "bool"
-        },
-        {
-          "internalType": "uint256",
-          "name": "unlock_time",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "swapped",
-          "type": "uint256"
-        },
-        {
           "internalType": "uint128[]",
           "name": "exchanged_tokens",
           "type": "uint128[]"
-        },
-        {
-          "internalType": "bool",
-          "name": "claimed",
-          "type": "bool"
         },
         {
           "internalType": "uint256",
@@ -373,9 +353,21 @@
           "type": "uint128[]"
         },
         {
-          "internalType": "uint256",
+          "components": [
+            {
+              "internalType": "uint32",
+              "name": "timestamp",
+              "type": "uint32"
+            },
+            {
+              "internalType": "uint32",
+              "name": "percent",
+              "type": "uint32"
+            }
+          ],
+          "internalType": "struct HappyTokenPool.UnlockTime[]",
           "name": "_unlock_time",
-          "type": "uint256"
+          "type": "tuple[]"
         },
         {
           "internalType": "address",
@@ -406,30 +398,75 @@
     {
       "inputs": [
         {
+          "internalType": "bytes32",
+          "name": "id",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "address",
+          "name": "user_addr",
+          "type": "address"
+        }
+      ],
+      "name": "get_swap_status",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "uint32",
+              "name": "timestamp",
+              "type": "uint32"
+            },
+            {
+              "internalType": "uint32",
+              "name": "percent",
+              "type": "uint32"
+            }
+          ],
+          "internalType": "struct HappyTokenPool.UnlockTime[]",
+          "name": "_unlock_time",
+          "type": "tuple[]"
+        },
+        {
+          "internalType": "uint256",
+          "name": "swapped_amount",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "unlocked_amount",
+          "type": "uint256"
+        },
+        {
+          "components": [
+            {
+              "internalType": "bool",
+              "name": "claimed",
+              "type": "bool"
+            },
+            {
+              "internalType": "uint256",
+              "name": "claimed_amount",
+              "type": "uint256"
+            }
+          ],
+          "internalType": "struct HappyTokenPool.SwapStatus",
+          "name": "swap_status",
+          "type": "tuple"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
           "internalType": "uint64",
           "name": "_base_time",
           "type": "uint64"
         }
       ],
       "name": "initialize",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "bytes32",
-          "name": "id",
-          "type": "bytes32"
-        },
-        {
-          "internalType": "uint32",
-          "name": "_unlock_time",
-          "type": "uint32"
-        }
-      ],
-      "name": "setUnlockTime",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"

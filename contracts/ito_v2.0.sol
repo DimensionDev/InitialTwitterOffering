@@ -16,7 +16,7 @@ import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "./IQLF.sol";
 
-contract HappyTokenPool is Initializable {
+contract HappyTokenPool_v2_0 is Initializable {
     struct Packed1 {
         address qualification_addr;
         uint40 password;
@@ -34,14 +34,8 @@ contract HappyTokenPool is Initializable {
         uint32 unlock_time;
     }
 
-    struct UnlockTime {
-        uint32 timestamp;
-        uint32 percent;
-    }
-
     struct SwapStatus {
         bool claimed;
-        uint256 claimed_amount;
     }
 
     struct Pool {
@@ -62,13 +56,6 @@ contract HappyTokenPool is Initializable {
         mapping(address => uint256) swapped_map;      // swapped amount of an address
         mapping(address => SwapStatus) swap_status;
         bool destructed;
-        // Token unlock status
-        // For backward compatibility, its length is allowed to be 0(legacy data)
-        // Example:
-        // { 1640998800, 20 } : unlock 20%, at `January 1, 2022 1:00:00 AM`
-        // { 1641085200, 50 } : unlock 50%, at `January 2, 2022 1:00:00 AM`
-        // { 1641171600, 100 } : unlock 100%, at `January 3, 2022 1:00:00 AM`
-        UnlockTime[] unlock_time;
     }
 
     // swap pool filling success event
@@ -123,7 +110,6 @@ contract HappyTokenPool is Initializable {
         uint256 withdraw_balance
     );
 
-    using SafeMath for uint256;
     using SafeERC20 for IERC20;
     // CAUTION: DO NOT CHANGE ORDER & TYPE OF THESE VARIABLES
     // GOOGLE KEYWORDS "SOLIDITY, UPGRADEABLE CONTRACTS, STORAGE" FOR MORE INFO
@@ -156,26 +142,13 @@ contract HappyTokenPool is Initializable {
      * This function takes the above parameters and creates the pool. _total_tokens of the target token
      * will be successfully transferred to this contract securely on a successful run of this function.
     **/
-    function fill_pool(
-        bytes32 _hash,
-        uint256 _start,
-        uint256 _end,
-        string memory _message,
-        address[] memory _exchange_addrs,
-        uint128[] memory _ratios,
-        UnlockTime[] memory _unlock_time,
-        address _token_addr,
-        uint256 _total_tokens,
-        uint256 _limit,
-        address _qualification
-    )
+    function fill_pool (bytes32 _hash, uint256 _start, uint256 _end, string memory _message,
+                        address[] memory _exchange_addrs, uint128[] memory _ratios, uint256 _unlock_time,
+                        address _token_addr, uint256 _total_tokens, uint256 _limit, address _qualification)
     public payable {
         nonce ++;
         require(_start < _end, "Start time should be earlier than end time.");
-        require(
-            _end < _unlock_time[0].timestamp || _unlock_time[0].timestamp == 0,
-            "End time should be earlier than unlock time"
-        );
+        require(_end < _unlock_time || _unlock_time == 0, "End time should be earlier than unlock time");
         require(_limit <= _total_tokens, "Limit needs to be less than or equal to the total supply");
         require(_total_tokens < 2 ** 128, "No more than 2^128 tokens(incluidng decimals) allowed");
         require(_exchange_addrs.length > 0, "Exchange token addresses need to be set");
@@ -185,20 +158,10 @@ contract HappyTokenPool is Initializable {
         Pool storage pool = pool_by_id[_id];
         pool.packed1 = Packed1(_qualification, uint40(uint256(_hash) >> 216));
         pool.packed2 = Packed2(uint128(_total_tokens), uint128(_limit));
-        // `unlock_time` in `packed3` not used any more.
-        pool.packed3 = Packed3(_token_addr, uint32(_start), uint32(_end), type(uint32).max);
+        pool.packed3 = Packed3(_token_addr, uint32(_start), uint32(_end), uint32(_unlock_time));
         pool.creator = msg.sender;
         pool.exchange_addrs = _exchange_addrs;
         pool.destructed = false;
-
-        if (_unlock_time[0].timestamp == 0) {
-            require(_unlock_time.length == 1, "invalid unlock schedule");
-        }
-        // validate `_unlock_time`
-        validate_unlock_schedule(_unlock_time);
-        for (uint256 i = 0; i < _unlock_time.length; i++) {
-            pool.unlock_time.push(_unlock_time[i]);
-        }
 
         // Init each token swapped amount to 0
         for (uint256 i = 0; i < _exchange_addrs.length; i++) {
@@ -333,38 +296,18 @@ contract HappyTokenPool is Initializable {
         if (exchange_addr != DEFAULT_ADDRESS) {
             IERC20(exchange_addr).safeTransferFrom(msg.sender, address(this), from_value);
         }
-        commit_swap(id, packed3, exchange_addr, input_total, from_value, swapped_tokens);
-        return swapped_tokens;
-    }
-
-    function commit_swap(
-        bytes32 id,
-        Packed3 memory packed3,
-        address exchange_addr,
-        uint128 input_total,
-        uint128 from_value,
-        uint128 swapped_tokens
-    )
-        internal
-    {
-        Pool storage pool = pool_by_id[id];
-        bool claimed = false;
-        if (pool.unlock_time.length > 0) {
-            if (pool.unlock_time[0].timestamp == 0)
-            {
-                claimed = true;
-            }
-        }
-        else if (packed3.unlock_time == 0)
-        {
-            claimed = true;
-        }
 
         {
+            // Solidity has stack depth limitation: "Stack too deep, try removing local variables"
+            // add local variables as a workaround
             // Swap success event
             bytes32 _id = id;
             uint128 _input_total = input_total;
             uint128 _from_value = from_value;
+            bool claimed = false;
+            if (packed3.unlock_time == 0) {
+                claimed = true;
+            }
             emit SwapSuccess(
                 _id,
                 msg.sender,
@@ -379,28 +322,13 @@ contract HappyTokenPool is Initializable {
 
         // if unlock_time == 0, transfer the swapped tokens to the recipient address (msg.sender) - OUTPUT
         // if not, claim() needs to be called to get the token
-        if (claimed) {
+        if (packed3.unlock_time == 0) {
             pool.swap_status[msg.sender].claimed = true;
-            pool.swap_status[msg.sender].claimed_amount = swapped_tokens;
             IERC20(packed3.token_address).safeTransfer(msg.sender, swapped_tokens);
             emit ClaimSuccess(id, msg.sender, block.timestamp, swapped_tokens, packed3.token_address);
         }
-    }
-
-    function validate_unlock_schedule(UnlockTime[] memory _unlock_time) internal pure
-    {
-        for (uint256 i = 0; i < _unlock_time.length - 1; i++) {
-            require(
-                _unlock_time[i].timestamp < _unlock_time[i + 1].timestamp,
-                "invalid unlock schedule"
-            );
-            require(
-                _unlock_time[i].percent < _unlock_time[i + 1].percent,
-                "invalid unlock schedule"
-            );
-        }
-        require(_unlock_time[0].percent > 0, "invalid unlock schedule");
-        require(_unlock_time[_unlock_time.length - 1].percent == 100, "invalid unlock schedule");
+            
+        return swapped_tokens;
     }
 
     /**
@@ -413,6 +341,7 @@ contract HappyTokenPool is Initializable {
      *                       5. swapped amount of the query address
      *                       5. exchanged amount of each token
     **/
+
     function check_availability (bytes32 id)
         external
         view
@@ -421,7 +350,11 @@ contract HappyTokenPool is Initializable {
             uint256 remaining,
             bool started,
             bool expired,
+            bool unlocked,
+            uint256 unlock_time,
+            uint256 swapped,
             uint128[] memory exchanged_tokens,
+            bool claimed,
             uint256 start_time,
             uint256 end_time,
             address qualification_addr
@@ -429,142 +362,55 @@ contract HappyTokenPool is Initializable {
     {
         Pool storage pool = pool_by_id[id];
         Packed3 memory packed3 = pool.packed3;
+        uint256 _swapped_amount = pool.swapped_map[msg.sender];
+        bool _claimed = false;
+        if ( pool.swap_status[msg.sender].claimed ||
+            ((_swapped_amount != 0) && (packed3.unlock_time == 0))) {
+            _claimed = true;
+        }
         return (
             pool.exchange_addrs,                                                // exchange_addrs 0x0 means destructed
             pool.packed2.total_tokens,                                          // remaining
             block.timestamp > packed3.start_time + base_time,                   // started
             block.timestamp > packed3.end_time + base_time,                     // expired
+            block.timestamp > packed3.unlock_time + base_time,                  // unlocked
+            packed3.unlock_time + base_time,                                    // unlock_time
+            _swapped_amount,                                                    // swapped number 
             pool.exchanged_tokens,                                              // exchanged tokens
+            _claimed,                                                           // claimed?
             packed3.start_time + base_time,
             packed3.end_time + base_time,
             pool.packed1.qualification_addr
         );
     }
 
-    function get_swap_status (bytes32 id, address user_addr)
-        external
-        view
-        returns (
-            UnlockTime[] memory unlock_time,
-            uint256 swapped_amount,
-            uint256 unlocked_amount,
-            SwapStatus memory swap_status
-        )
-    {
-        Pool storage pool = pool_by_id[id];
-        return (
-            pool.unlock_time,
-            pool.swapped_map[user_addr],
-            get_unlocked_amount(id, user_addr),
-            pool.swap_status[user_addr]
-        );
-    }
-
     function claim(bytes32[] calldata ito_ids) external {
         for (uint256 i = 0; i < ito_ids.length; i++) {
-            bytes32 id = ito_ids[i];
-            Pool storage pool = pool_by_id[id];
+            Pool storage pool = pool_by_id[ito_ids[i]];
             Packed3 memory packed3 = pool.packed3;
-
-            // already claimed when `swap()`
-            bool claimed_during_swap = false;
-            if (pool.unlock_time.length > 0) {
-                if (pool.unlock_time[0].timestamp == 0) {
-                    claimed_during_swap = true;
-                }
-            }
-            else if (packed3.unlock_time == 0) {
-                // version 2.0: legacy configuration
-                claimed_during_swap = true;
-            }
-            if (claimed_during_swap) {
+            if (packed3.unlock_time == 0)
                 continue;
-            }
-
-            uint256 unlocked_amount = get_unlocked_amount(id, msg.sender);
-            if (unlocked_amount == 0)
+            if (packed3.unlock_time + base_time > block.timestamp)
                 continue;
-
-            uint256 claimed_amount = get_claimed_amount(id, msg.sender);
-            if (claimed_amount >= unlocked_amount)
+            if (pool.swap_status[msg.sender].claimed)
                 continue;
-
-            pool.swap_status[msg.sender].claimed_amount = unlocked_amount;
+            uint256 claimed_amount = pool.swapped_map[msg.sender];
+            if (claimed_amount == 0)
+                continue;
             pool.swap_status[msg.sender].claimed = true;
-            uint256 claiming_amount = unlocked_amount - claimed_amount;
-            IERC20(packed3.token_address).safeTransfer(msg.sender, claiming_amount);
-            emit ClaimSuccess(ito_ids[i], msg.sender, block.timestamp, claiming_amount, packed3.token_address);
+            IERC20(packed3.token_address).safeTransfer(msg.sender, claimed_amount);
+            emit ClaimSuccess(ito_ids[i], msg.sender, block.timestamp, claimed_amount, packed3.token_address);
         }
     }
 
-    function get_claimed_amount(bytes32 id, address user_addr)
-        internal
-        view
-        returns (
-            uint256 unlocked_amount
-        )
-    {
+    function setUnlockTime(bytes32 id, uint32 _unlock_time) public {
         Pool storage pool = pool_by_id[id];
-        if (pool.unlock_time.length == 0) {
-            // version 2.0: legacy configuration
-            if (pool.swap_status[user_addr].claimed) {
-                return pool.swapped_map[user_addr];
-            }
-            return 0;
-        }
-        return pool.swap_status[user_addr].claimed_amount;
-    }
-
-    function get_unlocked_amount(bytes32 id, address user_addr)
-        internal
-        view
-        returns (
-            uint256 unlocked_amount
-        )
-    {
-        Pool storage pool = pool_by_id[id];
-        if (pool.unlock_time.length == 0) {
-            // version 2.0: legacy configuration
-            if (block.timestamp > (pool.packed3.unlock_time + base_time)) {
-                return pool.swapped_map[user_addr];
-            }
-            return 0;
-        }
-        uint256 percent = 0;
-        for (uint256 i = 0; i < pool.unlock_time.length; i++) {
-            if (block.timestamp > (pool.unlock_time[i].timestamp + base_time)) {
-                percent = pool.unlock_time[i].percent;
-            }
-            else {
-                break;
-            }
-        }
-        return pool.swapped_map[user_addr].mul(percent).div(100);
-    }
-
-    function setUnlockTime(
-        bytes32 id,
-        UnlockTime[] memory _unlock_time
-    )
-        external
-    {
-        Pool storage pool = pool_by_id[id];
+        uint32 packed3_unlock_time = pool.packed3.unlock_time;
         require(pool.creator == msg.sender, "Pool Creator Only");
-        // for simplicity, can NOT `setUnlockTime` on `legacy pool`
-        require(pool.unlock_time.length > 0, "legacy pool");
-
-        // validate existing `unlock schedule`
-        require(pool.unlock_time[0].timestamp != 0, "unlock_time is 0");
-        require(block.timestamp < (pool.unlock_time[0].timestamp + base_time), "Too Late");
-
-        // validate `_unlock_time`
-        // this `require` includes `_unlock_time[0].timestamp != 0`
-        require(block.timestamp < (_unlock_time[0].timestamp + base_time), "invalid unlock config");
-        validate_unlock_schedule(_unlock_time);
-        delete pool.unlock_time;
-        for (uint256 i = 0; i < _unlock_time.length; i++) {
-            pool.unlock_time.push(_unlock_time[i]);
-        }
+        require(block.timestamp < (packed3_unlock_time + base_time), "Too Late");
+        require(packed3_unlock_time != 0, "Not eligible when unlock_time is 0");
+        require(_unlock_time != 0, "Cannot set to 0");
+        pool.packed3.unlock_time = _unlock_time;
     }
 
     /**

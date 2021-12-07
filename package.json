@@ -1,6 +1,6 @@
 {
     "name": "initial-twitter-offering",
-    "version": "1.0.0",
+    "version": "3.0.0",
     "license": "MIT",
     "author": "Yisi Liu",
     "main": "hardhat.config.ts",
