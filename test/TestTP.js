@@ -539,7 +539,7 @@ describe('HappyTokenPool', () => {
                 happyTokenPoolDeployed
                     .connect(pool_user)
                     .swap(pool_id, verification, tokenC_address_index, exchange_amount, [pool_id]),
-            ).to.be.rejectedWith('revert ERC20: transfer amount exceeds balance');
+            ).to.be.rejectedWith('ERC20: transfer amount exceeds balance');
 
             // Transfer test tokens back
             await testTokenCDeployed.connect(creator).transfer(pool_user.address, transferAmount);
