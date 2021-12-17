@@ -57,6 +57,10 @@ The ITO smart contract adopts the `Proxy Upgrade Pattern` to improve user experi
 | Rinkeby-Arbitrum | [0x9b3649eC](https://rinkeby-explorer.arbitrum.io/address/0x9b3649eC8C9f68484acC76D437B145a4e58Bf2A2)          |
 | Arbitrum         | [0x71834a3F](https://explorer.arbitrum.io/address/0x71834a3FDeA3E70F14a93ED85c6be70925D0CAd9)                  |
 | xDai             | [0x913975af](https://blockscout.com/xdai/mainnet/address/0x913975af2Bb8a6Be4100D7dc5e9765B77F6A5d6c/contracts) |
+| Goerli           | [0x39Ad21f8](https://goerli.etherscan.io/address/0x39Ad21f89560D16b30652D5991915e78a8265aeF)                   |
+| Fantom           | [0x981be454](https://ftmscan.com/address/0x981be454a930479d92C91a0092D204b64845A5D6)                           |
+| Celo             | [0x54a0A221](https://explorer.celo.org/address/0x54a0A221C25Fc0a347EC929cFC5db0be17fA2a2B/transactions)        |
+| Avalanche        | [0x02Ea0720](https://snowtrace.io/address/0x02Ea0720254F7fa4eca7d09A1b9C783F1020EbEF)        |
 
 ### Implementation block number (required by frontend developers)
 
@@ -69,6 +73,10 @@ The ITO smart contract adopts the `Proxy Upgrade Pattern` to improve user experi
 | Rinkeby-Arbitrum | N/A                                | [708696][rinkeby-arbitrum-708696 ]  |
 | Arbitrum         | N/A                                | [102022][arbitrum-102022 ]          |
 | xDai             | N/A                                | [17865755][xdai-17865755 ]          |
+| Goerli           | N/A                                | [6028660][goerli-6028660 ]          |
+| Fantom           | N/A                                | [25071597][fantom-25071597 ]        |
+| Celo             | N/A                                | [10406511][celo-10406511 ]          |
+| Avalanche        | N/A                                | [8289892][avalanche-8289892 ]       |
 
 [mainnet-block-12689616]: https://etherscan.io/block/12689616
 [ropsten-block-10468221]: https://ropsten.etherscan.io/block/10468221
@@ -82,30 +90,11 @@ The ITO smart contract adopts the `Proxy Upgrade Pattern` to improve user experi
 [rinkeby-arbitrum-708696]: https://rinkeby-explorer.arbitrum.io/block/708696
 [arbitrum-102022]: https://explorer.arbitrum.io/block/102022
 [xdai-17865755]: https://blockscout.com/xdai/mainnet/blocks/17865755/transactions
+[goerli-6028660]: https://goerli.etherscan.io/block/6028660
+[fantom-25071597]: https://ftmscan.com/block/25071597
+[celo-10406511]: https://explorer.celo.org/block/10406511/transactions
+[avalanche-8289892]: https://snowtrace.io/block/8289892
 
-### ProxyAdmin
-
-Besides, we also deployed the `ProxyAdmin` to manage the `proxy`.
-
-| Chain        | Address                      |
-| ------------ | ---------------------------- |
-| Mainnet      | [0x7aa4F9C7][proxy-7aa4f9c7] |
-| Ropsten      | [0xa01c3cbe][proxy-a01c3cbe] |
-| Rinkeby      | [0x0061E06c][proxy-0061e06c] |
-| BSC          | [0x83D6b366][proxy-83d6b366] |
-| BSC-testnet  | [0xF7072bB9][proxy-f7072bb9] |
-| Matic        | [0xAb7B1bE4][proxy-ab7b1be4] |
-| Matic-mumbai | [0xDB80b907][proxy-db80b907] |
-| xDai         | [0x6cc1b105][proxy-6cc1b105] |
-
-[proxy-7aa4f9c7]: https://etherscan.io/address/0x7aa4F9C72985Da8309aa97894070Dd855E63C544
-[proxy-a01c3cbe]: https://ropsten.etherscan.io/address/0xa01c3cbeF7088cb4d22a990E1356F39bce7Ca3f2
-[proxy-0061e06c]: https://rinkeby.etherscan.io/address/0x0061E06c9f640a03C4981f43762d2AE5e03873c5
-[proxy-83d6b366]: https://bscscan.com/address/0x83D6b366f21e413f214EB077D5378478e71a5eD2
-[proxy-f7072bb9]: https://testnet.bscscan.com/address/0xF7072bB93458250E38C6c4523882C6e2b5fe8ec0
-[proxy-ab7b1be4]: https://polygonscan.com/address/0xAb7B1bE4233A04e5C43a810E75657ECED8E5463B
-[proxy-db80b907]: https://polygon-explorer-mumbai.chainstacklabs.com/address/0xDB80b9076F24EEee87425Fe70eA64222d9bD6A2a
-[proxy-6cc1b105]: https://blockscout.com/xdai/mainnet/address/0x6cc1b1058F9153358278C35E0b2D382f1585854B/transactions
 
 ## Qualification
 
@@ -113,20 +102,24 @@ Another smart contract interface `IQLF` ([source code](https://github.com/Dimens
 
 To prevent a malicious attack, you can set a `swap_start_time` in your custom qualification contract, then add accounts who swap before that time to a blacklist, they will no longer be able to access your ITO. Please confirm the `swap_start_time` carefully, it must be less than the end time of ITO, otherwise, nobody can access your ITO at all. To let Mask browser extension help you check if `swap_start_time` is less than the end time of ITO. You need to append `interfaceId == this.get_start_time.selector;` to `supportsInterface()`(Notice the getter function **MUST** be named `get_start_time()` to keep the same with the browser extension code), just copy the implementation of [our default qualification contract](https://github.com/DimensionDev/InitialTwitterOffering/blob/master/contracts/qualification.sol).
 
-### Empty Qualification Contract
+### Dummy Qualification Contract
 
-| Chain            | Address                     |
-| ---------------- | --------------------------- |
-| Mainnet          | [0x4dC5f343][iqlf-4dc5f343] |
-| Ropsten          | [0xd5e6434b][iqlf-d5e6434b] |
-| Rinkeby          | [0x8440b99B][iqlf-8440b99b] |
-| BSC              | [0xAb7B1bE4][iqlf-ab7b1be4] |
-| BSC-testnet      | [0xaaC2362f][iqlf-aac2362f] |
-| Matic            | [0x2cf91AD8][iqlf-2cf91ad8] |
-| Matic-mumbai     | [0x8AB2579C][iqlf-8ab2579c] |
-| Rinkeby-Arbitrum | [0xEbd753E6][iqlf-Ebd753E6] |
-| Arbitrum         | [0x913975af][iqlf-913975af] |
-| xDai             | [0x71834a3F][iqlf-71834a3F] |
+| Chain            | Address                         |
+| ---------------- | ------------------------------- |
+| Mainnet          | [0x4dC5f343][iqlf-4dc5f343]     |
+| Ropsten          | [0xd5e6434b][iqlf-d5e6434b]     |
+| Rinkeby          | [0x8440b99B][iqlf-8440b99b]     |
+| BSC              | [0xAb7B1bE4][iqlf-ab7b1be4]     |
+| BSC-testnet      | [0xaaC2362f][iqlf-aac2362f]     |
+| Matic            | [0x2cf91AD8][iqlf-2cf91ad8]     |
+| Matic-mumbai     | [0x8AB2579C][iqlf-8ab2579c]     |
+| Rinkeby-Arbitrum | [0xEbd753E6][iqlf-Ebd753E6]     |
+| Arbitrum         | [0x913975af][iqlf-913975af]     |
+| xDai             | [0x71834a3F][iqlf-71834a3F]     |
+| Goerli           | [0x957DCb39][goerli-0x957DCb39] |
+| Fantom           | [0x957DCb39][fantom-0x83D6b366] |
+| Celo             | [0x2cB220F9][celo-0x2cB220F9]   |
+| Avalanche        | [0x54a0A221][avalanche-0x54a0A221]   |
 
 [iqlf-4dc5f343]: https://etherscan.io/address/0x4dC5f343Fe57E4fbDA1B454d125D396A3181272c
 [iqlf-d5e6434b]: https://ropsten.etherscan.io/address/0xd5e6434bde165062b3d9572DEFd6393c7B3E2902
@@ -138,6 +131,10 @@ To prevent a malicious attack, you can set a `swap_start_time` in your custom qu
 [iqlf-Ebd753E6]: https://rinkeby-explorer.arbitrum.io/address/0xEbd753E66649C824241E63894301BA8Db5DBF5Bb
 [iqlf-913975af]: https://explorer.arbitrum.io/address/0x913975af2Bb8a6Be4100D7dc5e9765B77F6A5d6c
 [iqlf-71834a3F]: https://blockscout.com/xdai/mainnet/address/0x71834a3FDeA3E70F14a93ED85c6be70925D0CAd9/transactions
+[goerli-0x957DCb39](https://goerli.etherscan.io/address/0x957DCb3918E33dD80bd3db193ACb2A90812fE615)
+[fantom-0x83D6b366](https://ftmscan.com/address/0x83D6b366f21e413f214EB077D5378478e71a5eD2#code)
+[celo-0x2cB220F9](https://explorer.celo.org/address/0x2cB220F925E603A04BEE05F210252120deBA29d7/contracts)
+[avalanche-0x54a0A221](https://snowtrace.io/address/0x54a0A221C25Fc0a347EC929cFC5db0be17fA2a2B#code)
 
 ## Security Audit
 
