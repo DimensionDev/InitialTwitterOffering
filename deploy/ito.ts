@@ -7,8 +7,8 @@ const { base_timestamp } = require('../test/constants');
 type MyMapLikeType = Record<string, string>;
 const deployedContracts: MyMapLikeType = {
     mainnet: '0xc2CFbF22d6Dc87D0eE18d38d73733524c109Ff46',
-    ropsten: '0xBD4c3Cf084B6F4d25430Ee5d44436e860Cc58Ee4',
-    rinkeby: '0x0A5A7372eDf3349C46ea5E58A887BA7337fdF261',
+    ropsten: '0xcdE281B32b629f2e89E5953B674E1E507e6dabcF',
+    rinkeby: '0xBe62f1805C43559cC62f9326103354080588B158',
     bsc_test: '0xbc558E7683F79FAAE236c1083671396cbB2Ac242',
     bsc_mainnet: '0x96c7D011cdFD467f551605f0f5Fce279F86F4186',
     matic_mumbai_test: '0x4df24eB095A73CeCDe7c89233CeE1efCc7C1c685',
@@ -16,7 +16,7 @@ const deployedContracts: MyMapLikeType = {
     arbitrum: '0x71834a3FDeA3E70F14a93ED85c6be70925D0CAd9',
     arbitrum_rinkeby: '0x9b3649eC8C9f68484acC76D437B145a4e58Bf2A2',
     xdai: '0x913975af2Bb8a6Be4100D7dc5e9765B77F6A5d6c',
-    goerli: '0x39Ad21f89560D16b30652D5991915e78a8265aeF',
+    goerli: '0x3475255Fa26434B680DAe20D6469222C135f33Ea',
     fantom: '0x981be454a930479d92C91a0092D204b64845A5D6',
     celo: '0x54a0A221C25Fc0a347EC929cFC5db0be17fA2a2B',
     avalanche: '0x02Ea0720254F7fa4eca7d09A1b9C783F1020EbEF',

@@ -48,21 +48,23 @@ function debug_param (address _token_addr) public {
 
 The ITO smart contract adopts the `Proxy Upgrade Pattern` to improve user experience. Hence, the addresses in this section are actually the deployed `TransparentUpgradeableProxy` smart contract addresses.
 
-| Chain            | Address                                                                                                        |
-| ---------------- | -------------------------------------------------------------------------------------------------------------- |
-| Mainnet          | [0xc2CFbF22](https://etherscan.io/address/0xc2CFbF22d6Dc87D0eE18d38d73733524c109Ff46)                          |
-| Ropsten          | [0xBD4c3Cf0](https://ropsten.etherscan.io/address/0xBD4c3Cf084B6F4d25430Ee5d44436e860Cc58Ee4)                  |
-| BSC              | [0x96c7D011](https://bscscan.com/address/0x96c7D011cdFD467f551605f0f5Fce279F86F4186)                           |
-| Matic            | [0xF9F7C149](https://polygonscan.com/address/0xF9F7C1496c21bC0180f4B64daBE0754ebFc8A8c0)                       |
-| Rinkeby-Arbitrum | [0x9b3649eC](https://rinkeby-explorer.arbitrum.io/address/0x9b3649eC8C9f68484acC76D437B145a4e58Bf2A2)          |
-| Arbitrum         | [0x71834a3F](https://explorer.arbitrum.io/address/0x71834a3FDeA3E70F14a93ED85c6be70925D0CAd9)                  |
-| xDai             | [0x913975af](https://blockscout.com/xdai/mainnet/address/0x913975af2Bb8a6Be4100D7dc5e9765B77F6A5d6c/contracts) |
-| Goerli           | [0x39Ad21f8](https://goerli.etherscan.io/address/0x39Ad21f89560D16b30652D5991915e78a8265aeF)                   |
-| Fantom           | [0x981be454](https://ftmscan.com/address/0x981be454a930479d92C91a0092D204b64845A5D6)                           |
-| Celo             | [0x54a0A221](https://explorer.celo.org/address/0x54a0A221C25Fc0a347EC929cFC5db0be17fA2a2B/transactions)        |
-| Avalanche        | [0x02Ea0720](https://snowtrace.io/address/0x02Ea0720254F7fa4eca7d09A1b9C783F1020EbEF)                          |
-| Kovan-optimistic | [0x88edAC7a](https://kovan-optimistic.etherscan.io/address/0x88edAC7aEDEeAfaD15439010B0bdC0D067763571)         |
-| Optimistic       | [0x71834a3F](https://optimistic.etherscan.io/address/0x71834a3FDeA3E70F14a93ED85c6be70925D0CAd9)               |
+| Chain            | Address                                                                                                                                        |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| Mainnet          | [0xc2CFbF22d6Dc87D0eE18d38d73733524c109Ff46](https://etherscan.io/address/0xc2CFbF22d6Dc87D0eE18d38d73733524c109Ff46)                          |
+| Ropsten          | [0xcdE281B32b629f2e89E5953B674E1E507e6dabcF](https://ropsten.etherscan.io/address/0xcdE281B32b629f2e89E5953B674E1E507e6dabcF)                  |
+| Rinkeby          | [0xBe62f1805C43559cC62f9326103354080588B158](https://rinkeby.etherscan.io/address/0xBe62f1805C43559cC62f9326103354080588B158)                  |
+| BSC              | [0x96c7D011cdFD467f551605f0f5Fce279F86F4186](https://bscscan.com/address/0x96c7D011cdFD467f551605f0f5Fce279F86F4186)                           |
+| BSC-testnet      | [0xbc558E7683F79FAAE236c1083671396cbB2Ac242](https://testnet.bscscan.com/address/0xbc558E7683F79FAAE236c1083671396cbB2Ac242)                   |
+| Matic            | [0xF9F7C1496c21bC0180f4B64daBE0754ebFc8A8c0](https://polygonscan.com/address/0xF9F7C1496c21bC0180f4B64daBE0754ebFc8A8c0)                       |
+| Rinkeby-Arbitrum | [0x9b3649eC8C9f68484acC76D437B145a4e58Bf2A2](https://rinkeby-explorer.arbitrum.io/address/0x9b3649eC8C9f68484acC76D437B145a4e58Bf2A2)          |
+| Arbitrum         | [0x71834a3FDeA3E70F14a93ED85c6be70925D0CAd9](https://explorer.arbitrum.io/address/0x71834a3FDeA3E70F14a93ED85c6be70925D0CAd9)                  |
+| xDai             | [0x913975af2Bb8a6Be4100D7dc5e9765B77F6A5d6c](https://blockscout.com/xdai/mainnet/address/0x913975af2Bb8a6Be4100D7dc5e9765B77F6A5d6c/contracts) |
+| Goerli           | [0x3475255Fa26434B680DAe20D6469222C135f33Ea](https://goerli.etherscan.io/address/0x3475255Fa26434B680DAe20D6469222C135f33Ea)                   |
+| Fantom           | [0x981be454a930479d92C91a0092D204b64845A5D6](https://ftmscan.com/address/0x981be454a930479d92C91a0092D204b64845A5D6)                           |
+| Celo             | [0x54a0A221C25Fc0a347EC929cFC5db0be17fA2a2B](https://explorer.celo.org/address/0x54a0A221C25Fc0a347EC929cFC5db0be17fA2a2B/transactions)        |
+| Avalanche        | [0x02Ea0720254F7fa4eca7d09A1b9C783F1020EbEF](https://snowtrace.io/address/0x02Ea0720254F7fa4eca7d09A1b9C783F1020EbEF)                          |
+| Kovan-optimistic | [0x88edAC7aEDEeAfaD15439010B0bdC0D067763571](https://kovan-optimistic.etherscan.io/address/0x88edAC7aEDEeAfaD15439010B0bdC0D067763571)         |
+| Optimistic       | [0x71834a3FDeA3E70F14a93ED85c6be70925D0CAd9](https://optimistic.etherscan.io/address/0x71834a3FDeA3E70F14a93ED85c6be70925D0CAd9)               |
 
 ### Implementation block number (required by frontend developers)
 
@@ -109,41 +111,23 @@ To prevent a malicious attack, you can set a `swap_start_time` in your custom qu
 
 ### Dummy Qualification Contract
 
-| Chain            | Address                                   |
-| ---------------- | ----------------------------------------- |
-| Mainnet          | [0x4dC5f343][iqlf-4dc5f343]               |
-| Ropsten          | [0xd5e6434b][iqlf-d5e6434b]               |
-| Rinkeby          | [0x8440b99B][iqlf-8440b99b]               |
-| BSC              | [0xAb7B1bE4][iqlf-ab7b1be4]               |
-| BSC-testnet      | [0xaaC2362f][iqlf-aac2362f]               |
-| Matic            | [0x2cf91AD8][iqlf-2cf91ad8]               |
-| Matic-mumbai     | [0x8AB2579C][iqlf-8ab2579c]               |
-| Rinkeby-Arbitrum | [0xEbd753E6][iqlf-Ebd753E6]               |
-| Arbitrum         | [0x913975af][iqlf-913975af]               |
-| xDai             | [0x71834a3F][iqlf-71834a3F]               |
-| Goerli           | [0x957DCb39][goerli-0x957DCb39]           |
-| Fantom           | [0x957DCb39][fantom-0x83D6b366]           |
-| Celo             | [0x2cB220F9][celo-0x2cB220F9]             |
-| Avalanche        | [0x54a0A221][avalanche-0x54a0A221]        |
-| Kovan-optimistic | [0x57E2AAB7][kovan-optimistic-0x57E2AAB7] |
-| Optimistic       | [0x913975af][Optimistic-0x913975af]       |
-
-[iqlf-4dc5f343]: https://etherscan.io/address/0x4dC5f343Fe57E4fbDA1B454d125D396A3181272c
-[iqlf-d5e6434b]: https://ropsten.etherscan.io/address/0xd5e6434bde165062b3d9572DEFd6393c7B3E2902
-[iqlf-8440b99b]: https://rinkeby.etherscan.io/address/0x8440b99B1Df5D4B61957c8Ce0a199487Be3De270
-[iqlf-ab7b1be4]: https://bscscan.com/address/0xAb7B1bE4233A04e5C43a810E75657ECED8E5463B
-[iqlf-aac2362f]: https://testnet.bscscan.com/address/0xaaC2362f2DC523E9B37B1EE2eA57110e1Bd63F59
-[iqlf-2cf91ad8]: https://polygonscan.com/address/0x2cf91AD8C175305EBe6970Bd8f81231585EFbd77
-[iqlf-8ab2579c]: https://polygon-explorer-mumbai.chainstacklabs.com/address/0x8AB2579C91E4f1688e1787288d969450BF6d478d
-[iqlf-Ebd753E6]: https://rinkeby-explorer.arbitrum.io/address/0xEbd753E66649C824241E63894301BA8Db5DBF5Bb
-[iqlf-913975af]: https://explorer.arbitrum.io/address/0x913975af2Bb8a6Be4100D7dc5e9765B77F6A5d6c
-[iqlf-71834a3F]: https://blockscout.com/xdai/mainnet/address/0x71834a3FDeA3E70F14a93ED85c6be70925D0CAd9/transactions
-[goerli-0x957DCb39](https://goerli.etherscan.io/address/0x957DCb3918E33dD80bd3db193ACb2A90812fE615)
-[fantom-0x83D6b366](https://ftmscan.com/address/0x83D6b366f21e413f214EB077D5378478e71a5eD2#code)
-[celo-0x2cB220F9](https://explorer.celo.org/address/0x2cB220F925E603A04BEE05F210252120deBA29d7/contracts)
-[avalanche-0x54a0A221](https://snowtrace.io/address/0x54a0A221C25Fc0a347EC929cFC5db0be17fA2a2B#code)
-[kovan-optimistic-0x57E2AAB7](https://kovan-optimistic.etherscan.io/address/0x57E2AAB712E9c61CA55A6402223DbEe3d4eE09aa)
-[Optimistic-0x913975af](https://optimistic.etherscan.io/address/0x913975af2Bb8a6Be4100D7dc5e9765B77F6A5d6c)
+| Chain            | Address                                                                                                                                        |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| Mainnet          | [0x4dC5f343Fe57E4fbDA1B454d125D396A3181272c](https://etherscan.io/address/0x4dC5f343Fe57E4fbDA1B454d125D396A3181272c)                          |
+| Ropsten          | [0xd5e6434bde165062b3d9572DEFd6393c7B3E2902](https://ropsten.etherscan.io/address/0xd5e6434bde165062b3d9572DEFd6393c7B3E2902)                  |
+| Rinkeby          | [0x8440b99B1Df5D4B61957c8Ce0a199487Be3De270](https://rinkeby.etherscan.io/address/0x8440b99B1Df5D4B61957c8Ce0a199487Be3De270)                  |
+| BSC              | [0xAb7B1bE4233A04e5C43a810E75657ECED8E5463B](https://bscscan.com/address/0xAb7B1bE4233A04e5C43a810E75657ECED8E5463B)                           |
+| BSC-testnet      | [0xaaC2362f2DC523E9B37B1EE2eA57110e1Bd63F59](https://testnet.bscscan.com/address/0xaaC2362f2DC523E9B37B1EE2eA57110e1Bd63F59)                   |
+| Matic            | [0x2cf91AD8C175305EBe6970Bd8f81231585EFbd77](https://polygonscan.com/address/0x2cf91AD8C175305EBe6970Bd8f81231585EFbd77)                       |
+| Rinkeby-Arbitrum | [0xEbd753E66649C824241E63894301BA8Db5DBF5Bb](https://rinkeby-explorer.arbitrum.io/address/0xEbd753E66649C824241E63894301BA8Db5DBF5Bb)          |
+| Arbitrum         | [0x913975af2Bb8a6Be4100D7dc5e9765B77F6A5d6c](https://explorer.arbitrum.io/address/0x913975af2Bb8a6Be4100D7dc5e9765B77F6A5d6c)                  |
+| xDai             | [0x71834a3FDeA3E70F14a93ED85c6be70925D0CAd9](https://blockscout.com/xdai/mainnet/address/0x71834a3FDeA3E70F14a93ED85c6be70925D0CAd9/contracts) |
+| Goerli           | [0x957DCb3918E33dD80bd3db193ACb2A90812fE615](https://goerli.etherscan.io/address/0x957DCb3918E33dD80bd3db193ACb2A90812fE615)                   |
+| Fantom           | [0x83D6b366f21e413f214EB077D5378478e71a5eD2](https://ftmscan.com/address/0x83D6b366f21e413f214EB077D5378478e71a5eD2)                           |
+| Celo             | [0x2cB220F925E603A04BEE05F210252120deBA29d7](https://explorer.celo.org/address/0x2cB220F925E603A04BEE05F210252120deBA29d7/transactions)        |
+| Avalanche        | [0x54a0A221C25Fc0a347EC929cFC5db0be17fA2a2B](https://snowtrace.io/address/0x54a0A221C25Fc0a347EC929cFC5db0be17fA2a2B)                          |
+| Kovan-optimistic | [0x57E2AAB712E9c61CA55A6402223DbEe3d4eE09aa](https://kovan-optimistic.etherscan.io/address/0x57E2AAB712E9c61CA55A6402223DbEe3d4eE09aa)         |
+| Optimistic       | [0x913975af2Bb8a6Be4100D7dc5e9765B77F6A5d6c](https://optimistic.etherscan.io/address/0x913975af2Bb8a6Be4100D7dc5e9765B77F6A5d6c)               |
 
 ## Security Audit
 
