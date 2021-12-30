@@ -350,7 +350,7 @@ contract HappyTokenPool is Initializable {
             uint256 remaining,
             bool started,
             bool expired,
-            bool unlocked,
+            bool destructed,
             uint256 unlock_time,
             uint256 swapped,
             uint128[] memory exchanged_tokens,
@@ -369,13 +369,13 @@ contract HappyTokenPool is Initializable {
             _claimed = true;
         }
         return (
-            pool.exchange_addrs,                                                // exchange_addrs 0x0 means destructed
+            pool.exchange_addrs,                                                // exchange_addrs
             pool.packed2.total_tokens,                                          // remaining
             block.timestamp > packed3.start_time + base_time,                   // started
             block.timestamp > packed3.end_time + base_time,                     // expired
-            block.timestamp > packed3.unlock_time + base_time,                  // unlocked
+            pool.destructed,
             packed3.unlock_time + base_time,                                    // unlock_time
-            _swapped_amount,                                                    // swapped number 
+            _swapped_amount,                                                    // swapped number
             pool.exchanged_tokens,                                              // exchanged tokens
             _claimed,                                                           // claimed?
             packed3.start_time + base_time,
