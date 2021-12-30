@@ -912,6 +912,7 @@ describe('HappyTokenPool', () => {
 
                 expect(availabilityNow.swapped.toString()).and.to.be.eq(availabilityPrevious.swapped.toString());
                 expect(availabilityNow.claimed).to.be.true;
+                expect(availabilityNow.destructed).to.be.true;
 
                 const logs = await ethers.provider.getLogs(happyTokenPoolDeployed.filters.ClaimSuccess());
                 const parsedLog = itoInterface.parseLog(logs[0]);
@@ -977,12 +978,11 @@ describe('HappyTokenPool', () => {
                     await happyTokenPoolDeployed.connect(creator).setUnlockTime(pool_id, new_unlock_time);
                     {
                         await helper.advanceTimeAndBlock(1000);
-                        const { unlocked: poolUnlocked, unlock_time: poolUnlockTime } = await getAvailability(
+                        const { unlock_time: poolUnlockTime } = await getAvailability(
                             happyTokenPoolDeployed,
                             pool_id,
                             signers[2].address,
                         );
-                        assert.isTrue(poolUnlocked);
                         expect(poolUnlockTime.toString()).and.to.be.eq(now_in_second.toString());
                     }
                     await happyTokenPoolDeployed.connect(signers[2]).claim([pool_id]);
@@ -1163,6 +1163,10 @@ describe('HappyTokenPool', () => {
                 pool_id,
                 exchange_tokenC_amount,
             );
+            {
+                const result = await getAvailability(happyTokenPoolDeployed, pool_id, signers[1].address);
+                expect(result.destructed).to.false;
+            }
 
             await helper.advanceTimeAndBlock(2000 * 1000);
             await happyTokenPoolDeployed.connect(creator).destruct(pool_id);
@@ -1232,6 +1236,7 @@ describe('HappyTokenPool', () => {
                     exchange_tokenB_amount,
                     exchange_tokenC_pool_limit,
                 ]);
+                expect(result.destructed).to.true;
             }
             {
                 // destruct again, do nothing
