@@ -22,6 +22,10 @@ const deployedContracts: MyMapLikeType = {
     avalanche: '0x02Ea0720254F7fa4eca7d09A1b9C783F1020EbEF',
     optimism: '0x71834a3FDeA3E70F14a93ED85c6be70925D0CAd9',
     optimism_kovan: '0x88edAC7aEDEeAfaD15439010B0bdC0D067763571',
+    aurora: '0x2cf91AD8C175305EBe6970Bd8f81231585EFbd77',
+    fuse: '0xF9F7C1496c21bC0180f4B64daBE0754ebFc8A8c0',
+    boba: '0x981be454a930479d92C91a0092D204b64845A5D6',
+    moonriver: '0x981be454a930479d92C91a0092D204b64845A5D6',
 };
 
 const func: DeployFunction = async function(hre: HardhatRuntimeEnvironment) {

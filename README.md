@@ -65,6 +65,10 @@ The ITO smart contract adopts the `Proxy Upgrade Pattern` to improve user experi
 | Avalanche        | [0x02Ea0720254F7fa4eca7d09A1b9C783F1020EbEF](https://snowtrace.io/address/0x02Ea0720254F7fa4eca7d09A1b9C783F1020EbEF)                          |
 | Kovan-optimistic | [0x88edAC7aEDEeAfaD15439010B0bdC0D067763571](https://kovan-optimistic.etherscan.io/address/0x88edAC7aEDEeAfaD15439010B0bdC0D067763571)         |
 | Optimistic       | [0x71834a3FDeA3E70F14a93ED85c6be70925D0CAd9](https://optimistic.etherscan.io/address/0x71834a3FDeA3E70F14a93ED85c6be70925D0CAd9)               |
+| Aurora           | [0x2cf91AD8C175305EBe6970Bd8f81231585EFbd77](https://explorer.mainnet.aurora.dev/address/0x2cf91AD8C175305EBe6970Bd8f81231585EFbd77/transactions) |
+| Fuse             | [0xF9F7C1496c21bC0180f4B64daBE0754ebFc8A8c0](https://explorer.fuse.io/address/0xF9F7C1496c21bC0180f4B64daBE0754ebFc8A8c0/transactions)            |
+| Boba             | [0x981be454a930479d92C91a0092D204b64845A5D6](https://blockexplorer.boba.network/address/0x981be454a930479d92C91a0092D204b64845A5D6/transactions)  |
+| Moonriver        | [0x981be454a930479d92C91a0092D204b64845A5D6](https://moonriver.moonscan.io/address/0x981be454a930479d92C91a0092D204b64845A5D6)            |
 
 ### Implementation block number (required by frontend developers)
 
@@ -83,6 +87,10 @@ The ITO smart contract adopts the `Proxy Upgrade Pattern` to improve user experi
 | Avalanche        | N/A                                | [8289892][avalanche-8289892 ]       |
 | Kovan-optimistic | N/A                                | [47716][kovan-optimistic-47716 ]    |
 | Optimistic       | N/A                                | [8994][optimistic-8994 ]            |
+| Aurora           | N/A                                | [57350598][aurora-57350598 ]        |
+| Fuse             | N/A                                | [14951572][fuse-14951572 ]          |
+| Boba             | N/A                                | [290600][boba-290600 ]              |
+| Moonriver        | N/A                                | [1314566][moonriver-1314566 ]       |
 
 [mainnet-block-12689616]: https://etherscan.io/block/12689616
 [ropsten-block-10468221]: https://ropsten.etherscan.io/block/10468221
@@ -102,6 +110,10 @@ The ITO smart contract adopts the `Proxy Upgrade Pattern` to improve user experi
 [avalanche-8289892]: https://snowtrace.io/block/8289892
 [kovan-optimistic-47716]: https://kovan-optimistic.etherscan.io/batch/47716
 [optimistic-8994]: https://optimistic.etherscan.io/batch/8994
+[aurora-57350598]: https://explorer.mainnet.aurora.dev/block/57350598/transactions
+[fuse-14951572]: https://explorer.fuse.io/block/14951572/transactions
+[boba-290600]: https://blockexplorer.boba.network/blocks/290600/transactions
+[moonriver-1314566]: https://moonriver.moonscan.io/block/1314566
 
 ## Qualification
 
@@ -128,6 +140,10 @@ To prevent a malicious attack, you can set a `swap_start_time` in your custom qu
 | Avalanche        | [0x54a0A221C25Fc0a347EC929cFC5db0be17fA2a2B](https://snowtrace.io/address/0x54a0A221C25Fc0a347EC929cFC5db0be17fA2a2B)                          |
 | Kovan-optimistic | [0x57E2AAB712E9c61CA55A6402223DbEe3d4eE09aa](https://kovan-optimistic.etherscan.io/address/0x57E2AAB712E9c61CA55A6402223DbEe3d4eE09aa)         |
 | Optimistic       | [0x913975af2Bb8a6Be4100D7dc5e9765B77F6A5d6c](https://optimistic.etherscan.io/address/0x913975af2Bb8a6Be4100D7dc5e9765B77F6A5d6c)               |
+| Aurora           | [0x578a7Fee5f0D8CEc7d00578Bf37374C5b95C4b98](https://explorer.mainnet.aurora.dev/address/0x578a7Fee5f0D8CEc7d00578Bf37374C5b95C4b98/transactions) |
+| Fuse             | [0x2cf91AD8C175305EBe6970Bd8f81231585EFbd77](https://explorer.fuse.io/address/0x2cf91AD8C175305EBe6970Bd8f81231585EFbd77/transactions)            |
+| Boba             | [0x83D6b366f21e413f214EB077D5378478e71a5eD2](https://blockexplorer.boba.network/address/0x83D6b366f21e413f214EB077D5378478e71a5eD2/transactions)            |
+| Moonriver        | [0x83D6b366f21e413f214EB077D5378478e71a5eD2](https://moonriver.moonscan.io/address/0x83D6b366f21e413f214EB077D5378478e71a5eD2)            |
 
 ## Security Audit
 
