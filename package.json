@@ -25,6 +25,14 @@
         "deploy:bsc_test": "hardhat --network bsc_test deploy",
         "deploy:bsc_mainnet": "hardhat --network bsc_mainnet deploy",
         "deploy:matic_mainnet": "hardhat --network matic_mainnet deploy",
+        "deploy:aurora_test": "hardhat --network aurora_test deploy",
+        "deploy:aurora": "hardhat --network aurora deploy",
+        "deploy:fuse": "hardhat --network fuse deploy",
+        "deploy:boba": "hardhat --network boba deploy",
+        "deploy:boba_test": "hardhat --network boba_test deploy",
+        "deploy:metis": "hardhat --network metis deploy",
+        "deploy:metis_test": "hardhat --network metis_test deploy",
+        "deploy:moonriver": "hardhat --network moonriver deploy",
         "format": "prettier --write './test/*.js' './deploy/*.ts'"
     },
     "dependencies": {
