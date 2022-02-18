@@ -77,25 +77,25 @@ The ITO smart contract adopts the `Proxy Upgrade Pattern` to improve user experi
 | Mainnet          | [12689616][mainnet-block-12689616] | [12766513][mainnet-block-12766513]  |
 | Ropsten          | [10468221][ropsten-block-10468221] | [10572050][ropsten-block-10572050]  |
 | BSC              | [8508077][bsc-block-8508077]       | [8885927][bsc-block-8885927]        |
-| Matic            | [16002769][polygon-block-16002769] | [16516643][polygon-block-16516643 ] |
-| Rinkeby-Arbitrum | N/A                                | [708696][rinkeby-arbitrum-708696 ]  |
-| Arbitrum         | N/A                                | [102022][arbitrum-102022 ]          |
-| xDai             | N/A                                | [17865755][xdai-17865755 ]          |
-| Goerli           | N/A                                | [6028660][goerli-6028660 ]          |
-| Fantom           | N/A                                | [25071597][fantom-25071597 ]        |
-| Celo             | N/A                                | [10406511][celo-10406511 ]          |
-| Avalanche        | N/A                                | [8289892][avalanche-8289892 ]       |
-| Kovan-optimistic | N/A                                | [47716][kovan-optimistic-47716 ]    |
-| Optimistic       | N/A                                | [8994][optimistic-8994 ]            |
-| Aurora           | N/A                                | [57350598][aurora-57350598 ]        |
-| Fuse             | N/A                                | [14951572][fuse-14951572 ]          |
-| Boba             | N/A                                | [290600][boba-290600 ]              |
-| Moonriver        | N/A                                | [1314566][moonriver-1314566 ]       |
+| Matic            | [16002769][polygon-block-16002769] | [16516643][polygon-block-16516643] |
+| Rinkeby-Arbitrum | N/A                                | [708696][rinkeby-arbitrum-708696]  |
+| Arbitrum         | N/A                                | [102022][arbitrum-102022]          |
+| xDai             | N/A                                | [17865755][xdai-17865755]          |
+| Goerli           | N/A                                | [6028660][goerli-6028660]          |
+| Fantom           | N/A                                | [25071597][fantom-25071597]        |
+| Celo             | N/A                                | [10406511][celo-10406511]          |
+| Avalanche        | N/A                                | [8289892][avalanche-8289892]       |
+| Kovan-optimistic | N/A                                | [47716][kovan-optimistic-47716]    |
+| Optimistic       | N/A                                | [8994][optimistic-8994]            |
+| Aurora           | N/A                                | [57350598][aurora-57350598]        |
+| Fuse             | N/A                                | [14951572][fuse-14951572]          |
+| Boba             | N/A                                | [290600][boba-290600]              |
+| Moonriver        | N/A                                | [1314566][moonriver-1314566]       |
 
 [mainnet-block-12689616]: https://etherscan.io/block/12689616
 [ropsten-block-10468221]: https://ropsten.etherscan.io/block/10468221
 [bsc-block-8508077]: https://bscscan.com/block/8508077
-[polygon-block-16002769 ]: https://polygonscan.com/block/16002769
+[polygon-block-16002769]: https://polygonscan.com/block/16002769
 
 [mainnet-block-12766513]: https://etherscan.io/block/12766513
 [ropsten-block-10572050]: https://ropsten.etherscan.io/block/10572050

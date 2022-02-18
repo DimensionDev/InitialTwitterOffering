@@ -1,18 +1,22 @@
 # InitialTwitterOffering
 
 ## 简介
+
 Initial Twitter Offering(ITO) 是一个基于 Mask 浏览器插件上的小程序，功能分为两方面，浏览器插件端与以太坊智能合约端，本文档只介绍以太坊智能合约端的设计思想与逻辑，还会描述智能合约中的各个函数与接口。
 
 功能设计
 ---
+
 ITO 的本质是一个可以由任何以太坊用户创建的代币兑换池（Token Swap Pool），用户可以转入一定量的某一种目标代币，然后设定一系列的兑换比例（现支持 ETH 与 ERC20），例如 {1 ETH: 10000 TOKEN, 1 DAI: 10 TOKEN ，通过引入`IQLF`(在 appendix 中会补充定义) 中的 `qualified` 接口来规定参与兑换的地址的资格，并设定好最高兑换上限（以目标代币 TOKEN 为基础），例如 10000 TOKEN。在设定的截止时间到期或待交换池已经兑光后，交换池的作者可以将剩余代币（如在到期时还有剩余）和所有兑换到的代币提取出来，并将这个交换池销毁。
 
 用户参与只需要基于按照指定`pool id` 的兑换比例，向合约的地址 `approve` 相应的目标代币，并调用合约的 `swap` 函数进行代币兑换，合约将会把相应数量的目标代币直接转给用户，并将兑换的代币从用户的地址转到合约中，待未来被兑换池创建者提取。每个用户只可以兑换一次或不超过兑换上限的代币，由兑换池发起方决定。
 
 合约 API 设计
 ---
+
 ### Structs and Global Variables
-```
+
+```plain
 uint32 nonce;                                      // 内部计数器，仅用于生成随机数
 uint256 base_timestamp;                            // 基准时间戳，节约空间，每个新 pool 
                                                    // 只保存 delta
@@ -40,7 +44,8 @@ struct Pool {
 ```
 
 ### Events
-```
+
+```plain
 // 创建成功
 event FillSuccess (
     uint256 total,
@@ -72,8 +77,10 @@ event DestructSuccess (
 ```
 
 ### Functions
+
 Helper Functions:
-```
+
+```plain
 /**
  * _token_addr    目标代币地址         160
  * _hash          sha3-256(密码)       48
@@ -93,7 +100,7 @@ function wrap1 (address _token_addr, bytes32 _hash, uint256 _start, uint256 _end
 }
 ```
 
-```
+```plain
 /**
  * _total_token    目标代币剩余总量     128
  * _limit          单地址兑换上限        128
@@ -108,7 +115,7 @@ function wrap2 (uint256 _total_tokens, uint256 _limit) internal pure returns (ui
 }
 ```
 
-```
+```plain
 /**
  * position      开始位置
  * size          变量大小
@@ -122,7 +129,7 @@ function box (uint16 position, uint16 size, uint256 data) internal pure returns 
 }
 ```
 
-```
+```plain
 /**
  * base          待提取变量
  * position      提取位置
@@ -136,7 +143,7 @@ function unbox (uint256 base, uint16 position, uint16 size) internal pure return
 }
 ```
 
-```
+```plain
 /**
  * size          变量大小
  * data          数据
@@ -151,7 +158,7 @@ function validRange (uint16 size, uint256 data) internal pure returns(bool) {
 }
 ```
 
-```
+```plain
 /**
  * _box          待修改变量
  * position      位置
@@ -169,7 +176,7 @@ internal pure returns (uint256 boxed) {
 }
 ```
 
-```
+```plain
 /**
  * token_address      ERC20 代币地址
  * sender_address     发送方地址
@@ -185,7 +192,7 @@ function transfer_token (address token_address, address sender_address,
 }
 ```
 
-```
+```plain
 /**
  * a          待转换地址
  * toBytes() 将输入地址 a 转换为 bytes
@@ -205,7 +212,8 @@ function toBytes (address a) internal pure returns (bytes memory b) {
 ```
 
 Core Functions:
-```
+
+```plain
 /**
  * _hash               sha3-256(密码)
  * _start              开始时间的 delta，真实时间为 base_timestamp + _start
@@ -269,7 +277,7 @@ public payable {
 }
 ```
 
-```
+```plain
 /**
  * id                   兑换池 id
  * verification         sha3-256(sha3-256(密码)[:48]+兑换者的地址)
@@ -357,7 +365,7 @@ public payable returns (uint256 swapped) {
 }
 ```
 
-```
+```plain
 /**
  * id            兑换池 id
  * check_availability() 返回该兑换池 id 的 可兑换代币地址数组、剩余代币数量、是否开始、是否结束、合约函数请求者已经兑换的代币数量与各兑换代币已兑换数量数组
@@ -379,7 +387,7 @@ function check_availability (bytes32 id) external view returns (address[] memory
 }
 ```
 
-```
+```plain
 /**
  * id            兑换池 id
  * destruct() 在验证该合约函数请求者确实是兑换池 id 的创建者并确保该兑换池已经结束或兑换完成之后，将剩余代币（如果还有剩余）与已转入的兑换代币转回给合约创建者，
@@ -420,4 +428,4 @@ function destruct (bytes32 id) public {
         pool.ratios[i*2+1] = 0;
     }
 }
-```    
+```

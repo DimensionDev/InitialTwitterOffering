@@ -11,15 +11,14 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
         with:
-          node-version: 12
-      - run: git submodule init
-      - run: git submodule update
+          submodules: true
+      - uses: actions/setup-node@v2
       - run: npm ci
       - run: npm run compile
       - run: npm run test
       - run: npx prettier --list-different ./test/*.js
+      - run: npx markdownlint-cli .
       # `npx hardhat check` does not return error code, even if there are `lint errors` reported.
       # Using `grep` to expose error code to `github workflows`
       - run: (! npx hardhat check | grep problem)
