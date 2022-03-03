@@ -69,6 +69,8 @@ The ITO smart contract adopts the `Proxy Upgrade Pattern` to improve user experi
 | Fuse             | [0xF9F7C1496c21bC0180f4B64daBE0754ebFc8A8c0](https://explorer.fuse.io/address/0xF9F7C1496c21bC0180f4B64daBE0754ebFc8A8c0/transactions)            |
 | Boba             | [0x981be454a930479d92C91a0092D204b64845A5D6](https://blockexplorer.boba.network/address/0x981be454a930479d92C91a0092D204b64845A5D6/transactions)  |
 | Moonriver        | [0x981be454a930479d92C91a0092D204b64845A5D6](https://moonriver.moonscan.io/address/0x981be454a930479d92C91a0092D204b64845A5D6)            |
+| cfx_test         | [0x83D6b366f21e413f214EB077D5378478e71a5eD2](https://evmtestnet.confluxscan.net/address/0x83d6b366f21e413f214eb077d5378478e71a5ed2)            |
+| cfx              | [0x066804d9123bf2609ed4a4a40b1177a9c5a9ed51](https://evm.confluxscan.net/address/0x066804d9123bf2609ed4a4a40b1177a9c5a9ed51)                   |
 
 ### Implementation block number (required by frontend developers)
 
@@ -91,6 +93,8 @@ The ITO smart contract adopts the `Proxy Upgrade Pattern` to improve user experi
 | Fuse             | N/A                                | [14951572][fuse-14951572 ]          |
 | Boba             | N/A                                | [290600][boba-290600 ]              |
 | Moonriver        | N/A                                | [1314566][moonriver-1314566 ]       |
+| cfx_test         | N/A                                | [66092470][cfx_test-66092470 ]      |
+| cfx              | N/A                                | [37722805][cfx-37722805 ]           |
 
 [mainnet-block-12689616]: https://etherscan.io/block/12689616
 [ropsten-block-10468221]: https://ropsten.etherscan.io/block/10468221
@@ -114,6 +118,8 @@ The ITO smart contract adopts the `Proxy Upgrade Pattern` to improve user experi
 [fuse-14951572]: https://explorer.fuse.io/block/14951572/transactions
 [boba-290600]: https://blockexplorer.boba.network/blocks/290600/transactions
 [moonriver-1314566]: https://moonriver.moonscan.io/block/1314566
+[cfx_test-66092470]: https://evmtestnet.confluxscan.net/block/66092470
+[cfx-37722805]: https://evm.confluxscan.net/block/37722805
 
 ## Qualification
 
@@ -144,6 +150,8 @@ To prevent a malicious attack, you can set a `swap_start_time` in your custom qu
 | Fuse             | [0x2cf91AD8C175305EBe6970Bd8f81231585EFbd77](https://explorer.fuse.io/address/0x2cf91AD8C175305EBe6970Bd8f81231585EFbd77/transactions)            |
 | Boba             | [0x83D6b366f21e413f214EB077D5378478e71a5eD2](https://blockexplorer.boba.network/address/0x83D6b366f21e413f214EB077D5378478e71a5eD2/transactions)            |
 | Moonriver        | [0x83D6b366f21e413f214EB077D5378478e71a5eD2](https://moonriver.moonscan.io/address/0x83D6b366f21e413f214EB077D5378478e71a5eD2)            |
+| cfx_test         | [0x96c7D011cdFD467f551605f0f5Fce279F86F4186](https://evmtestnet.confluxscan.net/address/0x96c7d011cdfd467f551605f0f5fce279f86f4186)            |
+| cfx              | [0x05ee315E407C21a594f807D61d6CC11306D1F149](https://evm.confluxscan.net/address/0x05ee315e407c21a594f807d61d6cc11306d1f149)                   |
 
 ## Security Audit
 
