@@ -10,3 +10,5 @@ cache
 artifacts
 project.secret.js
 .env
+.openzeppelin/
+deployments/

@@ -35,6 +35,8 @@
         "deploy:moonriver": "hardhat --network moonriver deploy",
         "deploy:cfx": "hardhat --network conflux_eSpace deploy",
         "deploy:cfx_test": "hardhat --network conflux_eSpace_test deploy",
+        "deploy:harmony": "hardhat --network harmony deploy",
+        "deploy:harmony_test": "hardhat --network harmony_test deploy",
         "format": "prettier --write './test/*.js' './deploy/*.ts'"
     },
     "dependencies": {
