@@ -97,8 +97,8 @@ The ITO smart contract adopts the `Proxy Upgrade Pattern` to improve user experi
 | Moonriver        | N/A                                | [1314566][moonriver-1314566 ]       |
 | cfx_test         | N/A                                | [66092470][cfx_test-66092470 ]      |
 | cfx              | N/A                                | [37722805][cfx-37722805 ]           |
-| Harmony          | N/A                                | [24133195][harmony-24133195 ]       |
-| Harmony_test     | N/A                                | [22744578][harmony_test-22744578 ]  |
+| Harmony          | N/A                                | [24133305][harmony-24133305 ]       |
+| Harmony_test     | N/A                                | [22744597][harmony_test-22744597 ]  |
 
 [mainnet-block-12689616]: https://etherscan.io/block/12689616
 [ropsten-block-10468221]: https://ropsten.etherscan.io/block/10468221
@@ -124,8 +124,8 @@ The ITO smart contract adopts the `Proxy Upgrade Pattern` to improve user experi
 [moonriver-1314566]: https://moonriver.moonscan.io/block/1314566
 [cfx_test-66092470]: https://evmtestnet.confluxscan.net/block/66092470
 [cfx-37722805]: https://evm.confluxscan.net/block/37722805
-[harmony-24133195]: https://explorer.harmony.one/block/24133195
-[harmony_test-22744578]: https://explorer.pops.one/block/22744578
+[harmony-24133305]: https://explorer.harmony.one/block/24133305
+[harmony_test-22744597]: https://explorer.pops.one/block/22744597
 
 ## Qualification
 
