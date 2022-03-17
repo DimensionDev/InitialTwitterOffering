@@ -71,6 +71,8 @@ The ITO smart contract adopts the `Proxy Upgrade Pattern` to improve user experi
 | Moonriver        | [0x981be454a930479d92C91a0092D204b64845A5D6](https://moonriver.moonscan.io/address/0x981be454a930479d92C91a0092D204b64845A5D6)            |
 | cfx_test         | [0x83D6b366f21e413f214EB077D5378478e71a5eD2](https://evmtestnet.confluxscan.net/address/0x83d6b366f21e413f214eb077d5378478e71a5ed2)            |
 | cfx              | [0x066804d9123bf2609ed4a4a40b1177a9c5a9ed51](https://evm.confluxscan.net/address/0x066804d9123bf2609ed4a4a40b1177a9c5a9ed51)                   |
+| Harmony          | [0x5B966f3a32Db9C180843bCb40267A66b73E4f022](https://explorer.harmony.one/address/0x5b966f3a32db9c180843bcb40267a66b73e4f022)                   |
+| Harmony_test     | [0x578a7Fee5f0D8CEc7d00578Bf37374C5b95C4b98](https://explorer.pops.one/address/0x578a7fee5f0d8cec7d00578bf37374c5b95c4b98)                   |
 
 ### Implementation block number (required by frontend developers)
 
@@ -95,6 +97,8 @@ The ITO smart contract adopts the `Proxy Upgrade Pattern` to improve user experi
 | Moonriver        | N/A                                | [1314566][moonriver-1314566 ]       |
 | cfx_test         | N/A                                | [66092470][cfx_test-66092470 ]      |
 | cfx              | N/A                                | [37722805][cfx-37722805 ]           |
+| Harmony          | N/A                                | [24133305][harmony-24133305 ]       |
+| Harmony_test     | N/A                                | [22744597][harmony_test-22744597 ]  |
 
 [mainnet-block-12689616]: https://etherscan.io/block/12689616
 [ropsten-block-10468221]: https://ropsten.etherscan.io/block/10468221
@@ -120,6 +124,8 @@ The ITO smart contract adopts the `Proxy Upgrade Pattern` to improve user experi
 [moonriver-1314566]: https://moonriver.moonscan.io/block/1314566
 [cfx_test-66092470]: https://evmtestnet.confluxscan.net/block/66092470
 [cfx-37722805]: https://evm.confluxscan.net/block/37722805
+[harmony-24133305]: https://explorer.harmony.one/block/24133305
+[harmony_test-22744597]: https://explorer.pops.one/block/22744597
 
 ## Qualification
 
@@ -152,6 +158,8 @@ To prevent a malicious attack, you can set a `swap_start_time` in your custom qu
 | Moonriver        | [0x83D6b366f21e413f214EB077D5378478e71a5eD2](https://moonriver.moonscan.io/address/0x83D6b366f21e413f214EB077D5378478e71a5eD2)            |
 | cfx_test         | [0x96c7D011cdFD467f551605f0f5Fce279F86F4186](https://evmtestnet.confluxscan.net/address/0x96c7d011cdfd467f551605f0f5fce279f86f4186)            |
 | cfx              | [0x05ee315E407C21a594f807D61d6CC11306D1F149](https://evm.confluxscan.net/address/0x05ee315e407c21a594f807d61d6cc11306d1f149)                   |
+| Harmony          | [0x02Ea0720254F7fa4eca7d09A1b9C783F1020EbEF](https://explorer.harmony.one/address/0x02ea0720254f7fa4eca7d09a1b9c783f1020ebef)                   |
+| Harmony_test     | [0x812463356F58fc8194645A1838ee6C52D8ca2D26](https://explorer.pops.one/address/0x812463356f58fc8194645a1838ee6c52d8ca2d26)                   |
 
 ## Security Audit
 
