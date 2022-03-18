@@ -29,6 +29,7 @@ const deployedContracts: MyMapLikeType = {
     conflux_eSpace: '0x066804d9123bf2609ed4a4a40b1177a9c5a9ed51',
     conflux_eSpace_test: '0x83D6b366f21e413f214EB077D5378478e71a5eD2',
     harmony: '0x5B966f3a32Db9C180843bCb40267A66b73E4f022',
+    metis: '0x5B966f3a32Db9C180843bCb40267A66b73E4f022',
 };
 
 const func: DeployFunction = async function(hre: HardhatRuntimeEnvironment) {
@@ -48,6 +49,7 @@ const func: DeployFunction = async function(hre: HardhatRuntimeEnvironment) {
 
             const admin = await upgrades.admin.getInstance();
             const impl_addr = await admin.getProxyImplementation(HappyTokenPoolProxy.address);
+            console.log('Implementation address: ', impl_addr);
             await hre.run('verify:verify', {
                 address: impl_addr,
                 constructorArguments: [],
