@@ -58,33 +58,33 @@ To prevent a malicious attack, you can set a `swap_start_time` in your custom qu
 
 <!-- begin address -->
 
-| Chain            | ITO                                  | Qualification                        |
-| ---------------- | ------------------------------------ | ------------------------------------ |
-| Mainnet          | [`0xc2CFbF22`][ito-mainnet]          | [`0x4dC5f343`][qlf-mainnet]          |
-| Ropsten          | [`0xcdE281B3`][ito-ropsten]          | [`0xd5e6434b`][qlf-ropsten]          |
-| Rinkeby          | [`0xBe62f180`][ito-rinkeby]          | [`0x8440b99B`][qlf-rinkeby]          |
-| BSC              | [`0x96c7D011`][ito-bsc]              | [`0xAb7B1bE4`][qlf-bsc]              |
-| BSC_test         | [`0xbc558E76`][ito-bsc_test]         | [`0xaaC2362f`][qlf-bsc_test]         |
-| Matic            | [`0xF9F7C149`][ito-matic]            | [`0x2cf91AD8`][qlf-matic]            |
+| Chain            |                 ITO                  |         Dummy Qualification          |
+| ---------------- | :----------------------------------: | :----------------------------------: |
+| Mainnet          |     [`0xc2CFbF22`][ito-mainnet]      |     [`0x4dC5f343`][qlf-mainnet]      |
+| Ropsten          |     [`0xcdE281B3`][ito-ropsten]      |     [`0xd5e6434b`][qlf-ropsten]      |
+| Rinkeby          |     [`0xBe62f180`][ito-rinkeby]      |     [`0x8440b99B`][qlf-rinkeby]      |
+| BSC              |       [`0x96c7D011`][ito-bsc]        |       [`0xAb7B1bE4`][qlf-bsc]        |
+| BSC_test         |     [`0xbc558E76`][ito-bsc_test]     |     [`0xaaC2362f`][qlf-bsc_test]     |
+| Matic            |      [`0xF9F7C149`][ito-matic]       |      [`0x2cf91AD8`][qlf-matic]       |
 | Rinkeby_arbitrum | [`0x9b3649eC`][ito-rinkeby_arbitrum] | [`0xEbd753E6`][qlf-rinkeby_arbitrum] |
-| Arbitrum         | [`0x71834a3F`][ito-arbitrum]         | [`0x913975af`][qlf-arbitrum]         |
-| xDai             | [`0x913975af`][ito-xdai]             | [`0x71834a3F`][qlf-xdai]             |
-| Goerli           | [`0x3475255F`][ito-goerli]           | [`0x957DCb39`][qlf-goerli]           |
-| Fantom           | [`0x981be454`][ito-fantom]           | [`0x83D6b366`][qlf-fantom]           |
-| Celo             | [`0x54a0A221`][ito-celo]             | [`0x2cB220F9`][qlf-celo]             |
-| Avalanche        | [`0x02Ea0720`][ito-avalanche]        | [`0x54a0A221`][qlf-avalanche]        |
+| Arbitrum         |     [`0x71834a3F`][ito-arbitrum]     |     [`0x913975af`][qlf-arbitrum]     |
+| xDai             |       [`0x913975af`][ito-xdai]       |       [`0x71834a3F`][qlf-xdai]       |
+| Goerli           |      [`0x3475255F`][ito-goerli]      |      [`0x957DCb39`][qlf-goerli]      |
+| Fantom           |      [`0x981be454`][ito-fantom]      |      [`0x83D6b366`][qlf-fantom]      |
+| Celo             |       [`0x54a0A221`][ito-celo]       |       [`0x2cB220F9`][qlf-celo]       |
+| Avalanche        |    [`0x02Ea0720`][ito-avalanche]     |    [`0x54a0A221`][qlf-avalanche]     |
 | Kovan_optimistic | [`0x88edAC7a`][ito-kovan_optimistic] | [`0x57E2AAB7`][qlf-kovan_optimistic] |
-| Optimistic       | [`0x71834a3F`][ito-optimistic]       | [`0x913975af`][qlf-optimistic]       |
-| Aurora           | [`0x2cf91AD8`][ito-aurora]           | [`0x578a7Fee`][qlf-aurora]           |
-| Fuse             | [`0xF9F7C149`][ito-fuse]             | [`0x2cf91AD8`][qlf-fuse]             |
-| Boba             | [`0x981be454`][ito-boba]             | [`0x83D6b366`][qlf-boba]             |
-| Moonriver        | [`0x981be454`][ito-moonriver]        | [`0x83D6b366`][qlf-moonriver]        |
-| Conflux_test     | [`0x83D6b366`][ito-conflux_test]     | [`0x96c7D011`][qlf-conflux_test]     |
-| Conflux          | [`0x066804d9`][ito-conflux]          | [`0x05ee315E`][qlf-conflux]          |
-| Harmony          | [`0x5B966f3a`][ito-harmony]          | [`0x02Ea0720`][qlf-harmony]          |
-| Harmony_test     | [`0x578a7Fee`][ito-harmony_test]     | [`0x81246335`][qlf-harmony_test]     |
-| Metis_test       | [`0x71834a3F`][ito-metis_test]       |                                      |
-| Metis            | [`0x5B966f3a`][ito-metis]            |                                      |
+| Optimistic       |    [`0x71834a3F`][ito-optimistic]    |    [`0x913975af`][qlf-optimistic]    |
+| Aurora           |      [`0x2cf91AD8`][ito-aurora]      |      [`0x578a7Fee`][qlf-aurora]      |
+| Fuse             |       [`0xF9F7C149`][ito-fuse]       |       [`0x2cf91AD8`][qlf-fuse]       |
+| Boba             |       [`0x981be454`][ito-boba]       |       [`0x83D6b366`][qlf-boba]       |
+| Moonriver        |    [`0x981be454`][ito-moonriver]     |    [`0x83D6b366`][qlf-moonriver]     |
+| Conflux_test     |   [`0x83D6b366`][ito-conflux_test]   |   [`0x96c7D011`][qlf-conflux_test]   |
+| Conflux          |     [`0x066804d9`][ito-conflux]      |     [`0x05ee315E`][qlf-conflux]      |
+| Harmony          |     [`0x5B966f3a`][ito-harmony]      |     [`0x02Ea0720`][qlf-harmony]      |
+| Harmony_test     |   [`0x578a7Fee`][ito-harmony_test]   |   [`0x81246335`][qlf-harmony_test]   |
+| Metis_test       |    [`0x71834a3F`][ito-metis_test]    |                                      |
+| Metis            |      [`0x5B966f3a`][ito-metis]       |                                      |
 
 [ito-mainnet]: https://etherscan.io/address/0xc2CFbF22d6Dc87D0eE18d38d73733524c109Ff46
 [ito-ropsten]: https://ropsten.etherscan.io/address/0xcdE281B32b629f2e89E5953B674E1E507e6dabcF
@@ -141,33 +141,31 @@ To prevent a malicious attack, you can set a `swap_start_time` in your custom qu
 
 <!-- begin block -->
 
-| Chain            | v1.0                   | v1.01                         |
-| ---------------- | ---------------------- | ----------------------------- |
-| Mainnet          | [12689616][v1-mainnet] | [12766513][v2-mainnet]        |
-| Ropsten          | [10468221][v1-ropsten] | [10572050][v2-ropsten]        |
-| Rinkeby          |                        |                               |
-| BSC              | [8508077][v1-bsc]      | [8885927][v2-bsc]             |
-| BSC_test         |                        |                               |
-| Matic            | [16002769][v1-matic]   | [16516643][v2-matic]          |
+| Chain            |          v1.0          |                         v1.01 |
+| ---------------- | :--------------------: | ----------------------------: |
+| Mainnet          | [12689616][v1-mainnet] |        [12766513][v2-mainnet] |
+| Ropsten          | [10468221][v1-ropsten] |        [10572050][v2-ropsten] |
+| BSC              |   [8508077][v1-bsc]    |             [8885927][v2-bsc] |
+| Matic            |  [16002769][v1-matic]  |          [16516643][v2-matic] |
 | Rinkeby_arbitrum |                        | [708696][v2-rinkeby_arbitrum] |
-| Arbitrum         |                        | [102022][v2-arbitrum]         |
-| xDai             |                        | [17865755][v2-xdai]           |
-| Goerli           |                        | [6028660][v2-goerli]          |
-| Fantom           |                        | [25071597][v2-fantom]         |
-| Celo             |                        | [10406511][v2-celo]           |
-| Avalanche        |                        | [8289892][v2-avalanche]       |
-| Kovan_optimistic |                        | [47716][v2-kovan_optimistic]  |
-| Optimistic       |                        | [8994][v2-optimistic]         |
-| Aurora           |                        | [57350598][v2-aurora]         |
-| Fuse             |                        | [14951572][v2-fuse]           |
-| Boba             |                        | [290600][v2-boba]             |
-| Moonriver        |                        | [1314566][v2-moonriver]       |
-| Conflux_test     |                        | [66092470][v2-conflux_test]   |
-| Conflux          |                        | [37722805][v2-conflux]        |
-| Harmony          |                        | [24133305][v2-harmony]        |
-| Harmony_test     |                        | [22744597][v2-harmony_test]   |
-| Metis_test       |                        | [5207086][v2-metis_test]      |
-| Metis            |                        | [1701875][v2-metis]           |
+| Arbitrum         |                        |         [102022][v2-arbitrum] |
+| xDai             |                        |           [17865755][v2-xdai] |
+| Goerli           |                        |          [6028660][v2-goerli] |
+| Fantom           |                        |         [25071597][v2-fantom] |
+| Celo             |                        |           [10406511][v2-celo] |
+| Avalanche        |                        |       [8289892][v2-avalanche] |
+| Kovan_optimistic |                        |  [47716][v2-kovan_optimistic] |
+| Optimistic       |                        |         [8994][v2-optimistic] |
+| Aurora           |                        |         [57350598][v2-aurora] |
+| Fuse             |                        |           [14951572][v2-fuse] |
+| Boba             |                        |             [290600][v2-boba] |
+| Moonriver        |                        |       [1314566][v2-moonriver] |
+| Conflux_test     |                        |   [66092470][v2-conflux_test] |
+| Conflux          |                        |        [37722805][v2-conflux] |
+| Harmony          |                        |        [24133305][v2-harmony] |
+| Harmony_test     |                        |   [22744597][v2-harmony_test] |
+| Metis_test       |                        |      [5207086][v2-metis_test] |
+| Metis            |                        |           [1701875][v2-metis] |
 
 [v1-mainnet]: https://etherscan.io/block/12689616
 [v2-mainnet]: https://etherscan.io/block/12766513

@@ -30,8 +30,8 @@ async function main() {
 main();
 
 function* makeAddressTable(rows: DeployedAddressRow[]) {
-  yield "| Chain | ITO | Qualification |";
-  yield "| - | - | - |";
+  yield "| Chain | ITO | Dummy Qualification |";
+  yield "| - | :-: | :-: |";
   for (const { Chain, HappyTokenPool, Qualification } of rows) {
     const itoElement = formElement(HappyTokenPool, `ito-${Chain}`);
     const qlfElement = formElement(Qualification, `qlf-${Chain}`);
@@ -44,7 +44,7 @@ function* makeAddressTable(rows: DeployedAddressRow[]) {
 
 function* makeBlockTable(rows: DeployedAddressRow[]) {
   yield "| Chain | v1.0 | v1.01 |";
-  yield "| - | - | - |";
+  yield "| - | :-: | -: |";
   for (const { Chain, v1Block, v2Block } of rows) {
     const v1Element = formElement(v1Block, `v1-${Chain}`);
     const v2Element = formElement(v2Block, `v2-${Chain}`);
