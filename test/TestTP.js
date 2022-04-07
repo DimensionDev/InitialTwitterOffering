@@ -179,22 +179,16 @@ describe('HappyTokenPool', () => {
             expect(result).to.have.property('id').that.to.not.be.null;
             expect(result).to.have.property('creator').that.to.not.be.null;
             expect(result.creation_time.toString()).to.length(10);
-            expect(result)
-                .to.have.property('token_address')
-                .that.to.be.eq(testTokenADeployed.address);
+            expect(result).to.have.property('token_address').that.to.be.eq(testTokenADeployed.address);
             expect(result.message).to.be.eq('Hello From the Outside Hello From the Outside');
             // TODO: add a new class(balanceChecker???) to get rid of duplicated code
             const creatorBalanceAfter = await testTokenADeployed.balanceOf(creator.address);
             const contractBalanceAfter = await testTokenADeployed.balanceOf(happyTokenPoolDeployed.address);
             expect(creatorBalanceAfter.toString()).to.be.eq(
-                BigNumber(creatorBalanceBefore.toString())
-                    .minus(BigNumber(fpp.total_tokens))
-                    .toFixed(),
+                BigNumber(creatorBalanceBefore.toString()).minus(BigNumber(fpp.total_tokens)).toFixed(),
             );
             expect(contractBalanceAfter.toString()).to.be.eq(
-                BigNumber(contractBalanceBefore.toString())
-                    .plus(BigNumber(fpp.total_tokens))
-                    .toFixed(),
+                BigNumber(contractBalanceBefore.toString()).plus(BigNumber(fpp.total_tokens)).toFixed(),
             );
         });
 
@@ -270,7 +264,7 @@ describe('HappyTokenPool', () => {
         it('Should return the exchanged_tokens filled with zero when there was no exchange', async () => {
             const { id: pool_id } = await getResultFromPoolFill(happyTokenPoolDeployed, fpp);
             const result = await getAvailability(happyTokenPoolDeployed, pool_id, signers[1].address);
-            expect(result.exchanged_tokens.map(bn => ethers.utils.parseEther(bn.toString()).toString())).to.eql([
+            expect(result.exchanged_tokens.map((bn) => ethers.utils.parseEther(bn.toString()).toString())).to.eql([
                 '0',
                 '0',
                 '0',
@@ -570,29 +564,19 @@ describe('HappyTokenPool', () => {
             const contractTokenCBalanceAfterSwap = await testTokenCDeployed.balanceOf(happyTokenPoolDeployed.address);
 
             expect(contractTokenCBalanceAfterSwap.toString()).to.be.eq(
-                BigNumber(contractTokenCBalanceBeforeSwap.toString())
-                    .plus(BigNumber(exchange_amount))
-                    .toFixed(),
+                BigNumber(contractTokenCBalanceBeforeSwap.toString()).plus(BigNumber(exchange_amount)).toFixed(),
             );
             expect(userTokenCBalanceAfterSwap.toString()).to.be.eq(
-                BigNumber(userTokenCBalanceBeforeSwap.toString())
-                    .minus(BigNumber(exchange_amount))
-                    .toFixed(),
+                BigNumber(userTokenCBalanceBeforeSwap.toString()).minus(BigNumber(exchange_amount)).toFixed(),
             );
 
             expect(result).to.have.property('id').that.to.not.be.null;
             expect(result).to.have.property('swapper').that.to.not.be.null;
             expect(result.from_value.toString()).that.to.be.eq(String(exchange_amount));
             expect(result.to_value.toString()).that.to.be.eq(String(exchange_amount * ratio));
-            expect(result)
-                .to.have.property('from_address')
-                .that.to.be.eq(testTokenCDeployed.address);
-            expect(result)
-                .to.have.property('to_address')
-                .that.to.be.eq(testTokenADeployed.address);
-            expect(result)
-                .to.have.property('claimed')
-                .that.to.be.eq(false);
+            expect(result).to.have.property('from_address').that.to.be.eq(testTokenCDeployed.address);
+            expect(result).to.have.property('to_address').that.to.be.eq(testTokenADeployed.address);
+            expect(result).to.have.property('claimed').that.to.be.eq(false);
         });
 
         it('Should swap the maximum number of token equals to limit', async () => {
@@ -714,25 +698,13 @@ describe('HappyTokenPool', () => {
             const from_value = result.from_value;
             const to_value = result.to_value;
 
-            expect(remaining.toString()).to.be.eq(
-                BigNumber('5e11')
-                    .times(ratio)
-                    .toFixed(),
-            );
+            expect(remaining.toString()).to.be.eq(BigNumber('5e11').times(ratio).toFixed());
             expect(from_value.toString())
-                .to.be.eq(
-                    BigNumber(remaining.toString())
-                        .div(ratio)
-                        .toFixed(),
-                )
+                .to.be.eq(BigNumber(remaining.toString()).div(ratio).toFixed())
                 .and.to.not.be.eq(exchange_ETH_amount);
             expect(to_value.toString())
                 .to.be.eq(remaining.toString())
-                .and.to.not.be.eq(
-                    BigNumber(exchange_ETH_amount)
-                        .times(ratio)
-                        .toFixed(),
-                );
+                .and.to.not.be.eq(BigNumber(exchange_ETH_amount).times(ratio).toFixed());
         });
 
         describe('claim()', async () => {
@@ -791,24 +763,16 @@ describe('HappyTokenPool', () => {
                 );
 
                 expect(contractTokenBBalanceAfterSwap.toString()).to.be.eq(
-                    BigNumber(contractTokenBBalanceBeforeSwap.toString())
-                        .plus(BigNumber(approve_amount))
-                        .toFixed(),
+                    BigNumber(contractTokenBBalanceBeforeSwap.toString()).plus(BigNumber(approve_amount)).toFixed(),
                 );
                 expect(contractTokenCBalanceAfterSwap.toString()).to.be.eq(
-                    BigNumber(contractTokenCBalanceBeforeSwap.toString())
-                        .plus(BigNumber(approve_amount))
-                        .toFixed(),
+                    BigNumber(contractTokenCBalanceBeforeSwap.toString()).plus(BigNumber(approve_amount)).toFixed(),
                 );
                 expect(userTokenBBalanceAfterSwap.toString()).to.be.eq(
-                    BigNumber(userTokenBBalanceBeforeSwap.toString())
-                        .minus(BigNumber(approve_amount))
-                        .toFixed(),
+                    BigNumber(userTokenBBalanceBeforeSwap.toString()).minus(BigNumber(approve_amount)).toFixed(),
                 );
                 expect(userTokenCBalanceAfterSwap.toString()).to.be.eq(
-                    BigNumber(userTokenCBalanceBeforeSwap.toString())
-                        .minus(BigNumber(approve_amount))
-                        .toFixed(),
+                    BigNumber(userTokenCBalanceBeforeSwap.toString()).minus(BigNumber(approve_amount)).toFixed(),
                 );
 
                 const availabilityPrevious = await getAvailability(happyTokenPoolDeployed, pool_id, pool_user.address);
@@ -855,9 +819,7 @@ describe('HappyTokenPool', () => {
                 const exchangedTokenA_total = exchangedTokenA_pool_1 + exchangedTokenA_pool_2;
 
                 expect(userTokenABalanceAfterClaim.toString()).to.be.eq(
-                    BigNumber(userTokenABalanceBeforeClaim.toString())
-                        .plus(BigNumber(exchangedTokenA_total))
-                        .toFixed(),
+                    BigNumber(userTokenABalanceBeforeClaim.toString()).plus(BigNumber(exchangedTokenA_total)).toFixed(),
                 );
                 expect(contractTokenABalanceAfterClaim.toString()).to.be.eq(
                     BigNumber(contractTokenABalanceBeforeClaim.toString())
@@ -1029,43 +991,29 @@ describe('HappyTokenPool', () => {
 
             // tokens swapped immmediately
             expect(userTokenABalanceAfterSwap.toString()).to.be.eq(
-                BigNumber(userTokenABalanceBeforeSwap.toString())
-                    .plus(BigNumber(approve_amount))
-                    .toFixed(),
+                BigNumber(userTokenABalanceBeforeSwap.toString()).plus(BigNumber(approve_amount)).toFixed(),
             );
             expect(contractTokenCBalanceAfterSwap.toString()).to.be.eq(
-                BigNumber(contractTokenCBalanceBeforeSwap.toString())
-                    .plus(BigNumber(approve_amount))
-                    .toFixed(),
+                BigNumber(contractTokenCBalanceBeforeSwap.toString()).plus(BigNumber(approve_amount)).toFixed(),
             );
             expect(contractTokenABalanceAfterSwap.toString()).to.be.eq(
-                BigNumber(contractTokenABalanceBeforeSwap.toString())
-                    .minus(BigNumber(approve_amount))
-                    .toFixed(),
+                BigNumber(contractTokenABalanceBeforeSwap.toString()).minus(BigNumber(approve_amount)).toFixed(),
             );
             expect(userTokenCBalanceAfterSwap.toString()).to.be.eq(
-                BigNumber(userTokenCBalanceBeforeSwap.toString())
-                    .minus(BigNumber(approve_amount))
-                    .toFixed(),
+                BigNumber(userTokenCBalanceBeforeSwap.toString()).minus(BigNumber(approve_amount)).toFixed(),
             );
             {
                 const logs = await ethers.provider.getLogs(happyTokenPoolDeployed.filters.SwapSuccess());
                 const parsedLog = itoInterface.parseLog(logs[0]);
                 const result = parsedLog.args;
-                expect(result)
-                    .to.have.property('swapper')
-                    .that.to.be.eq(pool_user.address);
-                expect(result)
-                    .to.have.property('claimed')
-                    .that.to.be.eq(true);
+                expect(result).to.have.property('swapper').that.to.be.eq(pool_user.address);
+                expect(result).to.have.property('claimed').that.to.be.eq(true);
             }
             {
                 const logs = await ethers.provider.getLogs(happyTokenPoolDeployed.filters.ClaimSuccess());
                 const parsedLog = itoInterface.parseLog(logs[0]);
                 const result = parsedLog.args;
-                expect(result)
-                    .to.have.property('claimer')
-                    .that.to.be.eq(pool_user.address);
+                expect(result).to.have.property('claimer').that.to.be.eq(pool_user.address);
             }
             // can not swap again
             {
@@ -1175,12 +1123,8 @@ describe('HappyTokenPool', () => {
             const parsedLog = itoInterface.parseLog(logs[0]);
             const result = parsedLog.args;
 
-            expect(result)
-                .to.have.property('id')
-                .that.to.be.eq(pool_id);
-            expect(result)
-                .to.have.property('token_address')
-                .that.to.be.eq(testTokenADeployed.address);
+            expect(result).to.have.property('id').that.to.be.eq(pool_id);
+            expect(result).to.have.property('token_address').that.to.be.eq(testTokenADeployed.address);
             expect(result).to.have.property('remaining_balance');
             expect(result).to.have.property('exchanged_values');
 
@@ -1231,7 +1175,7 @@ describe('HappyTokenPool', () => {
                 // `exchanged_tokens` and `exchange_addrs` should still be available
                 const result = await getAvailability(happyTokenPoolDeployed, pool_id, signers[1].address);
                 expect(result.exchange_addrs).to.eql(fpp.exchange_addrs);
-                expect(result.exchanged_tokens.map(bn => bn.toString())).to.eql([
+                expect(result.exchanged_tokens.map((bn) => bn.toString())).to.eql([
                     exchange_ETH_amount,
                     exchange_tokenB_amount,
                     exchange_tokenC_pool_limit,
@@ -1288,12 +1232,8 @@ describe('HappyTokenPool', () => {
             const parsedLog = itoInterface.parseLog(logs[0]);
             const result = parsedLog.args;
 
-            expect(result)
-                .to.have.property('id')
-                .that.to.be.eq(pool_id);
-            expect(result)
-                .to.have.property('token_address')
-                .that.to.be.eq(testTokenADeployed.address);
+            expect(result).to.have.property('id').that.to.be.eq(pool_id);
+            expect(result).to.have.property('token_address').that.to.be.eq(testTokenADeployed.address);
             expect(result.remaining_balance.toString()).that.to.be.eq('0');
             expect(result).to.have.property('exchanged_values');
         });
@@ -1380,12 +1320,8 @@ describe('HappyTokenPool', () => {
                     expect(result).to.have.property('swapper').that.to.not.be.null;
                     expect(result.from_value.toString()).that.to.be.eq(String(exchange_amount));
                     expect(result.to_value.toString()).that.to.be.eq(String(exchanged_tokenA_amount));
-                    expect(result)
-                        .to.have.property('from_address')
-                        .that.to.be.eq(testTokenCDeployed.address);
-                    expect(result)
-                        .to.have.property('to_address')
-                        .that.to.be.eq(testTokenADeployed.address);
+                    expect(result).to.have.property('from_address').that.to.be.eq(testTokenCDeployed.address);
+                    expect(result).to.have.property('to_address').that.to.be.eq(testTokenADeployed.address);
                     expect(result).to.not.have.property('claimed');
                 }
                 // check token C balance after swap
@@ -1400,9 +1336,7 @@ describe('HappyTokenPool', () => {
                             .toFixed(),
                     );
                     expect(userTokenCBalanceAfterSwap.toString()).to.be.eq(
-                        BigNumber(userTokenCBalanceBeforeSwap.toString())
-                            .minus(BigNumber(exchange_amount))
-                            .toFixed(),
+                        BigNumber(userTokenCBalanceBeforeSwap.toString()).minus(BigNumber(exchange_amount)).toFixed(),
                     );
                 }
                 //-------------------------------------------------------------------------------------------------------------
@@ -1499,12 +1433,8 @@ describe('HappyTokenPool', () => {
                     expect(result).to.have.property('swapper').that.to.not.be.null;
                     expect(result.from_value.toString()).that.to.be.eq(String(exchange_amount));
                     expect(result.to_value.toString()).that.to.be.eq(String(exchanged_tokenA_amount));
-                    expect(result)
-                        .to.have.property('from_address')
-                        .that.to.be.eq(testTokenCDeployed.address);
-                    expect(result)
-                        .to.have.property('to_address')
-                        .that.to.be.eq(testTokenADeployed.address);
+                    expect(result).to.have.property('from_address').that.to.be.eq(testTokenCDeployed.address);
+                    expect(result).to.have.property('to_address').that.to.be.eq(testTokenADeployed.address);
                     expect(result).to.not.have.property('claimed');
                 }
                 // check token C balance after swap
@@ -1519,9 +1449,7 @@ describe('HappyTokenPool', () => {
                             .toFixed(),
                     );
                     expect(userTokenCBalanceAfterSwap.toString()).to.be.eq(
-                        BigNumber(userTokenCBalanceBeforeSwap.toString())
-                            .minus(BigNumber(exchange_amount))
-                            .toFixed(),
+                        BigNumber(userTokenCBalanceBeforeSwap.toString()).minus(BigNumber(exchange_amount)).toFixed(),
                     );
                 }
                 {
@@ -1626,9 +1554,7 @@ describe('HappyTokenPool', () => {
                             .toFixed(),
                     );
                     expect(userTokenCBalanceAfterSwap.toString()).to.be.eq(
-                        BigNumber(userTokenCBalanceBeforeSwap.toString())
-                            .minus(BigNumber(exchange_amount))
-                            .toFixed(),
+                        BigNumber(userTokenCBalanceBeforeSwap.toString()).minus(BigNumber(exchange_amount)).toFixed(),
                     );
                 }
                 // check token A balance after swap
@@ -1729,9 +1655,7 @@ describe('HappyTokenPool', () => {
                             .toFixed(),
                     );
                     expect(userTokenCBalanceAfterSwap.toString()).to.be.eq(
-                        BigNumber(userTokenCBalanceBeforeSwap.toString())
-                            .minus(BigNumber(exchange_amount))
-                            .toFixed(),
+                        BigNumber(userTokenCBalanceBeforeSwap.toString()).minus(BigNumber(exchange_amount)).toFixed(),
                     );
                 }
                 // check token A balance after swap
