@@ -4,6 +4,7 @@
   "license": "MIT",
   "author": "Yisi Liu",
   "main": "hardhat.config.ts",
+  "private": true,
   "scripts": {
     "test": "npx hardhat test",
     "test:coverage": "hardhat coverage",
