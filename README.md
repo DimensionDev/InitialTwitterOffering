@@ -148,9 +148,7 @@ To prevent a malicious attack, you can set a `swap_start_time` in your custom qu
 | ---------------- | ---------------------- | ----------------------------- |
 | Mainnet          | [12689616][v1-mainnet] | [12766513][v2-mainnet]        |
 | Ropsten          | [10468221][v1-ropsten] | [10572050][v2-ropsten]        |
-| Rinkeby          |                        |                               |
 | BSC              | [8508077][v1-bsc]      | [8885927][v2-bsc]             |
-| BSC_test         |                        |                               |
 | Matic            | [16002769][v1-matic]   | [16516643][v2-matic]          |
 | Rinkeby_arbitrum |                        | [708696][v2-rinkeby_arbitrum] |
 | Arbitrum         |                        | [102022][v2-arbitrum]         |
