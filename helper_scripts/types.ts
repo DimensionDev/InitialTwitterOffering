@@ -24,6 +24,7 @@ export enum ChainId {
   Metis = 1088,
   Metis_test = 28,
   xDai = 100,
+  Kardia = 24,
 }
 
 function makeDetailURL(domain: string) {
@@ -72,6 +73,7 @@ export const BlockExplorer: Record<ChainId, (param: string, section: string) => 
   },
   [ChainId.Arbitrum]: makeDetailURL("explorer.arbitrum.io"),
   [ChainId.Rinkeby_arbitrum]: makeDetailURL("rinkeby-explorer.arbitrum.io"),
+  [ChainId.Kardia]: makeDetailURL("explorer.kardiachain.io")
 }
 
 export type DeployedAddressRow = {

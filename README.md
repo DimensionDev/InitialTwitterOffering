@@ -85,6 +85,7 @@ To prevent a malicious attack, you can set a `swap_start_time` in your custom qu
 | Harmony_test     | [`0x578a7Fee`][ito-harmony_test]     | [`0x81246335`][qlf-harmony_test]     |
 | Metis_test       | [`0x71834a3F`][ito-metis_test]       |                                      |
 | Metis            | [`0x5B966f3a`][ito-metis]            |                                      |
+| Kardia           | [`0x224e8327`][ito-kardia]           | [`0x0cE6df81`][qlf-kardia]           |
 
 [ito-mainnet]: https://etherscan.io/address/0xc2CFbF22d6Dc87D0eE18d38d73733524c109Ff46
 [ito-ropsten]: https://ropsten.etherscan.io/address/0xcdE281B32b629f2e89E5953B674E1E507e6dabcF
@@ -111,6 +112,7 @@ To prevent a malicious attack, you can set a `swap_start_time` in your custom qu
 [ito-harmony_test]: https://explorer.pops.one/address/0x578a7Fee5f0D8CEc7d00578Bf37374C5b95C4b98
 [ito-metis_test]: https://stardust-explorer.metis.io/address/0x71834a3FDeA3E70F14a93ED85c6be70925D0CAd9
 [ito-metis]: https://andromeda-explorer.metis.io/address/0x5B966f3a32Db9C180843bCb40267A66b73E4f022
+[ito-kardia]: https://explorer.kardiachain.io/address/0x224e8327182a85e511A08C63C4341efB0460f36e
 [qlf-mainnet]: https://etherscan.io/address/0x4dC5f343Fe57E4fbDA1B454d125D396A3181272c
 [qlf-ropsten]: https://ropsten.etherscan.io/address/0xd5e6434bde165062b3d9572DEFd6393c7B3E2902
 [qlf-rinkeby]: https://rinkeby.etherscan.io/address/0x8440b99B1Df5D4B61957c8Ce0a199487Be3De270
@@ -134,6 +136,7 @@ To prevent a malicious attack, you can set a `swap_start_time` in your custom qu
 [qlf-conflux]: https://evm.confluxscan.io/address/0x05ee315E407C21a594f807D61d6CC11306D1F149
 [qlf-harmony]: https://explorer.harmony.one/address/0x02Ea0720254F7fa4eca7d09A1b9C783F1020EbEF
 [qlf-harmony_test]: https://explorer.pops.one/address/0x812463356F58fc8194645A1838ee6C52D8ca2D26
+[qlf-kardia]: https://explorer.kardiachain.io/address/0x0cE6df8171AD4B23fe162FFA01DEC8595ED1f7cc
 
 <!-- end address -->
 
@@ -145,7 +148,9 @@ To prevent a malicious attack, you can set a `swap_start_time` in your custom qu
 | ---------------- | ---------------------- | ----------------------------- |
 | Mainnet          | [12689616][v1-mainnet] | [12766513][v2-mainnet]        |
 | Ropsten          | [10468221][v1-ropsten] | [10572050][v2-ropsten]        |
+| Rinkeby          |                        |                               |
 | BSC              | [8508077][v1-bsc]      | [8885927][v2-bsc]             |
+| BSC_test         |                        |                               |
 | Matic            | [16002769][v1-matic]   | [16516643][v2-matic]          |
 | Rinkeby_arbitrum |                        | [708696][v2-rinkeby_arbitrum] |
 | Arbitrum         |                        | [102022][v2-arbitrum]         |
@@ -166,6 +171,7 @@ To prevent a malicious attack, you can set a `swap_start_time` in your custom qu
 | Harmony_test     |                        | [22744597][v2-harmony_test]   |
 | Metis_test       |                        | [5207086][v2-metis_test]      |
 | Metis            |                        | [1701875][v2-metis]           |
+| Kardia           |                        | [7566530][v2-kardia]          |
 
 [v1-mainnet]: https://etherscan.io/block/12689616
 [v2-mainnet]: https://etherscan.io/block/12766513
@@ -194,6 +200,7 @@ To prevent a malicious attack, you can set a `swap_start_time` in your custom qu
 [v2-harmony_test]: https://explorer.pops.one/block/22744597
 [v2-metis_test]: https://stardust-explorer.metis.io/block/5207086
 [v2-metis]: https://andromeda-explorer.metis.io/block/1701875
+[v2-kardia]: https://explorer.kardiachain.io/block/7566530
 
 <!-- end block -->
 
