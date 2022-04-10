@@ -5,20 +5,20 @@ export enum ChainId {
   BSC = 56,
   BSC_test = 97,
   Matic = 137,
-  Rinkeby_arbitrum = 421611,
+  Arbitrum_rinkeby = 421611,
   Arbitrum = 42161,
   Goerli = 5,
   Fantom = 250,
   Celo = 42220,
   Avalanche = 43114,
-  Kovan_optimistic = 69,
-  Optimistic = 10,
+  Optimism_kovan = 69,
+  Optimism = 10,
   Aurora = 1313161554,
   Fuse = 122,
   Boba = 288,
   Moonriver = 1285,
-  Conflux_test = 71,
-  Conflux = 1030,
+  Conflux_espace_test = 71,
+  Conflux_espace = 1030,
   Harmony = 1666600000,
   Harmony_test = 1666700000,
   Metis = 1088,
@@ -42,12 +42,12 @@ export const BlockExplorer: Record<ChainId, (param: string, section: string) => 
   [ChainId.Fantom]: makeDetailURL("ftmscan.com"),
   [ChainId.Celo]: makeDetailURL("explorer.celo.org"),
   [ChainId.Avalanche]: makeDetailURL("snowtrace.io"),
-  [ChainId.Kovan_optimistic]: (param, section) => {
+  [ChainId.Optimism_kovan]: (param, section) => {
     return section == "address" ?
       makeDetailURL("kovan-optimistic.etherscan.io")(param, section) :
       `https://kovan-optimistic.etherscan.io/batch/${param}`;
   },
-  [ChainId.Optimistic]: (param, section) => {
+  [ChainId.Optimism]: (param, section) => {
     return section == "address" ?
       makeDetailURL("optimistic.etherscan.io")(param, section) :
       `https://optimistic.etherscan.io/batch/${param}`;
@@ -60,8 +60,8 @@ export const BlockExplorer: Record<ChainId, (param: string, section: string) => 
       `https://blockexplorer.boba.network/blocks/${param}`;
   },
   [ChainId.Moonriver]: makeDetailURL("moonriver.moonscan.io"),
-  [ChainId.Conflux_test]: makeDetailURL("evmtestnet.confluxscan.io"),
-  [ChainId.Conflux]: makeDetailURL("evm.confluxscan.io"),
+  [ChainId.Conflux_espace_test]: makeDetailURL("evmtestnet.confluxscan.io"),
+  [ChainId.Conflux_espace]: makeDetailURL("evm.confluxscan.io"),
   [ChainId.Harmony]: makeDetailURL("explorer.harmony.one"),
   [ChainId.Harmony_test]: makeDetailURL("explorer.pops.one"),
   [ChainId.Metis]: makeDetailURL("andromeda-explorer.metis.io"),
@@ -72,7 +72,7 @@ export const BlockExplorer: Record<ChainId, (param: string, section: string) => 
       `https://blockscout.com/xdai/mainnet/blocks/${param}`;
   },
   [ChainId.Arbitrum]: makeDetailURL("explorer.arbitrum.io"),
-  [ChainId.Rinkeby_arbitrum]: makeDetailURL("rinkeby-explorer.arbitrum.io"),
+  [ChainId.Arbitrum_rinkeby]: makeDetailURL("rinkeby-explorer.arbitrum.io"),
   [ChainId.Kardia]: makeDetailURL("explorer.kardiachain.io")
 }
 
