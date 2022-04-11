@@ -215,6 +215,8 @@ The Solidity code in this repository has been audited by blockchain security exp
 - [Audit Report](audits/SlowMist_Audit_Report_English.pdf)
 - [审计报告](audits/SlowMist_Audit_Report_Chinese.pdf)
 
+If you have any security issue to report, please send to <security@mask.io>.
+
 ## Contribute
 
 Any contribution is welcomed to make it more secure and powerful. Had you any questions, please do not hesitate to create an issue to let us know.
