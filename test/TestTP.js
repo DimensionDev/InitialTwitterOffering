@@ -68,7 +68,9 @@ describe('HappyTokenPool', () => {
         qualificationTesterDeployed2 = await qualificationTester2.deployed();
 
         HappyTokenPool = await ethers.getContractFactory('HappyTokenPool');
-        HappyTokenPoolProxy = await upgrades.deployProxy(HappyTokenPool, [base_timestamp]);
+        HappyTokenPoolProxy = await upgrades.deployProxy(HappyTokenPool, [base_timestamp], {
+            unsafeAllow: ['delegatecall'],
+        });
         happyTokenPoolDeployed = new ethers.Contract(HappyTokenPoolProxy.address, itoJsonABI.abi, creator);
     });
 
@@ -1254,7 +1256,9 @@ describe('HappyTokenPool', () => {
 
         beforeEach(async () => {
             const HappyTokenPool_v1_0 = await ethers.getContractFactory('HappyTokenPool_v1_0');
-            const HappyTokenPoolProxy_v1_0 = await upgrades.deployProxy(HappyTokenPool_v1_0, [base_timestamp]);
+            const HappyTokenPoolProxy_v1_0 = await upgrades.deployProxy(HappyTokenPool_v1_0, [base_timestamp], {
+                unsafeAllow: ['delegatecall'],
+            });
             happyTokenPoolDeployed_v1_0 = new ethers.Contract(
                 HappyTokenPoolProxy_v1_0.address,
                 itoJsonABI_V1_0.abi,
@@ -1368,7 +1372,9 @@ describe('HappyTokenPool', () => {
             }
 
             // upgrade contract to latest
-            await upgrades.upgradeProxy(happyTokenPoolDeployed_v1_0.address, HappyTokenPool);
+            await upgrades.upgradeProxy(happyTokenPoolDeployed_v1_0.address, HappyTokenPool, {
+                unsafeAllow: ['delegatecall'],
+            });
             const deployedUpgraded = new ethers.Contract(happyTokenPoolDeployed_v1_0.address, itoJsonABI.abi, creator);
             {
                 const availability = await getAvailability(deployedUpgraded, pool_id, pool_user.address);
@@ -1460,7 +1466,9 @@ describe('HappyTokenPool', () => {
             }
             //-------------------------------------------------------------------------------------------------------------
             // upgrade contract to latest
-            await upgrades.upgradeProxy(happyTokenPoolDeployed_v1_0.address, HappyTokenPool);
+            await upgrades.upgradeProxy(happyTokenPoolDeployed_v1_0.address, HappyTokenPool, {
+                unsafeAllow: ['delegatecall'],
+            });
             const deployedUpgraded = new ethers.Contract(happyTokenPoolDeployed_v1_0.address, itoJsonABI.abi, creator);
             //-------------------------------------------------------------------------------------------------------------
             {
@@ -1582,7 +1590,9 @@ describe('HappyTokenPool', () => {
             }
             //-------------------------------------------------------------------------------------------------------------
             // upgrade contract to latest
-            await upgrades.upgradeProxy(happyTokenPoolDeployed_v1_0.address, HappyTokenPool);
+            await upgrades.upgradeProxy(happyTokenPoolDeployed_v1_0.address, HappyTokenPool, {
+                unsafeAllow: ['delegatecall'],
+            });
             const deployedUpgraded = new ethers.Contract(happyTokenPoolDeployed_v1_0.address, itoJsonABI.abi, creator);
             //-------------------------------------------------------------------------------------------------------------
             {
@@ -1626,7 +1636,9 @@ describe('HappyTokenPool', () => {
             await testTokenCDeployed.connect(pool_user).approve(happyTokenPoolDeployed_v1_0.address, approve_amount);
             //-------------------------------------------------------------------------------------------------------------
             // upgrade contract to latest
-            await upgrades.upgradeProxy(happyTokenPoolDeployed_v1_0.address, HappyTokenPool);
+            await upgrades.upgradeProxy(happyTokenPoolDeployed_v1_0.address, HappyTokenPool, {
+                unsafeAllow: ['delegatecall'],
+            });
             const deployedUpgraded = new ethers.Contract(happyTokenPoolDeployed_v1_0.address, itoJsonABI.abi, creator);
             //-------------------------------------------------------------------------------------------------------------
             {
