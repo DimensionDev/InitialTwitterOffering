@@ -11,8 +11,7 @@
     "lint": "hardhat check",
     "compile": "hardhat compile",
     "deploy": "hardhat deploy --network",
-    "prettier:solidity": "prettier --write contracts/**/*.sol",
-    "format": "prettier --write './test/*.js' './deploy/*.ts'"
+    "pretter": "prettier --write ."
   },
   "dependencies": {
     "@nomiclabs/hardhat-etherscan": "^3.0.3",
