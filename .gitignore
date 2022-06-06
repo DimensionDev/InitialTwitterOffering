@@ -12,3 +12,4 @@ project.secret.js
 .env
 .openzeppelin/
 deployments/
+types/
