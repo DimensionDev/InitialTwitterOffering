@@ -18,7 +18,7 @@ export interface HappyPoolParamType {
   end_time: number;
   message: string;
   exchange_addrs: string[];
-  exchange_ratios: number[];
+  exchange_ratios: Array<number | BigNumber>;
   lock_time: number;
   token_address: string;
   total_tokens: BigNumber;
