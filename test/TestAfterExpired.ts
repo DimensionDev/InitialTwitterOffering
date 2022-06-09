@@ -23,14 +23,14 @@ const itoJsonABI = require("../artifacts/contracts/ito.sol/HappyTokenPool.json")
 const itoInterface = new ethers.utils.Interface(itoJsonABI.abi);
 
 //types
-import type { TestTokenA, TestTokenB, TestTokenC, HappyTokenPool, QLF } from "../types";
+import type { TestToken, HappyTokenPool, QLF } from "../types";
 
 describe("HappyTokenPoolExpiredProcess", () => {
   let fpp2: HappyPoolParamType; // fill happyTokenPoolDeployed parameters
   let snapshotId: string;
-  let testTokenADeployed: TestTokenA;
-  let testTokenBDeployed: TestTokenB;
-  let testTokenCDeployed: TestTokenC;
+  let testTokenADeployed: TestToken;
+  let testTokenBDeployed: TestToken;
+  let testTokenCDeployed: TestToken;
   let HappyTokenPool: HappyTokenPool;
 
   let happyTokenPoolDeployed: HappyTokenPool;
@@ -46,20 +46,20 @@ describe("HappyTokenPoolExpiredProcess", () => {
     creator = signers[0];
     ito_user = signers[1];
 
-    const TestTokenA = await ethers.getContractFactory("TestTokenA");
-    const TestTokenB = await ethers.getContractFactory("TestTokenB");
-    const TestTokenC = await ethers.getContractFactory("TestTokenC");
+    const TestTokenA = await ethers.getContractFactory("TestToken");
+    const TestTokenB = await ethers.getContractFactory("TestToken");
+    const TestTokenC = await ethers.getContractFactory("TestToken");
     const QualificationTester = await ethers.getContractFactory("QLF");
 
-    const testTokenA = await TestTokenA.deploy(amount);
-    const testTokenB = await TestTokenB.deploy(amount);
-    const testTokenC = await TestTokenC.deploy(amount);
+    const testTokenA = await TestTokenA.deploy(amount, "TestTokenA", "TESTA");
+    const testTokenB = await TestTokenB.deploy(amount, "TestTokenB", "TESTB");
+    const testTokenC = await TestTokenC.deploy(amount, "TestTokenC", "TESTC");
     const qualificationTester = await QualificationTester.deploy(0);
     const qualificationTester2 = await QualificationTester.deploy(pending_qualification_timestamp);
 
-    testTokenADeployed = (await testTokenA.deployed()) as TestTokenA;
-    testTokenBDeployed = (await testTokenB.deployed()) as TestTokenB;
-    testTokenCDeployed = (await testTokenC.deployed()) as TestTokenC;
+    testTokenADeployed = (await testTokenA.deployed()) as TestToken;
+    testTokenBDeployed = (await testTokenB.deployed()) as TestToken;
+    testTokenCDeployed = (await testTokenC.deployed()) as TestToken;
     qualificationTesterDeployed = (await qualificationTester.deployed()) as QLF;
 
     const HappyTokenPool = await ethers.getContractFactory("HappyTokenPool");

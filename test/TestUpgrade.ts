@@ -20,7 +20,7 @@ import {
 } from "./constants";
 
 //types
-import type { TestTokenA, TestTokenB, TestTokenC, HappyTokenPool, HappyTokenPool_v1_0, QLF } from "../types";
+import type { TestToken, HappyTokenPool, HappyTokenPool_v1_0, QLF } from "../types";
 
 const itoJsonABI = require("../artifacts/contracts/ito.sol/HappyTokenPool.json");
 const itoInterface = new ethers.utils.Interface(itoJsonABI.abi);
@@ -60,19 +60,19 @@ describe.only("smart contract upgrade", async () => {
     ito_user = signers[1];
     pool_user = signers[2];
 
-    const TestTokenA = await ethers.getContractFactory("TestTokenA");
-    const TestTokenB = await ethers.getContractFactory("TestTokenB");
-    const TestTokenC = await ethers.getContractFactory("TestTokenC");
+    const TestTokenA = await ethers.getContractFactory("TestToken");
+    const TestTokenB = await ethers.getContractFactory("TestToken");
+    const TestTokenC = await ethers.getContractFactory("TestToken");
     const QualificationTester = await ethers.getContractFactory("QLF");
 
-    const testTokenA = await TestTokenA.deploy(amount);
-    const testTokenB = await TestTokenB.deploy(amount);
-    const testTokenC = await TestTokenC.deploy(amount);
+    const testTokenA = await TestTokenA.deploy(amount, "TestTokenA", "TESTA");
+    const testTokenB = await TestTokenB.deploy(amount, "TestTokenB", "TESTB");
+    const testTokenC = await TestTokenC.deploy(amount, "TestTokenC", "TESTC");
     const qualificationTester = await QualificationTester.deploy(0);
 
-    testTokenADeployed = (await testTokenA.deployed()) as TestTokenA;
-    testTokenBDeployed = (await testTokenB.deployed()) as TestTokenB;
-    testTokenCDeployed = (await testTokenC.deployed()) as TestTokenC;
+    testTokenADeployed = (await testTokenA.deployed()) as TestToken;
+    testTokenBDeployed = (await testTokenB.deployed()) as TestToken;
+    testTokenCDeployed = (await testTokenC.deployed()) as TestToken;
     qualificationTesterDeployed = (await qualificationTester.deployed()) as QLF;
 
     pool_user = signers[2];
