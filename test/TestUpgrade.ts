@@ -1,24 +1,26 @@
-const BigNumber = require("bignumber.js");
-const { soliditySha3, hexToNumber, sha3 } = require("web3-utils");
-const chai = require("chai");
-const expect = chai.expect;
-const assert = chai.assert;
-chai.use(require("chai-as-promised"));
-const helper = require("./helper");
-const {
+import { ethers, upgrades } from "hardhat";
+import { BytesLike, Signer, BigNumber } from "ethers";
+import { takeSnapshot, revertToSnapShot, getRevertMsg, advanceTimeAndBlock } from "./helper";
+import { assert, use, util } from "chai";
+import chaiAsPromised from "chai-as-promised";
+import { soliditySha3, hexToNumber, sha3 } from "web3-utils";
+
+const { expect } = use(chaiAsPromised);
+
+import {
   base_timestamp,
   eth_address,
-  erc165_interface_id,
-  qualification_interface_id,
   PASSWORD,
   amount,
   ETH_address_index,
   tokenB_address_index,
   tokenC_address_index,
   pending_qualification_timestamp,
-} = require("./constants");
+  HappyPoolParamType,
+} from "./constants";
 
-//let base_timestamp_var = 1640966400; //2022-01-01 00:00:00
+//types
+import type { TestTokenA, TestTokenB, TestTokenC, HappyTokenPool, HappyTokenPool_v1_0, QLF } from "../types";
 
 const itoJsonABI = require("../artifacts/contracts/ito.sol/HappyTokenPool.json");
 const itoInterface = new ethers.utils.Interface(itoJsonABI.abi);
@@ -31,7 +33,6 @@ const proxyAdminABI = require("@openzeppelin/upgrades-core/artifacts/ProxyAdmin.
 const qualificationJsonABI = require("../artifacts/contracts/qualification.sol/QLF.json");
 const qualificationInterface = new ethers.utils.Interface(qualificationJsonABI.abi);
 
-let fpp2; // fill happyTokenPoolDeployed parameters
 let snapshotId;
 let testTokenADeployed;
 let testTokenBDeployed;
@@ -47,20 +48,17 @@ let creator;
 let ito_user;
 let fpp;
 
-describe("smart contract upgrade", async () => {
-  let pool_user;
-  let verification;
-  let happyTokenPoolDeployed_v1_0;
-  let exchange_amount;
+let pool_user;
+let verification;
+let happyTokenPoolDeployed_v1_0;
+let exchange_amount;
 
+describe.only("smart contract upgrade", async () => {
   before(async () => {
-    // signers = await ethers.getSigners();
-    // creator = signers[0];
-    // ito_user = signers[1];
-
     signers = await ethers.getSigners();
     creator = signers[0];
-    //pool_user = signers[2];
+    ito_user = signers[1];
+    pool_user = signers[2];
 
     const TestTokenA = await ethers.getContractFactory("TestTokenA");
     const TestTokenB = await ethers.getContractFactory("TestTokenB");
@@ -71,21 +69,31 @@ describe("smart contract upgrade", async () => {
     const testTokenB = await TestTokenB.deploy(amount);
     const testTokenC = await TestTokenC.deploy(amount);
     const qualificationTester = await QualificationTester.deploy(0);
-    // const qualificationTester2 = await QualificationTester.deploy(pending_qualification_timestamp);
 
-    testTokenADeployed = await testTokenA.deployed();
-    testTokenBDeployed = await testTokenB.deployed();
-    testTokenCDeployed = await testTokenC.deployed();
-    qualificationTesterDeployed = await qualificationTester.deployed();
+    testTokenADeployed = (await testTokenA.deployed()) as TestTokenA;
+    testTokenBDeployed = (await testTokenB.deployed()) as TestTokenB;
+    testTokenCDeployed = (await testTokenC.deployed()) as TestTokenC;
+    qualificationTesterDeployed = (await qualificationTester.deployed()) as QLF;
 
     pool_user = signers[2];
-    const transfer_amount = BigNumber("1e26").toFixed();
+    //const transfer_amount = BigNumber("1e26").toFixed();
+    const transfer_amount = ethers.utils.parseEther("100000000");
     await testTokenBDeployed.connect(creator).transfer(pool_user.address, transfer_amount);
     await testTokenCDeployed.connect(creator).transfer(pool_user.address, transfer_amount);
+
+    const HappyTokenPool = await ethers.getContractFactory("HappyTokenPool");
+    const HappyTokenPoolProxy = await upgrades.deployProxy(HappyTokenPool, [base_timestamp], {
+      unsafeAllow: ["delegatecall"],
+    });
+    happyTokenPoolDeployed = new ethers.Contract(
+      HappyTokenPoolProxy.address,
+      itoJsonABI.abi,
+      creator,
+    ) as HappyTokenPool;
   });
 
   beforeEach(async () => {
-    snapshotId = await helper.takeSnapshot();
+    snapshotId = await takeSnapshot();
     fpp = {
       hash: ethers.utils.keccak256(ethers.utils.toUtf8Bytes(PASSWORD)),
       start_time: 0,
@@ -95,8 +103,8 @@ describe("smart contract upgrade", async () => {
       exchange_ratios: [1, 10000, 1, 2000, 4000, 1],
       lock_time: 12960000, // duration 150 days
       token_address: testTokenADeployed.address,
-      total_tokens: BigNumber("1e22").toFixed(),
-      limit: BigNumber("1e21").toFixed(),
+      total_tokens: ethers.utils.parseEther("10000"),
+      limit: ethers.utils.parseEther("1000"),
       qualification: qualificationTesterDeployed.address,
     };
     const nowTimeStamp = Math.floor(new Date().getTime() / 1000);
@@ -109,13 +117,19 @@ describe("smart contract upgrade", async () => {
     const HappyTokenPoolProxy_v1_0 = await upgrades.deployProxy(HappyTokenPool_v1_0, [base_timestamp], {
       unsafeAllow: ["delegatecall"],
     });
-    happyTokenPoolDeployed_v1_0 = new ethers.Contract(HappyTokenPoolProxy_v1_0.address, itoJsonABI_V1_0.abi, creator);
+    happyTokenPoolDeployed_v1_0 = new ethers.Contract(
+      HappyTokenPoolProxy_v1_0.address,
+      itoJsonABI_V1_0.abi,
+      creator,
+    ) as HappyTokenPool_v1_0;
 
-    await testTokenADeployed.connect(creator).approve(happyTokenPoolDeployed_v1_0.address, BigNumber("1e26").toFixed());
+    await testTokenADeployed
+      .connect(creator)
+      .approve(happyTokenPoolDeployed_v1_0.address, ethers.utils.parseEther("100000000"));
     const r = getVerification(PASSWORD, pool_user.address);
     verification = r.verification;
 
-    exchange_amount = BigNumber("1e10").toFixed();
+    exchange_amount = BigNumber.from("10000000000");
   });
 
   it("Should non-owner not be able to update implementation", async () => {
@@ -127,17 +141,17 @@ describe("smart contract upgrade", async () => {
     expect(owner.toUpperCase()).that.to.be.eq(creator.address.toUpperCase());
     await expect(
       proxyAdmin.connect(pool_user).upgrade(happyTokenPoolDeployed_v1_0.address, qualificationTesterDeployed.address),
-    ).to.be.rejectedWith("caller is not the owner");
+    ).to.be.revertedWith("caller is not the owner");
   });
 
   it("Should ITO v1.0 be compatible with latest, upgrade after claim", async () => {
-    const approve_amount = BigNumber("1e10").toFixed();
+    const approve_amount = ethers.utils.parseEther("0.000000001");
     exchange_amount = approve_amount;
-    console.log("1111111\n");
+
     const { id: pool_id } = await getResultFromPoolFill(happyTokenPoolDeployed_v1_0, fpp);
-    console.log(pool_id);
+
     const userTokenABalanceBeforeSwap = await testTokenADeployed.balanceOf(pool_user.address);
-    console.log(userTokenABalanceBeforeSwap);
+
     const contractTokenABalanceBeforeSwap = await testTokenADeployed.balanceOf(happyTokenPoolDeployed_v1_0.address);
     const ratio = fpp.exchange_ratios[5] / fpp.exchange_ratios[4]; // tokenA <=> tokenC
     const exchanged_tokenA_amount = exchange_amount * ratio;
@@ -172,14 +186,14 @@ describe("smart contract upgrade", async () => {
         const userTokenCBalanceAfterSwap = await testTokenCDeployed.balanceOf(pool_user.address);
         const contractTokenCBalanceAfterSwap = await testTokenCDeployed.balanceOf(happyTokenPoolDeployed_v1_0.address);
         expect(contractTokenCBalanceAfterSwap.toString()).to.be.eq(
-          BigNumber(contractTokenCBalanceBeforeSwap.toString()).plus(BigNumber(exchange_amount)).toFixed(),
+          BigNumber.from(contractTokenCBalanceBeforeSwap.toString()).add(BigNumber.from(exchange_amount)),
         );
         expect(userTokenCBalanceAfterSwap.toString()).to.be.eq(
-          BigNumber(userTokenCBalanceBeforeSwap.toString()).minus(BigNumber(exchange_amount)).toFixed(),
+          BigNumber.from(userTokenCBalanceBeforeSwap.toString()).sub(BigNumber.from(exchange_amount)),
         );
       }
       //-------------------------------------------------------------------------------------------------------------
-      await helper.advanceTimeAndBlock(fpp.lock_time);
+      await advanceTimeAndBlock(fpp.lock_time);
       await happyTokenPoolDeployed_v1_0.connect(pool_user).claim([pool_id]);
       {
         const availability = await getAvailability(happyTokenPoolDeployed_v1_0, pool_id, pool_user.address);
@@ -192,10 +206,10 @@ describe("smart contract upgrade", async () => {
         const userTokenABalanceAfterClaim = await testTokenADeployed.balanceOf(pool_user.address);
         const contractTokenABalanceAfterClaim = await testTokenADeployed.balanceOf(happyTokenPoolDeployed_v1_0.address);
         expect(contractTokenABalanceAfterClaim.toString()).to.be.eq(
-          BigNumber(contractTokenABalanceBeforeSwap.toString()).minus(BigNumber(exchanged_tokenA_amount)).toFixed(),
+          BigNumber.from(contractTokenABalanceBeforeSwap.toString()).sub(BigNumber.from(exchanged_tokenA_amount)),
         );
         expect(userTokenABalanceAfterClaim.toString()).to.be.eq(
-          BigNumber(userTokenABalanceBeforeSwap.toString()).plus(BigNumber(exchanged_tokenA_amount)).toFixed(),
+          BigNumber.from(userTokenABalanceBeforeSwap.toString()).add(BigNumber.from(exchanged_tokenA_amount)),
         );
       }
     }
@@ -204,7 +218,12 @@ describe("smart contract upgrade", async () => {
     await upgrades.upgradeProxy(happyTokenPoolDeployed_v1_0.address, HappyTokenPool, {
       unsafeAllow: ["delegatecall"],
     });
-    const deployedUpgraded = new ethers.Contract(happyTokenPoolDeployed_v1_0.address, itoJsonABI.abi, creator);
+
+    const deployedUpgraded = new ethers.Contract(
+      happyTokenPoolDeployed_v1_0.address,
+      itoJsonABI.abi,
+      creator,
+    ) as HappyTokenPool_v1_0;
     {
       const availability = await getAvailability(deployedUpgraded, pool_id, pool_user.address);
       // minor problem
@@ -217,17 +236,17 @@ describe("smart contract upgrade", async () => {
         const userTokenABalanceAfterClaim = await testTokenADeployed.balanceOf(pool_user.address);
         const contractTokenABalanceAfterClaim = await testTokenADeployed.balanceOf(happyTokenPoolDeployed_v1_0.address);
         expect(contractTokenABalanceAfterClaim.toString()).to.be.eq(
-          BigNumber(contractTokenABalanceBeforeSwap.toString()).minus(BigNumber(exchanged_tokenA_amount)).toFixed(),
+          BigNumber.from(contractTokenABalanceBeforeSwap.toString()).sub(BigNumber.from(exchanged_tokenA_amount)),
         );
         expect(userTokenABalanceAfterClaim.toString()).to.be.eq(
-          BigNumber(userTokenABalanceBeforeSwap.toString()).plus(BigNumber(exchanged_tokenA_amount)).toFixed(),
+          BigNumber.from(userTokenABalanceBeforeSwap.toString()).add(BigNumber.from(exchanged_tokenA_amount)),
         );
       }
     }
   });
 
   it("Should ITO v1.0 be compatible with latest, upgrade before claim", async () => {
-    const approve_amount = BigNumber("1e10").toFixed();
+    const approve_amount = BigNumber.from("10000000000");
     exchange_amount = approve_amount;
     const { id: pool_id } = await getResultFromPoolFill(happyTokenPoolDeployed_v1_0, fpp);
     const userTokenABalanceBeforeSwap = await testTokenADeployed.balanceOf(pool_user.address);
@@ -265,10 +284,10 @@ describe("smart contract upgrade", async () => {
         const userTokenCBalanceAfterSwap = await testTokenCDeployed.balanceOf(pool_user.address);
         const contractTokenCBalanceAfterSwap = await testTokenCDeployed.balanceOf(happyTokenPoolDeployed_v1_0.address);
         expect(contractTokenCBalanceAfterSwap.toString()).to.be.eq(
-          BigNumber(contractTokenCBalanceBeforeSwap.toString()).plus(BigNumber(exchange_amount)).toFixed(),
+          BigNumber.from(contractTokenCBalanceBeforeSwap.toString()).add(BigNumber.from(exchange_amount)),
         );
         expect(userTokenCBalanceAfterSwap.toString()).to.be.eq(
-          BigNumber(userTokenCBalanceBeforeSwap.toString()).minus(BigNumber(exchange_amount)).toFixed(),
+          BigNumber.from(userTokenCBalanceBeforeSwap.toString()).sub(BigNumber.from(exchange_amount)),
         );
       }
       {
@@ -285,7 +304,7 @@ describe("smart contract upgrade", async () => {
     const deployedUpgraded = new ethers.Contract(happyTokenPoolDeployed_v1_0.address, itoJsonABI.abi, creator);
     //-------------------------------------------------------------------------------------------------------------
     {
-      await helper.advanceTimeAndBlock(fpp.lock_time);
+      await advanceTimeAndBlock(fpp.lock_time);
       await deployedUpgraded.connect(pool_user).claim([pool_id]);
       {
         const availability = await getAvailability(deployedUpgraded, pool_id, pool_user.address);
@@ -297,10 +316,10 @@ describe("smart contract upgrade", async () => {
         const userTokenABalanceAfterClaim = await testTokenADeployed.balanceOf(pool_user.address);
         const contractTokenABalanceAfterClaim = await testTokenADeployed.balanceOf(deployedUpgraded.address);
         expect(contractTokenABalanceAfterClaim.toString()).to.be.eq(
-          BigNumber(contractTokenABalanceBeforeSwap.toString()).minus(BigNumber(exchanged_tokenA_amount)).toFixed(),
+          BigNumber.from(contractTokenABalanceBeforeSwap.toString()).sub(BigNumber.from(exchanged_tokenA_amount)),
         );
         expect(userTokenABalanceAfterClaim.toString()).to.be.eq(
-          BigNumber(userTokenABalanceBeforeSwap.toString()).plus(BigNumber(exchanged_tokenA_amount)).toFixed(),
+          BigNumber.from(userTokenABalanceBeforeSwap.toString()).add(BigNumber.from(exchanged_tokenA_amount)),
         );
       }
     }
@@ -316,10 +335,10 @@ describe("smart contract upgrade", async () => {
         const userTokenABalanceAfterClaim = await testTokenADeployed.balanceOf(pool_user.address);
         const contractTokenABalanceAfterClaim = await testTokenADeployed.balanceOf(happyTokenPoolDeployed_v1_0.address);
         expect(contractTokenABalanceAfterClaim.toString()).to.be.eq(
-          BigNumber(contractTokenABalanceBeforeSwap.toString()).minus(BigNumber(exchanged_tokenA_amount)).toFixed(),
+          BigNumber.from(contractTokenABalanceBeforeSwap.toString()).sub(BigNumber.from(exchanged_tokenA_amount)),
         );
         expect(userTokenABalanceAfterClaim.toString()).to.be.eq(
-          BigNumber(userTokenABalanceBeforeSwap.toString()).plus(BigNumber(exchanged_tokenA_amount)).toFixed(),
+          BigNumber.from(userTokenABalanceBeforeSwap.toString()).add(BigNumber.from(exchanged_tokenA_amount)),
         );
       }
     }
@@ -327,7 +346,7 @@ describe("smart contract upgrade", async () => {
 
   it("Should ITO v1.0 be compatible with latest, unlocktime == 0, upgrade after swap", async () => {
     fpp.lock_time = 0;
-    const approve_amount = BigNumber("1e10").toFixed();
+    const approve_amount = BigNumber.from("100000000000");
     exchange_amount = approve_amount;
     const { id: pool_id } = await getResultFromPoolFill(happyTokenPoolDeployed_v1_0, fpp);
     const userTokenABalanceBeforeSwap = await testTokenADeployed.balanceOf(pool_user.address);
@@ -352,10 +371,10 @@ describe("smart contract upgrade", async () => {
         const userTokenCBalanceAfterSwap = await testTokenCDeployed.balanceOf(pool_user.address);
         const contractTokenCBalanceAfterSwap = await testTokenCDeployed.balanceOf(happyTokenPoolDeployed_v1_0.address);
         expect(contractTokenCBalanceAfterSwap.toString()).to.be.eq(
-          BigNumber(contractTokenCBalanceBeforeSwap.toString()).plus(BigNumber(exchange_amount)).toFixed(),
+          BigNumber.from(contractTokenCBalanceBeforeSwap.toString()).add(BigNumber.from(exchange_amount)),
         );
         expect(userTokenCBalanceAfterSwap.toString()).to.be.eq(
-          BigNumber(userTokenCBalanceBeforeSwap.toString()).minus(BigNumber(exchange_amount)).toFixed(),
+          BigNumber.from(userTokenCBalanceBeforeSwap.toString()).sub(BigNumber.from(exchange_amount)),
         );
       }
       // check token A balance after swap
@@ -363,10 +382,10 @@ describe("smart contract upgrade", async () => {
         const userTokenABalanceAfterClaim = await testTokenADeployed.balanceOf(pool_user.address);
         const contractTokenABalanceAfterClaim = await testTokenADeployed.balanceOf(happyTokenPoolDeployed_v1_0.address);
         expect(contractTokenABalanceAfterClaim.toString()).to.be.eq(
-          BigNumber(contractTokenABalanceBeforeSwap.toString()).minus(BigNumber(exchanged_tokenA_amount)).toFixed(),
+          BigNumber.from(contractTokenABalanceBeforeSwap.toString()).sub(BigNumber.from(exchanged_tokenA_amount)),
         );
         expect(userTokenABalanceAfterClaim.toString()).to.be.eq(
-          BigNumber(userTokenABalanceBeforeSwap.toString()).plus(BigNumber(exchanged_tokenA_amount)).toFixed(),
+          BigNumber.from(userTokenABalanceBeforeSwap.toString()).add(BigNumber.from(exchanged_tokenA_amount)),
         );
       }
       {
@@ -394,10 +413,10 @@ describe("smart contract upgrade", async () => {
         const userTokenABalanceAfterClaim = await testTokenADeployed.balanceOf(pool_user.address);
         const contractTokenABalanceAfterClaim = await testTokenADeployed.balanceOf(deployedUpgraded.address);
         expect(contractTokenABalanceAfterClaim.toString()).to.be.eq(
-          BigNumber(contractTokenABalanceBeforeSwap.toString()).minus(BigNumber(exchanged_tokenA_amount)).toFixed(),
+          BigNumber.from(contractTokenABalanceBeforeSwap.toString()).sub(BigNumber.from(exchanged_tokenA_amount)),
         );
         expect(userTokenABalanceAfterClaim.toString()).to.be.eq(
-          BigNumber(userTokenABalanceBeforeSwap.toString()).plus(BigNumber(exchanged_tokenA_amount)).toFixed(),
+          BigNumber.from(userTokenABalanceBeforeSwap.toString()).add(BigNumber.from(exchanged_tokenA_amount)),
         );
       }
     }
@@ -405,7 +424,7 @@ describe("smart contract upgrade", async () => {
 
   it("Should ITO v1.0 be compatible with latest, unlocktime == 0, upgrade before swap", async () => {
     fpp.lock_time = 0;
-    const approve_amount = BigNumber("1e10").toFixed();
+    const approve_amount = BigNumber.from("10000000000");
     exchange_amount = approve_amount;
     const { id: pool_id } = await getResultFromPoolFill(happyTokenPoolDeployed_v1_0, fpp);
     const userTokenABalanceBeforeSwap = await testTokenADeployed.balanceOf(pool_user.address);
@@ -437,10 +456,10 @@ describe("smart contract upgrade", async () => {
         const userTokenCBalanceAfterSwap = await testTokenCDeployed.balanceOf(pool_user.address);
         const contractTokenCBalanceAfterSwap = await testTokenCDeployed.balanceOf(happyTokenPoolDeployed_v1_0.address);
         expect(contractTokenCBalanceAfterSwap.toString()).to.be.eq(
-          BigNumber(contractTokenCBalanceBeforeSwap.toString()).plus(BigNumber(exchange_amount)).toFixed(),
+          BigNumber.from(contractTokenCBalanceBeforeSwap.toString()).add(BigNumber.from(exchange_amount)),
         );
         expect(userTokenCBalanceAfterSwap.toString()).to.be.eq(
-          BigNumber(userTokenCBalanceBeforeSwap.toString()).minus(BigNumber(exchange_amount)).toFixed(),
+          BigNumber.from(userTokenCBalanceBeforeSwap.toString()).sub(BigNumber.from(exchange_amount)),
         );
       }
       // check token A balance after swap
@@ -448,10 +467,10 @@ describe("smart contract upgrade", async () => {
         const userTokenABalanceAfterClaim = await testTokenADeployed.balanceOf(pool_user.address);
         const contractTokenABalanceAfterClaim = await testTokenADeployed.balanceOf(happyTokenPoolDeployed_v1_0.address);
         expect(contractTokenABalanceAfterClaim.toString()).to.be.eq(
-          BigNumber(contractTokenABalanceBeforeSwap.toString()).minus(BigNumber(exchanged_tokenA_amount)).toFixed(),
+          BigNumber.from(contractTokenABalanceBeforeSwap.toString()).sub(BigNumber.from(exchanged_tokenA_amount)),
         );
         expect(userTokenABalanceAfterClaim.toString()).to.be.eq(
-          BigNumber(userTokenABalanceBeforeSwap.toString()).plus(BigNumber(exchanged_tokenA_amount)).toFixed(),
+          BigNumber.from(userTokenABalanceBeforeSwap.toString()).add(BigNumber.from(exchanged_tokenA_amount)),
         );
       }
       {
@@ -472,22 +491,22 @@ describe("smart contract upgrade", async () => {
         const userTokenABalanceAfterClaim = await testTokenADeployed.balanceOf(pool_user.address);
         const contractTokenABalanceAfterClaim = await testTokenADeployed.balanceOf(deployedUpgraded.address);
         expect(contractTokenABalanceAfterClaim.toString()).to.be.eq(
-          BigNumber(contractTokenABalanceBeforeSwap.toString()).minus(BigNumber(exchanged_tokenA_amount)).toFixed(),
+          BigNumber.from(contractTokenABalanceBeforeSwap.toString()).sub(BigNumber.from(exchanged_tokenA_amount)),
         );
         expect(userTokenABalanceAfterClaim.toString()).to.be.eq(
-          BigNumber(userTokenABalanceBeforeSwap.toString()).plus(BigNumber(exchanged_tokenA_amount)).toFixed(),
+          BigNumber.from(userTokenABalanceBeforeSwap.toString()).add(BigNumber.from(exchanged_tokenA_amount)),
         );
       }
     }
   });
 
   function getVerification(password, account) {
-    var hash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(password));
-    var hash_bytes = Uint8Array.from(Buffer.from(hash.slice(2), "hex"));
-    hash = hash_bytes.slice(0, 5);
-    hash = "0x" + Buffer.from(hash).toString("hex");
+    const hash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(password));
+    const hash_bytes = Uint8Array.from(Buffer.from(hash.slice(2), "hex"));
+    const hash1 = hash_bytes.slice(0, 5);
+    const hash2 = "0x" + Buffer.from(hash1).toString("hex");
     return {
-      verification: soliditySha3(hexToNumber(hash), account),
+      verification: soliditySha3(hexToNumber(hash2), account),
       validation: sha3(account),
     };
   }
