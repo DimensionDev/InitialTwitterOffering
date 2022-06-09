@@ -1,0 +1,271 @@
+import { ethers, upgrades } from "hardhat";
+import { Signer, BigNumber } from "ethers";
+import { takeSnapshot, revertToSnapShot, getRevertMsg } from "./helper";
+const { soliditySha3, hexToNumber, sha3 } = require("web3-utils");
+
+import { use } from "chai";
+import chaiAsPromised from "chai-as-promised";
+
+import {
+  HappyPoolParamType,
+  base_timestamp,
+  eth_address,
+  erc165_interface_id,
+  qualification_interface_id,
+  PASSWORD,
+  amount,
+  ETH_address_index,
+  tokenB_address_index,
+  tokenC_address_index,
+  pending_qualification_timestamp,
+} from "./constants";
+
+const { expect } = use(chaiAsPromised);
+
+import itoJsonABI from "../artifacts/contracts/ito.sol/HappyTokenPool.json";
+const itoInterface = new ethers.utils.Interface(itoJsonABI.abi);
+
+//types
+import type { TestTokenA, TestTokenB, TestTokenC, HappyTokenPool, QLF } from "../types";
+
+describe("HappyTokenPool", () => {
+  let creationParams: HappyPoolParamType; // fill happyTokenPoolDeployed parameters
+  let snapshotId: string;
+  let testTokenADeployed: TestTokenA;
+  let testTokenBDeployed: TestTokenB;
+  let testTokenCDeployed: TestTokenC;
+
+  let happyTokenPoolDeployed: HappyTokenPool;
+  let qualificationTesterDeployed: QLF;
+
+  let signers: Signer[];
+  let creator: Signer;
+  let ito_user: Signer;
+  let creator_address: string;
+  let user_address: string;
+
+  before(async () => {
+    signers = await ethers.getSigners();
+    creator = signers[0];
+    ito_user = signers[1];
+
+    creator_address = await creator.getAddress();
+    user_address = await ito_user.getAddress();
+
+    const TestTokenA = await ethers.getContractFactory("TestTokenA");
+    const TestTokenB = await ethers.getContractFactory("TestTokenB");
+    const TestTokenC = await ethers.getContractFactory("TestTokenC");
+    const QualificationTester = await ethers.getContractFactory("QLF");
+
+    const testTokenA = await TestTokenA.deploy(amount);
+    const testTokenB = await TestTokenB.deploy(amount);
+    const testTokenC = await TestTokenC.deploy(amount);
+    const qualificationTester = await QualificationTester.deploy(0);
+
+    testTokenADeployed = (await testTokenA.deployed()) as TestTokenA;
+    testTokenBDeployed = (await testTokenB.deployed()) as TestTokenB;
+    testTokenCDeployed = (await testTokenC.deployed()) as TestTokenC;
+    qualificationTesterDeployed = (await qualificationTester.deployed()) as QLF;
+
+    const HappyTokenPool = await ethers.getContractFactory("HappyTokenPool");
+    const HappyTokenPoolProxy = await upgrades.deployProxy(HappyTokenPool, [base_timestamp], {
+      unsafeAllow: ["delegatecall"],
+    });
+    happyTokenPoolDeployed = new ethers.Contract(
+      HappyTokenPoolProxy.address,
+      itoJsonABI.abi,
+      creator,
+    ) as HappyTokenPool;
+  });
+
+  beforeEach(async () => {
+    snapshotId = await takeSnapshot();
+    creationParams = {
+      hash: ethers.utils.keccak256(ethers.utils.toUtf8Bytes(PASSWORD)),
+      start_time: 0,
+      end_time: 10368000, // duration 120 days
+      message: "Hello From the Outside Hello From the Outside",
+      exchange_addrs: [eth_address, testTokenBDeployed.address, testTokenCDeployed.address],
+      exchange_ratios: [1, 10000, 1, 2000, 4000, 1],
+      lock_time: 12960000, // duration 150 days
+      token_address: testTokenADeployed.address,
+      total_tokens: ethers.utils.parseEther("10000"),
+      limit: ethers.utils.parseEther("1000"),
+      qualification: qualificationTesterDeployed.address,
+    };
+    const nowTimeStamp = Math.floor(new Date().getTime() / 1000);
+    // 120 days
+    creationParams.end_time = nowTimeStamp + 10368000 - base_timestamp;
+    // 120 days
+    creationParams.lock_time = nowTimeStamp + 12960000 - base_timestamp;
+  });
+
+  afterEach(async () => {
+    await revertToSnapShot(snapshotId);
+  });
+
+  describe("check_availability()", async () => {
+    beforeEach(async () => {
+      await testTokenADeployed.approve(happyTokenPoolDeployed.address, creationParams.total_tokens);
+    });
+
+    it("Should return empty when pool id does not exist", async () => {
+      const invalidId = ethers.utils.formatBytes32String("id not exist");
+      const result = await happyTokenPoolDeployed.connect(ito_user).check_availability(invalidId);
+      await expect(result[0]).to.be.an("array").that.is.empty;
+    });
+
+    it("Should return status `started === true` when current time greater than start_time", async () => {
+      const fakeTime = (new Date().getTime() - 1000 * 10) / 1000;
+      creationParams.start_time = Math.ceil(fakeTime) - base_timestamp;
+      const { id: pool_id } = await getResultFromPoolFill(happyTokenPoolDeployed, creationParams);
+      const result = await getAvailability(happyTokenPoolDeployed, pool_id, user_address);
+
+      expect(result.started).to.be.true;
+    });
+
+    it("Should return status `started === false` when current time less than start_time", async () => {
+      const fakeTime = (new Date().getTime() + 1000 * 10) / 1000;
+      creationParams.start_time = Math.ceil(fakeTime) - base_timestamp;
+
+      const { id: pool_id } = await getResultFromPoolFill(happyTokenPoolDeployed, creationParams);
+      const result = await getAvailability(happyTokenPoolDeployed, pool_id, user_address);
+
+      expect(result.started).to.be.false;
+    });
+
+    it("Should return status `expired === true` when current time less than end_time", async () => {
+      const fakeTime = (new Date().getTime() - 1000 * 10) / 1000;
+      creationParams.end_time = Math.ceil(fakeTime) - base_timestamp;
+
+      const { id: pool_id } = await getResultFromPoolFill(happyTokenPoolDeployed, creationParams);
+      const result = await getAvailability(happyTokenPoolDeployed, pool_id, user_address);
+
+      expect(result.expired).to.be.true;
+    });
+
+    it("Should return status `expired === false` when current time less than end_time", async () => {
+      const fakeTime = (new Date().getTime() + 1000 * 10) / 1000;
+      creationParams.end_time = Math.ceil(fakeTime) - base_timestamp;
+
+      const { id: pool_id } = await getResultFromPoolFill(happyTokenPoolDeployed, creationParams);
+      const result = await getAvailability(happyTokenPoolDeployed, pool_id, user_address);
+
+      expect(result.expired).to.be.false;
+    });
+
+    it("Should return the same exchange_addrs which fill the happyTokenPoolDeployed", async () => {
+      const { id: pool_id } = await getResultFromPoolFill(happyTokenPoolDeployed, creationParams);
+      const result = await getAvailability(happyTokenPoolDeployed, pool_id, user_address);
+      expect(result.exchange_addrs).to.eql([eth_address, testTokenBDeployed.address, testTokenCDeployed.address]);
+    });
+
+    it("Should return the exchanged_tokens filled with zero when there was no exchange", async () => {
+      const { id: pool_id } = await getResultFromPoolFill(happyTokenPoolDeployed, creationParams);
+      const result = await getAvailability(happyTokenPoolDeployed, pool_id, user_address);
+      expect(result.exchanged_tokens.map((bn) => ethers.utils.parseEther(bn.toString()).toString())).to.eql([
+        "0",
+        "0",
+        "0",
+      ]);
+    });
+
+    it("Should return the zero swapped token when the spender did no exchange before", async () => {
+      const { id: pool_id } = await getResultFromPoolFill(happyTokenPoolDeployed, creationParams);
+      const result = await getAvailability(happyTokenPoolDeployed, pool_id, user_address);
+      expect(ethers.utils.parseEther(result.swapped.toString()).toString()).to.be.eq("0");
+    });
+
+    it("Should return same number of remaining token as total tokens when there was no exchange", async () => {
+      const { id: pool_id } = await getResultFromPoolFill(happyTokenPoolDeployed, creationParams);
+      const result = await getAvailability(happyTokenPoolDeployed, pool_id, user_address);
+      expect(result.remaining.toString()).to.be.eq(creationParams.total_tokens);
+    });
+
+    it("Should minus the number of remaining token by exchange amount after swap", async () => {
+      const transfer_amount = ethers.utils.parseEther("100000000");
+      const approve_amount = ethers.utils.parseEther("0.005");
+
+      await testTokenBDeployed.connect(creator).transfer(user_address, transfer_amount);
+      await testTokenBDeployed.connect(ito_user).approve(happyTokenPoolDeployed.address, approve_amount);
+      const { id: pool_id } = await getResultFromPoolFill(happyTokenPoolDeployed, creationParams);
+      const availability_before = await getAvailability(happyTokenPoolDeployed, pool_id, user_address);
+      expect(availability_before.claimed).to.be.eq(false);
+      const { verification, validation } = getVerification(PASSWORD, user_address);
+      await happyTokenPoolDeployed
+        .connect(ito_user)
+        .swap(pool_id, verification, tokenB_address_index, approve_amount, [pool_id]);
+      const availability_current = await getAvailability(happyTokenPoolDeployed, pool_id, creator_address);
+      const ratio = creationParams.exchange_ratios[3] / creationParams.exchange_ratios[2]; // tokenA <=> tokenB
+      const exchange_tokenA_amount = approve_amount.mul(ratio);
+      expect(availability_before.remaining.sub(availability_current.remaining).toString()).to.be.eq(
+        exchange_tokenA_amount.toString(),
+      );
+      expect(availability_current.claimed).to.be.eq(false);
+
+      expect(availability_current.start_time.toString()).to.be.eq(
+        (creationParams.start_time + base_timestamp).toString(),
+      );
+      expect(availability_current.end_time.toString()).to.be.eq((creationParams.end_time + base_timestamp).toString());
+      expect(availability_current.unlock_time.toString()).to.be.eq(
+        (creationParams.lock_time + base_timestamp).toString(),
+      );
+      expect(availability_current.qualification_addr).to.be.eq(creationParams.qualification);
+    });
+
+    it("Should return remaining token correctly when none of ratio gcd is not equal to 1 and tokens are very small", async () => {
+      creationParams.exchange_ratios = [2, 7, 3, 2, 3, 11];
+      creationParams.total_tokens = BigNumber.from("10");
+      creationParams.limit = BigNumber.from("10");
+      const signer = signers[1];
+      creationParams.lock_time = 0;
+      const { id: pool_id } = await getResultFromPoolFill(happyTokenPoolDeployed, creationParams);
+      //await happyTokenPoolDeployed.connect(creator).setUnlockTime(pool_id, 0)
+      const result_before = await getAvailability(happyTokenPoolDeployed, pool_id, user_address);
+      expect(result_before.remaining.toString()).to.be.eq(creationParams.total_tokens);
+      expect(result_before.claimed).to.be.eq(false);
+
+      const transfer_amount = BigNumber.from("2");
+      const approve_amount = BigNumber.from("2");
+
+      await testTokenBDeployed.connect(creator).transfer(user_address, transfer_amount);
+      await testTokenBDeployed.connect(signer).approve(happyTokenPoolDeployed.address, approve_amount);
+      const { verification, validation } = getVerification(PASSWORD, user_address);
+      await happyTokenPoolDeployed
+        .connect(signer)
+        .swap(pool_id, verification, tokenB_address_index, approve_amount, [pool_id]);
+      const result_now = await getAvailability(happyTokenPoolDeployed, pool_id, user_address);
+      const tokenB_balance = await testTokenBDeployed.balanceOf(user_address);
+      const tokenA_balance = await testTokenADeployed.balanceOf(user_address);
+
+      expect(tokenA_balance.toString()).to.be.eq("1");
+      expect(tokenB_balance.toString()).to.be.eq("0");
+      expect(result_now.remaining.toString()).to.be.eq("9");
+      expect(result_now.claimed).to.be.eq(true);
+    });
+  });
+
+  function getVerification(password, account) {
+    let hash: string | Uint8Array = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(password));
+    let hash_bytes = Uint8Array.from(Buffer.from(hash.slice(2), "hex"));
+    hash = hash_bytes.slice(0, 5);
+    hash = "0x" + Buffer.from(hash).toString("hex");
+    return {
+      verification: soliditySha3(hexToNumber(hash), account),
+      validation: sha3(account),
+    };
+  }
+
+  async function getResultFromPoolFill(happyTokenPoolDeployed, fpp) {
+    await happyTokenPoolDeployed.fill_pool(...Object.values(fpp));
+    const logs = await ethers.provider.getLogs(happyTokenPoolDeployed.filters.FillSuccess());
+    const result = itoInterface.parseLog(logs[0]);
+    return result.args;
+  }
+
+  async function getAvailability(happyTokenPoolDeployed, pool_id, account) {
+    const signer = await ethers.getSigner(account);
+    happyTokenPoolDeployed = happyTokenPoolDeployed.connect(signer);
+    return happyTokenPoolDeployed.check_availability(pool_id);
+  }
+});

@@ -4,18 +4,11 @@ import { takeSnapshot, revertToSnapShot, getRevertMsg } from "./helper";
 import { use } from "chai";
 import chaiAsPromised from "chai-as-promised";
 
-import {
-  base_timestamp,
-  eth_address,
-  PASSWORD,
-  amount,
-  pending_qualification_timestamp,
-  HappyPoolParamType,
-} from "./constants";
+import { base_timestamp, eth_address, PASSWORD, amount, HappyPoolParamType } from "./constants";
 
 const { expect } = use(chaiAsPromised);
 
-const itoJsonABI = require("../artifacts/contracts/ito.sol/HappyTokenPool.json");
+import itoJsonABI from "../artifacts/contracts/ito.sol/HappyTokenPool.json";
 const itoInterface = new ethers.utils.Interface(itoJsonABI.abi);
 
 //types
