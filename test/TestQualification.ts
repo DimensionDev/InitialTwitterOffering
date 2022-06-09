@@ -70,15 +70,6 @@ describe("qualification", () => {
       itoJsonABI.abi,
       creator,
     ) as HappyTokenPool;
-
-    // qualificationTesterDeployed = await qualificationTester.deployed();
-    // qualificationTesterDeployed2 = await qualificationTester2.deployed();
-
-    // HappyTokenPool = await ethers.getContractFactory("HappyTokenPool");
-    // HappyTokenPoolProxy = await upgrades.deployProxy(HappyTokenPool, [base_timestamp], {
-    //   unsafeAllow: ["delegatecall"],
-    // });
-    // happyTokenPoolDeployed = new ethers.Contract(HappyTokenPoolProxy.address, itoJsonABI.abi, creator);
   });
 
   it("should check the integrity of qualification contract", async () => {

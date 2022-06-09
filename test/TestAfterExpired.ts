@@ -25,8 +25,8 @@ const itoInterface = new ethers.utils.Interface(itoJsonABI.abi);
 //types
 import type { TestTokenA, TestTokenB, TestTokenC, HappyTokenPool, QLF } from "../types";
 
-describe("HappyTokenPoolExpiredProcess", () => {
-  let fpp2: HappyPoolParamType; // fill happyTokenPoolDeployed parameters
+describe.only("HappyTokenPoolExpiredProcess", () => {
+  //let fpp2: HappyPoolParamType; // fill happyTokenPoolDeployed parameters
   let snapshotId: string;
   let testTokenADeployed: TestTokenA;
   let testTokenBDeployed: TestTokenB;
@@ -39,6 +39,7 @@ describe("HappyTokenPoolExpiredProcess", () => {
   let signers: Signer[];
   let creator: Signer;
   let ito_user: Signer;
+  let fpp2;
 
   before(async () => {
     signers = await ethers.getSigners();
@@ -84,8 +85,6 @@ describe("HappyTokenPoolExpiredProcess", () => {
       exchange_ratios: [1, 10000, 1, 2000, 4000, 1],
       lock_time: 12960000, // duration 150 days
       token_address: testTokenADeployed.address,
-      // total_tokens: BigNumber.from("10000"),
-      // limit: BigNumber.from("1000"),
       total_tokens: ethers.utils.parseEther("10000"),
       limit: ethers.utils.parseEther("1000"),
       qualification: qualificationTesterDeployed.address,
@@ -120,7 +119,7 @@ describe("HappyTokenPoolExpiredProcess", () => {
       );
     });
 
-    it.skip("Should emit DestructSuccess event and withdraw all tokens", async () => {
+    it("Should emit DestructSuccess event and withdraw all tokens", async () => {
       const creator_address = await creator.getAddress();
       const fakeTime = (new Date().getTime() + 1000 * 1000) / 1000;
       fpp2.end_time = Math.ceil(fakeTime) - base_timestamp;
@@ -135,7 +134,6 @@ describe("HappyTokenPoolExpiredProcess", () => {
       const exchange_ETH_amount = ethers.utils.parseEther("1.3");
 
       const verification_address = await signers[2].getAddress();
-
       const { verification, validation } = getVerification(PASSWORD, verification_address);
 
       if (!verification) {
@@ -145,7 +143,7 @@ describe("HappyTokenPoolExpiredProcess", () => {
 
       await happyTokenPoolDeployed
         .connect(signers[2])
-        .swap(pool_id, fromAscii(verification), ETH_address_index, exchange_ETH_amount, [pool_id], {
+        .swap(pool_id, verification, ETH_address_index, exchange_ETH_amount, [pool_id], {
           value: exchange_ETH_amount,
         });
 
