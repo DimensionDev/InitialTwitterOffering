@@ -1,80 +1,34 @@
-import { ethers, upgrades } from "hardhat";
-import { Signer, BigNumber } from "ethers";
-import { takeSnapshot, revertToSnapShot, getRevertMsg, advanceTimeAndBlock } from "./helper";
+import { ethers } from "hardhat";
+import { Signer } from "ethers";
+import { advanceTimeAndBlock } from "./helper";
 import { use } from "chai";
 import chaiAsPromised from "chai-as-promised";
 
-import {
-  base_timestamp,
-  erc165_interface_id,
-  qualification_interface_id,
-  eth_address,
-  PASSWORD,
-  amount,
-  pending_qualification_timestamp,
-  HappyPoolParamType,
-} from "./constants";
+import { erc165_interface_id, qualification_interface_id, pending_qualification_timestamp } from "./constants";
 
 const { expect } = use(chaiAsPromised);
-
-const itoJsonABI = require("../artifacts/contracts/ito.sol/HappyTokenPool.json");
-
 const qualificationJsonABI = require("../artifacts/contracts/qualification.sol/QLF.json");
 const qualificationInterface = new ethers.utils.Interface(qualificationJsonABI.abi);
 
 //types
-import type { TestToken, HappyTokenPool, QLF } from "../types";
+import type { QLF } from "../types";
 
 describe("qualification", () => {
-  let testTokenADeployed: TestToken;
-  let testTokenBDeployed: TestToken;
-  let testTokenCDeployed: TestToken;
-  let HappyTokenPool: HappyTokenPool;
-
-  let happyTokenPoolDeployed: HappyTokenPool;
   let qualificationTesterDeployed: QLF;
   let qualificationTesterDeployed2: QLF;
 
   let signers: Signer[];
-  let creator: Signer;
-  let ito_user: Signer;
 
   before(async () => {
     signers = await ethers.getSigners();
-    creator = signers[0];
-    ito_user = signers[1];
 
-    const TestTokenA = await ethers.getContractFactory("TestToken");
-    const TestTokenB = await ethers.getContractFactory("TestToken");
-    const TestTokenC = await ethers.getContractFactory("TestToken");
     const QualificationTester = await ethers.getContractFactory("QLF");
-
-    const testTokenA = await TestTokenA.deploy(amount, "TestTokenA", "TESTA");
-    const testTokenB = await TestTokenB.deploy(amount, "TestTokenB", "TESTB");
-    const testTokenC = await TestTokenC.deploy(amount, "TestTokenC", "TESTC");
     const qualificationTester = await QualificationTester.deploy(0);
     const qualificationTester2 = await QualificationTester.deploy(pending_qualification_timestamp);
 
-    testTokenADeployed = (await testTokenA.deployed()) as TestToken;
-    testTokenBDeployed = (await testTokenB.deployed()) as TestToken;
-    testTokenCDeployed = (await testTokenC.deployed()) as TestToken;
     qualificationTesterDeployed = (await qualificationTester.deployed()) as QLF;
     qualificationTesterDeployed2 = (await qualificationTester2.deployed()) as QLF;
-
-    const HappyTokenPool = await ethers.getContractFactory("HappyTokenPool");
-    const HappyTokenPoolProxy = await upgrades.deployProxy(HappyTokenPool, [base_timestamp], {
-      unsafeAllow: ["delegatecall"],
-    });
-    happyTokenPoolDeployed = new ethers.Contract(
-      HappyTokenPoolProxy.address,
-      itoJsonABI.abi,
-      creator,
-    ) as HappyTokenPool;
   });
-
-  // afterEach(async () => {
-  //   await helper.revertToSnapShot(snapshotId);
-  // });
 
   it("should check the integrity of qualification contract", async () => {
     const isERC165 = await qualificationTesterDeployed.supportsInterface(erc165_interface_id);
@@ -102,10 +56,12 @@ describe("qualification", () => {
       const addr11 = await signers[11].getAddress();
       await qualificationTesterDeployed2.connect(signers[11]).logQualified(addr11, [fakeMerkleProof]);
       result = await getLogResult();
+
       //TODO
       if (!result) {
         return;
       }
+
       expect(result.qualified).to.be.true;
 
       await qualificationTesterDeployed2.connect(signers[10]).logQualified(addr10, [fakeMerkleProof]);

@@ -1,23 +1,13 @@
 import { ethers, upgrades } from "hardhat";
 import { BytesLike, Signer, BigNumber } from "ethers";
-import { takeSnapshot, revertToSnapShot, getRevertMsg, advanceTimeAndBlock } from "./helper";
+import { takeSnapshot, revertToSnapShot, advanceTimeAndBlock } from "./helper";
 import { assert, use, util } from "chai";
 import chaiAsPromised from "chai-as-promised";
 import { soliditySha3, hexToNumber, sha3 } from "web3-utils";
 
 const { expect } = use(chaiAsPromised);
 
-import {
-  base_timestamp,
-  eth_address,
-  PASSWORD,
-  amount,
-  ETH_address_index,
-  tokenB_address_index,
-  tokenC_address_index,
-  pending_qualification_timestamp,
-  HappyPoolParamType,
-} from "./constants";
+import { base_timestamp, eth_address, PASSWORD, amount, tokenC_address_index } from "./constants";
 
 //types
 import type { TestToken, HappyTokenPool, HappyTokenPool_v1_0, QLF } from "../types";
@@ -105,7 +95,7 @@ describe("smart contract upgrade", async () => {
     const nowTimeStamp = Math.floor(new Date().getTime() / 1000);
     // 120 days
     fpp.end_time = nowTimeStamp + 10368000 - base_timestamp;
-    // 120 days
+    // 150 days
     fpp.lock_time = nowTimeStamp + 12960000 - base_timestamp;
 
     const HappyTokenPool_v1_0 = await ethers.getContractFactory("HappyTokenPool_v1_0");
@@ -214,13 +204,10 @@ describe("smart contract upgrade", async () => {
         );
       }
     }
-    //console.log("=====debug===\n");
-    //console.log(happyTokenPoolDeployed_v1_0.address);
 
     // upgrade contract to latest
 
     const HappyTokenPoolFactory = await ethers.getContractFactory("HappyTokenPool");
-    //console.log(HappyTokenPoolFactory);
     await upgrades.upgradeProxy(happyTokenPoolDeployed_v1_0.address, HappyTokenPoolFactory, {
       unsafeAllow: ["delegatecall"],
     });

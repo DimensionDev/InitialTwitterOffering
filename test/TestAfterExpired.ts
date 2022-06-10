@@ -1,9 +1,9 @@
 import { ethers, upgrades } from "hardhat";
 import { BytesLike, Signer, BigNumber } from "ethers";
 import { takeSnapshot, revertToSnapShot, getRevertMsg, advanceTimeAndBlock } from "./helper";
-import { assert, use, util } from "chai";
+import { assert, use } from "chai";
 import chaiAsPromised from "chai-as-promised";
-import { soliditySha3, hexToNumber, sha3, fromAscii } from "web3-utils";
+import { soliditySha3, hexToNumber, sha3 } from "web3-utils";
 
 const { expect } = use(chaiAsPromised);
 
@@ -39,7 +39,6 @@ describe("HappyTokenPoolExpiredProcess", () => {
   let signers: Signer[];
   let creator: Signer;
   let ito_user: Signer;
-  //let fpp2;
 
   before(async () => {
     signers = await ethers.getSigners();
@@ -199,19 +198,18 @@ describe("HappyTokenPoolExpiredProcess", () => {
         BigNumber.from(previous_tokenC_balance).sub(transfer_amount).add(exchange_tokenC_amount),
       );
       expect(tokenC_balance.toString()).to.be.eq(
-        BigNumber.from(previous_tokenC_balance.toString()).sub(BigNumber.from(transfer_amount)).mul(
-          BigNumber.from(exchange_tokenC_pool_limit), // 2000e18 exceeds limit
-        ),
+        BigNumber.from(previous_tokenC_balance.toString()).sub(transfer_amount).add(exchange_tokenC_pool_limit), // 2000e18 exceeds limit
       );
       {
         // `exchanged_tokens` and `exchange_addrs` should still be available
-        const test_addr = await signers[9].getAddress();
-        const result = await getAvailability(happyTokenPoolDeployed, pool_id, test_addr);
+        const test_addr9 = await signers[9].getAddress();
+        const result = await getAvailability(happyTokenPoolDeployed, pool_id, test_addr9);
+
         expect(result.exchange_addrs).to.eql(fpp2.exchange_addrs);
         expect(result.exchanged_tokens.map((bn) => bn.toString())).to.eql([
-          exchange_ETH_amount,
-          exchange_tokenB_amount,
-          exchange_tokenC_pool_limit,
+          exchange_ETH_amount.toString(),
+          exchange_tokenB_amount.toString(),
+          exchange_tokenC_pool_limit.toString(),
         ]);
         expect(result.destructed).to.true;
       }
