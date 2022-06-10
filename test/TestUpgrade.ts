@@ -31,33 +31,30 @@ const itoInterface_V1_0 = new ethers.utils.Interface(itoJsonABI_V1_0.abi);
 const proxyAdminABI = require("@openzeppelin/upgrades-core/artifacts/ProxyAdmin.json");
 
 const qualificationJsonABI = require("../artifacts/contracts/qualification.sol/QLF.json");
-const qualificationInterface = new ethers.utils.Interface(qualificationJsonABI.abi);
 
 let snapshotId;
 let testTokenADeployed;
 let testTokenBDeployed;
 let testTokenCDeployed;
 
-let HappyTokenPool;
+let HappyTokenPoolFactory;
 let happyTokenPoolDeployed;
 let qualificationTesterDeployed;
 let HappyTokenPoolProxy;
 
 let signers;
 let creator;
-let ito_user;
+let pool_user;
 let fpp;
 
-let pool_user;
 let verification;
 let happyTokenPoolDeployed_v1_0;
 let exchange_amount;
 
-describe.only("smart contract upgrade", async () => {
+describe("smart contract upgrade", async () => {
   before(async () => {
     signers = await ethers.getSigners();
     creator = signers[0];
-    ito_user = signers[1];
     pool_user = signers[2];
 
     const TestTokenA = await ethers.getContractFactory("TestToken");
@@ -75,14 +72,12 @@ describe.only("smart contract upgrade", async () => {
     testTokenCDeployed = (await testTokenC.deployed()) as TestToken;
     qualificationTesterDeployed = (await qualificationTester.deployed()) as QLF;
 
-    pool_user = signers[2];
-    //const transfer_amount = BigNumber("1e26").toFixed();
     const transfer_amount = ethers.utils.parseEther("100000000");
     await testTokenBDeployed.connect(creator).transfer(pool_user.address, transfer_amount);
     await testTokenCDeployed.connect(creator).transfer(pool_user.address, transfer_amount);
 
-    const HappyTokenPool = await ethers.getContractFactory("HappyTokenPool");
-    const HappyTokenPoolProxy = await upgrades.deployProxy(HappyTokenPool, [base_timestamp], {
+    const HappyTokenPoolFactory = await ethers.getContractFactory("HappyTokenPool");
+    const HappyTokenPoolProxy = await upgrades.deployProxy(HappyTokenPoolFactory, [base_timestamp], {
       unsafeAllow: ["delegatecall"],
     });
     happyTokenPoolDeployed = new ethers.Contract(
@@ -126,10 +121,16 @@ describe.only("smart contract upgrade", async () => {
     await testTokenADeployed
       .connect(creator)
       .approve(happyTokenPoolDeployed_v1_0.address, ethers.utils.parseEther("100000000"));
-    const r = getVerification(PASSWORD, pool_user.address);
+
+    const pool_user_address = await pool_user.getAddress();
+    const r = getVerification(PASSWORD, pool_user_address);
     verification = r.verification;
 
     exchange_amount = BigNumber.from("10000000000");
+  });
+
+  afterEach(async () => {
+    await revertToSnapShot(snapshotId);
   });
 
   it("Should non-owner not be able to update implementation", async () => {
@@ -213,17 +214,18 @@ describe.only("smart contract upgrade", async () => {
         );
       }
     }
+    //console.log("=====debug===\n");
+    //console.log(happyTokenPoolDeployed_v1_0.address);
 
     // upgrade contract to latest
-    await upgrades.upgradeProxy(happyTokenPoolDeployed_v1_0.address, HappyTokenPool, {
+
+    const HappyTokenPoolFactory = await ethers.getContractFactory("HappyTokenPool");
+    //console.log(HappyTokenPoolFactory);
+    await upgrades.upgradeProxy(happyTokenPoolDeployed_v1_0.address, HappyTokenPoolFactory, {
       unsafeAllow: ["delegatecall"],
     });
 
-    const deployedUpgraded = new ethers.Contract(
-      happyTokenPoolDeployed_v1_0.address,
-      itoJsonABI.abi,
-      creator,
-    ) as HappyTokenPool_v1_0;
+    const deployedUpgraded = new ethers.Contract(happyTokenPoolDeployed_v1_0.address, itoJsonABI.abi, creator);
     {
       const availability = await getAvailability(deployedUpgraded, pool_id, pool_user.address);
       // minor problem
@@ -249,6 +251,7 @@ describe.only("smart contract upgrade", async () => {
     const approve_amount = BigNumber.from("10000000000");
     exchange_amount = approve_amount;
     const { id: pool_id } = await getResultFromPoolFill(happyTokenPoolDeployed_v1_0, fpp);
+
     const userTokenABalanceBeforeSwap = await testTokenADeployed.balanceOf(pool_user.address);
     const contractTokenABalanceBeforeSwap = await testTokenADeployed.balanceOf(happyTokenPoolDeployed_v1_0.address);
     const ratio = fpp.exchange_ratios[5] / fpp.exchange_ratios[4]; // tokenA <=> tokenC
@@ -258,6 +261,7 @@ describe.only("smart contract upgrade", async () => {
 
       const userTokenCBalanceBeforeSwap = await testTokenCDeployed.balanceOf(pool_user.address);
       const contractTokenCBalanceBeforeSwap = await testTokenCDeployed.balanceOf(happyTokenPoolDeployed_v1_0.address);
+
       await happyTokenPoolDeployed_v1_0
         .connect(pool_user)
         .swap(pool_id, verification, tokenC_address_index, exchange_amount, [pool_id]);
@@ -266,6 +270,7 @@ describe.only("smart contract upgrade", async () => {
         expect(availability.swapped.toString()).to.be.eq(exchanged_tokenA_amount.toString());
         expect(availability).to.not.have.property("claimed");
       }
+
       // Check SwapSuccess event
       {
         const logs = await ethers.provider.getLogs(happyTokenPoolDeployed_v1_0.filters.SwapSuccess());
@@ -284,7 +289,7 @@ describe.only("smart contract upgrade", async () => {
         const userTokenCBalanceAfterSwap = await testTokenCDeployed.balanceOf(pool_user.address);
         const contractTokenCBalanceAfterSwap = await testTokenCDeployed.balanceOf(happyTokenPoolDeployed_v1_0.address);
         expect(contractTokenCBalanceAfterSwap.toString()).to.be.eq(
-          BigNumber.from(contractTokenCBalanceBeforeSwap.toString()).add(BigNumber.from(exchange_amount)),
+          BigNumber.from(contractTokenCBalanceBeforeSwap.toString()).add(exchange_amount),
         );
         expect(userTokenCBalanceAfterSwap.toString()).to.be.eq(
           BigNumber.from(userTokenCBalanceBeforeSwap.toString()).sub(BigNumber.from(exchange_amount)),
@@ -298,7 +303,8 @@ describe.only("smart contract upgrade", async () => {
     }
     //-------------------------------------------------------------------------------------------------------------
     // upgrade contract to latest
-    await upgrades.upgradeProxy(happyTokenPoolDeployed_v1_0.address, HappyTokenPool, {
+    const HappyTokenPoolFactory = await ethers.getContractFactory("HappyTokenPool");
+    await upgrades.upgradeProxy(happyTokenPoolDeployed_v1_0.address, HappyTokenPoolFactory, {
       unsafeAllow: ["delegatecall"],
     });
     const deployedUpgraded = new ethers.Contract(happyTokenPoolDeployed_v1_0.address, itoJsonABI.abi, creator);
@@ -326,6 +332,7 @@ describe.only("smart contract upgrade", async () => {
 
     {
       const availability = await getAvailability(deployedUpgraded, pool_id, pool_user.address);
+
       expect(availability.swapped.toString()).to.be.eq(exchanged_tokenA_amount.toString());
       expect(availability.claimed).to.be.true;
       await deployedUpgraded.connect(pool_user).claim([pool_id]);
@@ -396,7 +403,8 @@ describe.only("smart contract upgrade", async () => {
     }
     //-------------------------------------------------------------------------------------------------------------
     // upgrade contract to latest
-    await upgrades.upgradeProxy(happyTokenPoolDeployed_v1_0.address, HappyTokenPool, {
+    const HappyTokenPoolFactory = await ethers.getContractFactory("HappyTokenPool");
+    await upgrades.upgradeProxy(happyTokenPoolDeployed_v1_0.address, HappyTokenPoolFactory, {
       unsafeAllow: ["delegatecall"],
     });
     const deployedUpgraded = new ethers.Contract(happyTokenPoolDeployed_v1_0.address, itoJsonABI.abi, creator);
@@ -434,7 +442,8 @@ describe.only("smart contract upgrade", async () => {
     await testTokenCDeployed.connect(pool_user).approve(happyTokenPoolDeployed_v1_0.address, approve_amount);
     //-------------------------------------------------------------------------------------------------------------
     // upgrade contract to latest
-    await upgrades.upgradeProxy(happyTokenPoolDeployed_v1_0.address, HappyTokenPool, {
+    const HappyTokenPoolFactory = await ethers.getContractFactory("HappyTokenPool");
+    await upgrades.upgradeProxy(happyTokenPoolDeployed_v1_0.address, HappyTokenPoolFactory, {
       unsafeAllow: ["delegatecall"],
     });
     const deployedUpgraded = new ethers.Contract(happyTokenPoolDeployed_v1_0.address, itoJsonABI.abi, creator);

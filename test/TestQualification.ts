@@ -72,6 +72,10 @@ describe("qualification", () => {
     ) as HappyTokenPool;
   });
 
+  // afterEach(async () => {
+  //   await helper.revertToSnapShot(snapshotId);
+  // });
+
   it("should check the integrity of qualification contract", async () => {
     const isERC165 = await qualificationTesterDeployed.supportsInterface(erc165_interface_id);
     const isQualification = await qualificationTesterDeployed.supportsInterface(qualification_interface_id);

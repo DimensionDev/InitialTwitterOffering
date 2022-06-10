@@ -25,8 +25,8 @@ const itoInterface = new ethers.utils.Interface(itoJsonABI.abi);
 //types
 import type { TestToken, HappyTokenPool, QLF } from "../types";
 
-describe.only("HappyTokenPoolExpiredProcess", () => {
-  //let fpp2: HappyPoolParamType; // fill happyTokenPoolDeployed parameters
+describe("HappyTokenPoolExpiredProcess", () => {
+  let fpp2: HappyPoolParamType; // fill happyTokenPoolDeployed parameters
   let snapshotId: string;
   let testTokenADeployed: TestToken;
   let testTokenBDeployed: TestToken;
@@ -39,7 +39,7 @@ describe.only("HappyTokenPoolExpiredProcess", () => {
   let signers: Signer[];
   let creator: Signer;
   let ito_user: Signer;
-  let fpp2;
+  //let fpp2;
 
   before(async () => {
     signers = await ethers.getSigners();
@@ -96,6 +96,10 @@ describe.only("HappyTokenPoolExpiredProcess", () => {
     fpp2.lock_time = nowTimeStamp + 12960000 - base_timestamp;
   });
 
+  afterEach(async () => {
+    await revertToSnapShot(snapshotId);
+  });
+
   describe("destruct()", async () => {
     before(async () => {
       await testTokenADeployed.approve(happyTokenPoolDeployed.address, ethers.utils.parseEther("1000000000"));
@@ -136,14 +140,9 @@ describe.only("HappyTokenPoolExpiredProcess", () => {
       const verification_address = await signers[2].getAddress();
       const { verification, validation } = getVerification(PASSWORD, verification_address);
 
-      if (!verification) {
-        //TODO
-        return;
-      }
-
       await happyTokenPoolDeployed
         .connect(signers[2])
-        .swap(pool_id, verification, ETH_address_index, exchange_ETH_amount, [pool_id], {
+        .swap(pool_id, verification as BytesLike, ETH_address_index, exchange_ETH_amount, [pool_id], {
           value: exchange_ETH_amount,
         });
 
@@ -172,13 +171,13 @@ describe.only("HappyTokenPoolExpiredProcess", () => {
       expect(result).to.have.property("remaining_balance");
       expect(result).to.have.property("exchanged_values");
 
-      const ratioETH = fpp2.exchange_ratios[1] / fpp2.exchange_ratios[0];
-      const ratioB = fpp2.exchange_ratios[3] / fpp2.exchange_ratios[2];
+      const ratioETH = BigNumber.from(fpp2.exchange_ratios[1]).div(fpp2.exchange_ratios[0]);
+      const ratioB = BigNumber.from(fpp2.exchange_ratios[3]).div(fpp2.exchange_ratios[2]);
       const remaining_tokens = BigNumber.from(fpp2.total_tokens).sub(
         BigNumber.from(ratioB)
-          .mul(BigNumber.from(exchange_tokenB_amount))
+          .mul(exchange_tokenB_amount)
           .add(ethers.utils.parseEther("100000"))
-          .add(BigNumber.from(ratioETH).mul(exchange_ETH_amount)),
+          .add(ratioETH.mul(exchange_ETH_amount)),
       );
 
       expect(remaining_tokens).to.be.eq(result.remaining_balance.toString());
@@ -192,16 +191,12 @@ describe.only("HappyTokenPoolExpiredProcess", () => {
       const transfer_amount = ethers.utils.parseEther("100000000");
       const tokenB_balance = await testTokenBDeployed.balanceOf(creator_address);
       expect(tokenB_balance.toString()).to.be.eq(
-        BigNumber.from(previous_tokenB_balance.toString())
-          .sub(BigNumber.from(transfer_amount))
-          .mul(BigNumber.from(exchange_tokenB_amount)),
+        BigNumber.from(previous_tokenB_balance.toString()).sub(transfer_amount).add(exchange_tokenB_amount),
       );
 
       const tokenC_balance = await testTokenCDeployed.balanceOf(creator_address);
       expect(tokenC_balance.toString()).to.be.not.eq(
-        BigNumber.from(previous_tokenC_balance)
-          .sub(BigNumber.from(transfer_amount))
-          .mul(BigNumber.from(exchange_tokenC_amount)),
+        BigNumber.from(previous_tokenC_balance).sub(transfer_amount).add(exchange_tokenC_amount),
       );
       expect(tokenC_balance.toString()).to.be.eq(
         BigNumber.from(previous_tokenC_balance.toString()).sub(BigNumber.from(transfer_amount)).mul(
