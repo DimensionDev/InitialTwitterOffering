@@ -71,38 +71,40 @@ describe("HappyTokenPoolExpiredProcess", () => {
       itoJsonABI.abi,
       creator,
     ) as HappyTokenPool;
-  });
 
-  beforeEach(async () => {
-    snapshotId = await takeSnapshot();
-    fpp2 = {
-      hash: ethers.utils.keccak256(ethers.utils.toUtf8Bytes(PASSWORD)),
-      start_time: 0,
-      end_time: 10368000, // duration 120 days
-      message: "Hello From the Outside Hello From the Outside",
-      exchange_addrs: [eth_address, testTokenBDeployed.address, testTokenCDeployed.address],
-      exchange_ratios: [1, 10000, 1, 2000, 4000, 1],
-      lock_time: 12960000, // duration 150 days
-      token_address: testTokenADeployed.address,
-      total_tokens: ethers.utils.parseEther("10000"),
-      limit: ethers.utils.parseEther("1000"),
-      qualification: qualificationTesterDeployed.address,
-    };
-    const nowTimeStamp = Math.floor(new Date().getTime() / 1000);
-    // 120 days
-    fpp2.end_time = nowTimeStamp + 10368000 - base_timestamp;
-    // 150 days
-    fpp2.lock_time = nowTimeStamp + 12960000 - base_timestamp;
-  });
-
-  afterEach(async () => {
-    await revertToSnapShot(snapshotId);
+    await testTokenADeployed.approve(happyTokenPoolDeployed.address, ethers.utils.parseEther("1000000000"));
   });
 
   describe("destruct()", async () => {
-    before(async () => {
-      await testTokenADeployed.approve(happyTokenPoolDeployed.address, ethers.utils.parseEther("1000000000"));
+    beforeEach(async () => {
+      snapshotId = await takeSnapshot();
+      fpp2 = {
+        hash: ethers.utils.keccak256(ethers.utils.toUtf8Bytes(PASSWORD)),
+        start_time: 0,
+        end_time: 10368000, // duration 120 days
+        message: "Hello From the Outside Hello From the Outside",
+        exchange_addrs: [eth_address, testTokenBDeployed.address, testTokenCDeployed.address],
+        exchange_ratios: [1, 10000, 1, 2000, 4000, 1],
+        lock_time: 12960000, // duration 150 days
+        token_address: testTokenADeployed.address,
+        total_tokens: ethers.utils.parseEther("10000"),
+        limit: ethers.utils.parseEther("1000"),
+        qualification: qualificationTesterDeployed.address,
+      };
+      const nowTimeStamp = Math.floor(new Date().getTime() / 1000);
+      // 120 days
+      fpp2.end_time = nowTimeStamp + 10368000 - base_timestamp;
+      // 150 days
+      fpp2.lock_time = nowTimeStamp + 12960000 - base_timestamp;
     });
+
+    afterEach(async () => {
+      await revertToSnapShot(snapshotId);
+    });
+
+    // before(async () => {
+    //   await testTokenADeployed.approve(happyTokenPoolDeployed.address, ethers.utils.parseEther("1000000000"));
+    // });
 
     it("Should throw error when you're not the creator of the happyTokenPoolDeployed", async () => {
       const account_not_creator = await signers[4].getAddress();
@@ -302,9 +304,5 @@ describe("HappyTokenPoolExpiredProcess", () => {
       happyTokenPoolDeployed = happyTokenPoolDeployed.connect(signer);
       return happyTokenPoolDeployed.check_availability(pool_id);
     }
-  });
-
-  afterEach(async () => {
-    await revertToSnapShot(snapshotId);
   });
 });
