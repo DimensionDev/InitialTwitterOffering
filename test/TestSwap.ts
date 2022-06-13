@@ -308,31 +308,31 @@ describe("HappyTokenPool", () => {
     });
 
     it("Should emit swapSuccess when swap successful", async () => {
-      const swap_user = signers[2];
-      const swap_user_address = await swap_user.getAddress();
+      const swapUser = signers[2];
+      const swapUserAddress = await swapUser.getAddress();
 
       const approve_amount = BigNumber.from("10000000000");
       exchange_amount = approve_amount;
 
-      await testTokenCDeployed.connect(creator).transfer(swap_user_address, exchange_amount);
+      await testTokenCDeployed.connect(creator).transfer(swapUserAddress, exchange_amount);
 
-      await testTokenCDeployed.connect(swap_user).approve(happyTokenPoolDeployed.address, approve_amount);
+      await testTokenCDeployed.connect(swapUser).approve(happyTokenPoolDeployed.address, approve_amount);
       const { id: pool_id } = await getResultFromPoolFill(happyTokenPoolDeployed, creationParams);
 
-      const userTokenCBalanceBeforeSwap = await testTokenCDeployed.balanceOf(swap_user_address);
+      const userTokenCBalanceBeforeSwap = await testTokenCDeployed.balanceOf(swapUserAddress);
       const contractTokenCBalanceBeforeSwap = await testTokenCDeployed.balanceOf(happyTokenPoolDeployed.address);
 
-      const { verification } = await getVerification(PASSWORD, swap_user_address);
+      const { verification } = await getVerification(PASSWORD, swapUserAddress);
 
       await happyTokenPoolDeployed
-        .connect(swap_user)
+        .connect(swapUser)
         .swap(pool_id, verification, tokenC_address_index, exchange_amount, [pool_id]);
       const logs = await ethers.provider.getLogs(happyTokenPoolDeployed.filters.SwapSuccess());
       const parsedLog = itoInterface.parseLog(logs[0]);
       const result = parsedLog.args;
       const ratio = (creationParams.exchange_ratios[5] as number) / (creationParams.exchange_ratios[4] as number); // tokenA <=> tokenC
 
-      const userTokenCBalanceAfterSwap = await testTokenCDeployed.balanceOf(swap_user_address);
+      const userTokenCBalanceAfterSwap = await testTokenCDeployed.balanceOf(swapUserAddress);
       const contractTokenCBalanceAfterSwap = await testTokenCDeployed.balanceOf(happyTokenPoolDeployed.address);
 
       expect(contractTokenCBalanceAfterSwap.toString()).to.be.eq(contractTokenCBalanceBeforeSwap.add(exchange_amount));

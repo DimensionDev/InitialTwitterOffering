@@ -111,12 +111,12 @@ describe("HappyTokenPoolExpiredProcess", () => {
     });
 
     it("Should throw error when you're not the creator of the happyTokenPoolDeployed", async () => {
-      const account_not_creator = await signers[4].getAddress();
+      const accountNotCreator = await signers[4].getAddress();
       const fakeTime = (new Date().getTime() + 1000 * 3600 * 24) / 1000;
       fpp2.end_time = Math.ceil(fakeTime) - base_timestamp;
 
       const { id: pool_id } = await getResultFromPoolFill(happyTokenPoolDeployed, fpp2);
-      await expect(happyTokenPoolDeployed.connect(account_not_creator).destruct(pool_id)).to.be.revertedWith(
+      await expect(happyTokenPoolDeployed.connect(accountNotCreator).destruct(pool_id)).to.be.revertedWith(
         getRevertMsg("Only the pool creator can destruct."),
       );
     });
@@ -129,21 +129,21 @@ describe("HappyTokenPoolExpiredProcess", () => {
     });
 
     it("Should emit DestructSuccess event and withdraw all tokens", async () => {
-      const creator_address = await creator.getAddress();
+      const creatorAddress = await creator.getAddress();
       const fakeTime = (new Date().getTime() + 1000 * 1000) / 1000;
       fpp2.end_time = Math.ceil(fakeTime) - base_timestamp;
       fpp2.exchange_ratios = [1, 75000, 1, 100, 1, 100];
       fpp2.limit = ethers.utils.parseEther("100000");
       fpp2.total_tokens = ethers.utils.parseEther("1000000");
       const { id: pool_id } = await getResultFromPoolFill(happyTokenPoolDeployed, fpp2);
-      let previous_eth_balance = await ethers.provider.getBalance(creator_address);
-      const previous_tokenB_balance = await testTokenBDeployed.balanceOf(creator_address);
-      const previous_tokenC_balance = await testTokenCDeployed.balanceOf(creator_address);
+      let previous_eth_balance = await ethers.provider.getBalance(creatorAddress);
+      const previous_tokenB_balance = await testTokenBDeployed.balanceOf(creatorAddress);
+      const previous_tokenC_balance = await testTokenCDeployed.balanceOf(creatorAddress);
 
       const exchange_ETH_amount = ethers.utils.parseEther("1.3");
 
       const verification_address = await signers[2].getAddress();
-      const { verification, validation } = getVerification(PASSWORD, verification_address);
+      const { verification } = getVerification(PASSWORD, verification_address);
 
       await happyTokenPoolDeployed
         .connect(signers[2])
@@ -187,19 +187,19 @@ describe("HappyTokenPoolExpiredProcess", () => {
 
       expect(remaining_tokens).to.be.eq(result.remaining_balance.toString());
 
-      const eth_balance = await ethers.provider.getBalance(creator_address);
+      const eth_balance = await ethers.provider.getBalance(creatorAddress);
       const r = BigNumber.from(eth_balance.sub(previous_eth_balance).toString());
 
       expect(r.sub(ethers.utils.parseEther("1")).gt(0)).to.be.true;
       expect(r.sub(ethers.utils.parseEther("1.3")).lt(0)).to.be.true;
 
       const transfer_amount = ethers.utils.parseEther("100000000");
-      const tokenB_balance = await testTokenBDeployed.balanceOf(creator_address);
+      const tokenB_balance = await testTokenBDeployed.balanceOf(creatorAddress);
       expect(tokenB_balance.toString()).to.be.eq(
         BigNumber.from(previous_tokenB_balance.toString()).sub(transfer_amount).add(exchange_tokenB_amount),
       );
 
-      const tokenC_balance = await testTokenCDeployed.balanceOf(creator_address);
+      const tokenC_balance = await testTokenCDeployed.balanceOf(creatorAddress);
       expect(tokenC_balance.toString()).to.be.not.eq(
         BigNumber.from(previous_tokenC_balance).sub(transfer_amount).add(exchange_tokenC_amount),
       );

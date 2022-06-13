@@ -38,10 +38,10 @@ describe("qualification", () => {
 
     const unknown_interface_id = "0x87ab3aaa";
     const invalid_interface_id = "0xffffffff";
-    const isok_1 = await qualificationTesterDeployed.supportsInterface(unknown_interface_id);
-    const isok_2 = await qualificationTesterDeployed.supportsInterface(invalid_interface_id);
-    expect(isok_1).to.be.false;
-    expect(isok_2).to.be.false;
+    const isSupportsInterface1 = await qualificationTesterDeployed.supportsInterface(unknown_interface_id);
+    const isSupportsInterface2 = await qualificationTesterDeployed.supportsInterface(invalid_interface_id);
+    expect(isSupportsInterface1).to.be.false;
+    expect(isSupportsInterface2).to.be.false;
   });
 
   describe("logQualified()", () => {
