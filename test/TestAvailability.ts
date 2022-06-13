@@ -27,7 +27,7 @@ describe("HappyTokenPool", () => {
   let signers: Signer[];
   let creator: Signer;
   let ito_user: Signer;
-  let creator_address: string;
+  let creatorAddress: string;
   let user_address: string;
 
   before(async () => {
@@ -35,7 +35,7 @@ describe("HappyTokenPool", () => {
     creator = signers[0];
     ito_user = signers[1];
 
-    creator_address = await creator.getAddress();
+    creatorAddress = await creator.getAddress();
     user_address = await ito_user.getAddress();
 
     const TestTokenA = await ethers.getContractFactory("TestToken");
@@ -181,7 +181,7 @@ describe("HappyTokenPool", () => {
       await happyTokenPoolDeployed
         .connect(ito_user)
         .swap(pool_id, verification, tokenB_address_index, approve_amount, [pool_id]);
-      const availability_current = await getAvailability(happyTokenPoolDeployed, pool_id, creator_address);
+      const availability_current = await getAvailability(happyTokenPoolDeployed, pool_id, creatorAddress);
       const ratio = (creationParams.exchange_ratios[3] as number) / (creationParams.exchange_ratios[2] as number); // tokenA <=> tokenB
       const exchange_tokenA_amount = approve_amount.mul(ratio * 100000).div(100000);
       expect(availability_before.remaining.sub(availability_current.remaining).toString()).to.be.eq(

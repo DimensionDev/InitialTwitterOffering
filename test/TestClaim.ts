@@ -307,9 +307,9 @@ describe("HappyTokenPool", () => {
         const new_unlock_time = now_in_second - base_timestamp;
         {
           // only the "pool owner" can setUnlockTime
-          const account_not_creator = signers[4];
+          const accountNotCreator = signers[4];
           expect(
-            happyTokenPoolDeployed.connect(account_not_creator).setUnlockTime(pool_id, new_unlock_time),
+            happyTokenPoolDeployed.connect(accountNotCreator).setUnlockTime(pool_id, new_unlock_time),
           ).to.be.revertedWith(getRevertMsg("Pool Creator Only"));
         }
         {

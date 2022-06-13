@@ -46,7 +46,7 @@ describe("HappyTokenPool", () => {
   let signers: Signer[];
   let creator: Signer;
   let ito_user: Signer;
-  let creator_address: string;
+  let creatorAddress: string;
   let user_address: string;
 
   before(async () => {
@@ -54,7 +54,7 @@ describe("HappyTokenPool", () => {
     creator = signers[0];
     ito_user = signers[1];
 
-    creator_address = await creator.getAddress();
+    creatorAddress = await creator.getAddress();
     user_address = await ito_user.getAddress();
 
     const TestTokenA = await ethers.getContractFactory("TestToken");
@@ -287,7 +287,7 @@ describe("HappyTokenPool", () => {
       // Transfer most tokens to another account, only "exchange_amount/2" left
       const leftAmount = ethers.BigNumber.from(exchange_amount).div(2);
       const transferAmount = tokenCBalance.sub(leftAmount);
-      await testTokenCDeployed.connect(ito_user).transfer(creator_address, transferAmount);
+      await testTokenCDeployed.connect(ito_user).transfer(creatorAddress, transferAmount);
       tokenCBalance = await testTokenCDeployed.balanceOf(user_address);
       assert.isFalse(tokenCBalance.gt(exchange_amount));
 

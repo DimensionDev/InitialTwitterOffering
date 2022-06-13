@@ -162,12 +162,12 @@ describe("HappyTokenPool", () => {
     // });
 
     it("Should emit fillSuccess event correctly when a happyTokenPoolDeployed is filled", async () => {
-      const creator_address = await creator.getAddress();
+      const creatorAddress = await creator.getAddress();
       const user_address = await ito_user.getAddress();
 
       expect(creationParams.token_address).that.to.be.eq(testTokenADeployed.address);
 
-      const creatorBalanceBefore = await testTokenADeployed.balanceOf(creator_address);
+      const creatorBalanceBefore = await testTokenADeployed.balanceOf(creatorAddress);
       const contractBalanceBefore = await testTokenADeployed.balanceOf(happyTokenPoolDeployed.address);
 
       await testTokenADeployed.approve(happyTokenPoolDeployed.address, creationParams.total_tokens);
@@ -186,7 +186,7 @@ describe("HappyTokenPool", () => {
       }
 
       // filter with *indexed creator*, should work as expected
-      const logs = await ethers.provider.getLogs(happyTokenPoolDeployed.filters.FillSuccess(creator_address));
+      const logs = await ethers.provider.getLogs(happyTokenPoolDeployed.filters.FillSuccess(creatorAddress));
       const parsedLog = itoInterface.parseLog(logs[0]);
       const result = parsedLog.args;
       expect(result.total.toString()).that.to.be.eq(creationParams.total_tokens);
@@ -196,7 +196,7 @@ describe("HappyTokenPool", () => {
       expect(result).to.have.property("token_address").that.to.be.eq(testTokenADeployed.address);
       expect(result.message).to.be.eq("Hello From the Outside Hello From the Outside");
       // TODO: add a new class(balanceChecker???) to get rid of duplicated code
-      const creatorBalanceAfter = await testTokenADeployed.balanceOf(creator_address);
+      const creatorBalanceAfter = await testTokenADeployed.balanceOf(creatorAddress);
       const contractBalanceAfter = await testTokenADeployed.balanceOf(happyTokenPoolDeployed.address);
       expect(creatorBalanceAfter).to.be.eq(creatorBalanceBefore.sub(creationParams.total_tokens));
       expect(contractBalanceAfter).to.be.eq(contractBalanceBefore.add(creationParams.total_tokens));
