@@ -9,6 +9,7 @@ coverage.json
 cache
 artifacts
 project.secret.js
+!project.secret.sample.js
 .env
 .openzeppelin/
 deployments/

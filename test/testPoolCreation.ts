@@ -142,9 +142,7 @@ describe("HappyTokenPool", () => {
 
       await testTokenADeployed.approve(happyTokenPoolDeployed.address, tokens_approved);
 
-      await expect(happyTokenPoolDeployed.fill_pool.apply(null, Object.values(invalidParams))).to.be.revertedWith(
-        getRevertMsg("ERC20: transfer amount exceeds allowance"),
-      );
+      await expect(happyTokenPoolDeployed.fill_pool.apply(null, Object.values(invalidParams))).to.be.reverted;
     });
 
     // TODO: check

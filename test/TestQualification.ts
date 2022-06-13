@@ -45,6 +45,15 @@ describe("qualification", () => {
   });
 
   describe("logQualified()", () => {
+    // reset block_timestamp
+    afterEach(async () => {
+      const blockNumber = ethers.provider.getBlockNumber();
+      const block = await ethers.provider.getBlock(blockNumber);
+      const currentTimestamp = Math.floor(new Date().getTime() / 1000);
+      const currentDiff = currentTimestamp - block.timestamp;
+      await advanceTimeAndBlock(currentDiff);
+    });
+
     it("should always return false once swap before start_time", async () => {
       const fakeMerkleProof = "0x1234567833dc44ce38f1024d3ea7d861f13ac29112db0e5b9814c54b12345678";
       const addr10 = await signers[10].getAddress();
@@ -57,8 +66,8 @@ describe("qualification", () => {
       await qualificationTesterDeployed2.connect(signers[11]).logQualified(addr11, [fakeMerkleProof]);
       result = await getLogResult();
 
-      //TODO
       if (!result) {
+        console.log("result is null");
         return;
       }
 

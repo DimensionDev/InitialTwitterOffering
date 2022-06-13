@@ -55,7 +55,6 @@ describe("HappyTokenPoolExpiredProcess", () => {
     const testTokenB = await TestTokenB.deploy(amount, "TestTokenB", "TESTB");
     const testTokenC = await TestTokenC.deploy(amount, "TestTokenC", "TESTC");
     const qualificationTester = await QualificationTester.deploy(0);
-    const qualificationTester2 = await QualificationTester.deploy(pending_qualification_timestamp);
 
     testTokenADeployed = (await testTokenA.deployed()) as TestToken;
     testTokenBDeployed = (await testTokenB.deployed()) as TestToken;
@@ -99,12 +98,14 @@ describe("HappyTokenPoolExpiredProcess", () => {
     });
 
     afterEach(async () => {
+      // reset advanced Time
+      const blockNumber = ethers.provider.getBlockNumber();
+      const block = await ethers.provider.getBlock(blockNumber);
+      const currentTimestamp = Math.floor(new Date().getTime() / 1000);
+      const currentDiff = currentTimestamp - block.timestamp;
+      await advanceTimeAndBlock(currentDiff);
       await revertToSnapShot(snapshotId);
     });
-
-    // before(async () => {
-    //   await testTokenADeployed.approve(happyTokenPoolDeployed.address, ethers.utils.parseEther("1000000000"));
-    // });
 
     it("Should throw error when you're not the creator of the happyTokenPoolDeployed", async () => {
       const account_not_creator = await signers[4].getAddress();

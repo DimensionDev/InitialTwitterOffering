@@ -202,7 +202,7 @@ describe("HappyTokenPool", () => {
         happyTokenPoolDeployed
           .connect(ito_user)
           .swap(pool_id, verification, tokenC_address_index, exchange_amount, [pool_id]),
-      ).to.be.revertedWith(getRevertMsg("ERC20: transfer amount exceeds allowance"));
+      ).to.be.reverted;
     });
 
     it("Should better not draw water with a sieve", async () => {
