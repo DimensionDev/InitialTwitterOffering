@@ -1,9 +1,8 @@
 import { ethers, upgrades } from "hardhat";
 import { BytesLike, Signer, BigNumber } from "ethers";
-import { takeSnapshot, revertToSnapShot, getRevertMsg, advanceTimeAndBlock } from "./helper";
+import { takeSnapshot, revertToSnapShot, getRevertMsg, advanceTimeAndBlock, getVerification } from "./helper";
 import { assert, use } from "chai";
 import chaiAsPromised from "chai-as-promised";
-import { soliditySha3, hexToNumber, sha3 } from "web3-utils";
 
 const { expect } = use(chaiAsPromised);
 
@@ -15,7 +14,6 @@ import {
   ETH_address_index,
   tokenB_address_index,
   tokenC_address_index,
-  pending_qualification_timestamp,
   HappyPoolParamType,
 } from "./constants";
 
@@ -280,17 +278,6 @@ describe("HappyTokenPoolExpiredProcess", () => {
       await happyTokenPoolDeployed
         .connect(swapper_acc)
         .swap(pool_id, verification as BytesLike, token_address_index, exchange_amount, [pool_id]);
-    }
-
-    function getVerification(password, account) {
-      const hash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(password));
-      const hash_bytes = Uint8Array.from(Buffer.from(hash.slice(2), "hex"));
-      const hash1 = hash_bytes.slice(0, 5);
-      const hash2 = "0x" + Buffer.from(hash1).toString("hex");
-      return {
-        verification: soliditySha3(hexToNumber(hash2), account),
-        validation: sha3(account),
-      };
     }
 
     async function getResultFromPoolFill(happyTokenPoolDeployed, fpp) {

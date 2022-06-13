@@ -1,6 +1,6 @@
 import { ethers, upgrades } from "hardhat";
 import { BytesLike, Signer, BigNumber } from "ethers";
-import { takeSnapshot, revertToSnapShot, advanceTimeAndBlock } from "./helper";
+import { takeSnapshot, revertToSnapShot, advanceTimeAndBlock, getVerification } from "./helper";
 import { assert, use, util } from "chai";
 import chaiAsPromised from "chai-as-promised";
 import { soliditySha3, hexToNumber, sha3 } from "web3-utils";
@@ -495,17 +495,6 @@ describe("smart contract upgrade", async () => {
       }
     }
   });
-
-  function getVerification(password, account) {
-    const hash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(password));
-    const hash_bytes = Uint8Array.from(Buffer.from(hash.slice(2), "hex"));
-    const hash1 = hash_bytes.slice(0, 5);
-    const hash2 = "0x" + Buffer.from(hash1).toString("hex");
-    return {
-      verification: soliditySha3(hexToNumber(hash2), account),
-      validation: sha3(account),
-    };
-  }
 
   async function getProxyAdmin(deployedProxyAddr) {
     const adminStoragePosition = "0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103";

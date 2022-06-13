@@ -1,6 +1,6 @@
 import { ethers, upgrades } from "hardhat";
 import { Signer, BigNumber } from "ethers";
-import { takeSnapshot, revertToSnapShot, getRevertMsg } from "./helper";
+import { takeSnapshot, revertToSnapShot, getRevertMsg, getVerification } from "./helper";
 const { soliditySha3, hexToNumber, sha3 } = require("web3-utils");
 
 import { use } from "chai";
@@ -459,17 +459,6 @@ describe("HappyTokenPool", () => {
         .and.to.not.be.eq(BigNumber.from(exchange_ETH_amount).mul(ratio));
     });
   });
-
-  function getVerification(password, account) {
-    let hash: string | Uint8Array = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(password));
-    let hash_bytes = Uint8Array.from(Buffer.from(hash.slice(2), "hex"));
-    hash = hash_bytes.slice(0, 5);
-    hash = "0x" + Buffer.from(hash).toString("hex");
-    return {
-      verification: soliditySha3(hexToNumber(hash), account),
-      validation: sha3(account),
-    };
-  }
 
   async function getResultFromPoolFill(happyTokenPoolDeployed, creationParams) {
     await happyTokenPoolDeployed.fill_pool(...Object.values(creationParams));
