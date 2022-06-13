@@ -96,13 +96,13 @@ describe("HappyTokenPoolExpiredProcess", () => {
     });
 
     afterEach(async () => {
+      await revertToSnapShot(snapshotId);
       // reset advanced Time
       const blockNumber = ethers.provider.getBlockNumber();
       const block = await ethers.provider.getBlock(blockNumber);
       const currentTimestamp = Math.floor(new Date().getTime() / 1000);
       const currentDiff = currentTimestamp - block.timestamp;
       await advanceTimeAndBlock(currentDiff);
-      await revertToSnapShot(snapshotId);
     });
 
     it("Should throw error when you're not the creator of the happyTokenPoolDeployed", async () => {

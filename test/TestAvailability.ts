@@ -1,5 +1,5 @@
 import { ethers, upgrades } from "hardhat";
-import { Signer, BigNumber } from "ethers";
+import { Signer, BigNumber, BytesLike } from "ethers";
 import { takeSnapshot, revertToSnapShot, getRevertMsg, getVerification } from "./helper";
 const { soliditySha3, hexToNumber, sha3 } = require("web3-utils");
 
@@ -194,7 +194,7 @@ describe("HappyTokenPool", () => {
       const { verification, validation } = getVerification(PASSWORD, user_address);
       await happyTokenPoolDeployed
         .connect(ito_user)
-        .swap(pool_id, verification, tokenB_address_index, approve_amount, [pool_id]);
+        .swap(pool_id, verification as BytesLike, tokenB_address_index, approve_amount, [pool_id]);
       const availability_current = await getAvailability(happyTokenPoolDeployed, pool_id, creator_address);
       const ratio = (creationParams.exchange_ratios[3] as number) / (creationParams.exchange_ratios[2] as number); // tokenA <=> tokenB
       const exchange_tokenA_amount = approve_amount.mul(ratio * 100000).div(100000);
@@ -233,7 +233,7 @@ describe("HappyTokenPool", () => {
       const { verification, validation } = getVerification(PASSWORD, user_address);
       await happyTokenPoolDeployed
         .connect(signer)
-        .swap(pool_id, verification, tokenB_address_index, approve_amount, [pool_id]);
+        .swap(pool_id, verification as BytesLike, tokenB_address_index, approve_amount, [pool_id]);
       const result_now = await getAvailability(happyTokenPoolDeployed, pool_id, user_address);
       const tokenB_balance = await testTokenBDeployed.balanceOf(user_address);
       const tokenA_balance = await testTokenADeployed.balanceOf(user_address);

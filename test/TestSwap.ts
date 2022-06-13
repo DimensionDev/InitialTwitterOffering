@@ -1,5 +1,5 @@
 import { ethers, upgrades } from "hardhat";
-import { Signer, BigNumber } from "ethers";
+import { Signer, BigNumber, BytesLike } from "ethers";
 import { takeSnapshot, revertToSnapShot, getRevertMsg, getVerification } from "./helper";
 const { soliditySha3, hexToNumber, sha3 } = require("web3-utils");
 
@@ -128,7 +128,9 @@ describe("HappyTokenPool", () => {
     it("Should throw error when happyTokenPoolDeployed id does not exist", async () => {
       const pool_id = ethers.utils.formatBytes32String("id not exist");
       await expect(
-        happyTokenPoolDeployed.swap(pool_id, verification, tokenC_address_index, exchange_amount, [pool_id]),
+        happyTokenPoolDeployed.swap(pool_id, verification as BytesLike, tokenC_address_index, exchange_amount, [
+          pool_id,
+        ]),
       ).to.be.revertedWith("Transaction reverted: function call to a non-contract account");
     });
 
@@ -141,7 +143,9 @@ describe("HappyTokenPool", () => {
       await testTokenCDeployed.connect(creator).approve(happyTokenPoolDeployed.address, approve_amount);
       const { id: pool_id } = await getResultFromPoolFill(happyTokenPoolDeployed, creationParams);
       await expect(
-        happyTokenPoolDeployed.swap(pool_id, verification, tokenC_address_index, exchange_amount, [pool_id]),
+        happyTokenPoolDeployed.swap(pool_id, verification as BytesLike, tokenC_address_index, exchange_amount, [
+          pool_id,
+        ]),
       ).to.be.revertedWith("reverted with reason string 'Not started.'");
     });
 
@@ -155,7 +159,7 @@ describe("HappyTokenPool", () => {
       await expect(
         happyTokenPoolDeployed
           .connect(badGuy)
-          .swap(pool_id, verification, tokenC_address_index, exchange_amount, [pool_id]),
+          .swap(pool_id, verification as BytesLike, tokenC_address_index, exchange_amount, [pool_id]),
       ).to.be.reverted;
 
       async function prepare(signer) {
@@ -179,7 +183,7 @@ describe("HappyTokenPool", () => {
       await expect(
         happyTokenPoolDeployed
           .connect(ito_user)
-          .swap(pool_id, verification, tokenC_address_index, exchange_amount, [pool_id]),
+          .swap(pool_id, verification as BytesLike, tokenC_address_index, exchange_amount, [pool_id]),
       ).to.be.revertedWith(getRevertMsg("Expired."));
     });
 
@@ -201,7 +205,7 @@ describe("HappyTokenPool", () => {
       await expect(
         happyTokenPoolDeployed
           .connect(ito_user)
-          .swap(pool_id, verification, tokenC_address_index, exchange_amount, [pool_id]),
+          .swap(pool_id, verification as BytesLike, tokenC_address_index, exchange_amount, [pool_id]),
       ).to.be.reverted;
     });
 
@@ -320,7 +324,7 @@ describe("HappyTokenPool", () => {
 
       await happyTokenPoolDeployed
         .connect(swap_user)
-        .swap(pool_id, verification, tokenC_address_index, exchange_amount, [pool_id]);
+        .swap(pool_id, verification as BytesLike, tokenC_address_index, exchange_amount, [pool_id]);
       const logs = await ethers.provider.getLogs(happyTokenPoolDeployed.filters.SwapSuccess());
       const parsedLog = itoInterface.parseLog(logs[0]);
       const result = parsedLog.args;
@@ -370,9 +374,11 @@ describe("HappyTokenPool", () => {
 
       var vr = getVerification(PASSWORD, await signers[4].getAddress());
 
-      await happyTokenPoolDeployed.connect(signers[4]).swap(pool_id, vr.verification, 0, exchange_amount, [pool_id], {
-        value: approve_amount,
-      });
+      await happyTokenPoolDeployed
+        .connect(signers[4])
+        .swap(pool_id, vr.verification as BytesLike, 0, exchange_amount, [pool_id], {
+          value: approve_amount,
+        });
       {
         const logs = await ethers.provider.getLogs(happyTokenPoolDeployed.filters.SwapSuccess());
         const parsedLog = itoInterface.parseLog(logs[0]);
@@ -389,7 +395,9 @@ describe("HappyTokenPool", () => {
       await testTokenBDeployed.connect(signers[3]).approve(happyTokenPoolDeployed.address, approve_amount2);
 
       var vr = getVerification(PASSWORD, await signers[3].getAddress());
-      await happyTokenPoolDeployed.connect(signers[3]).swap(pool_id, vr.verification, 1, exchange_amount2, [pool_id]);
+      await happyTokenPoolDeployed
+        .connect(signers[3])
+        .swap(pool_id, vr.verification as BytesLike, 1, exchange_amount2, [pool_id]);
       {
         const logs = await ethers.provider.getLogs(happyTokenPoolDeployed.filters.SwapSuccess());
         const parsedLog = itoInterface.parseLog(logs[0]);
@@ -432,7 +440,7 @@ describe("HappyTokenPool", () => {
       const v1 = getVerification(PASSWORD, swapperFirstETH);
       await happyTokenPoolDeployed
         .connect(ito_user)
-        .swap(pool_id, v1.verification, ETH_address_index, exchange_ETH_amount, [pool_id], {
+        .swap(pool_id, v1.verification as BytesLike, ETH_address_index, exchange_ETH_amount, [pool_id], {
           value: exchange_ETH_amount,
         });
 
@@ -442,7 +450,7 @@ describe("HappyTokenPool", () => {
       exchange_ETH_amount = BigNumber.from("1000000000000"); //1 * 10**12
       await happyTokenPoolDeployed
         .connect(signers[3])
-        .swap(pool_id, v2.verification, ETH_address_index, exchange_ETH_amount, [pool_id], {
+        .swap(pool_id, v2.verification as BytesLike, ETH_address_index, exchange_ETH_amount, [pool_id], {
           value: exchange_ETH_amount,
         });
       const logs = await ethers.provider.getLogs(happyTokenPoolDeployed.filters.SwapSuccess());
