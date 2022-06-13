@@ -19,7 +19,6 @@ import { base_timestamp, eth_address, PASSWORD, amount, tokenC_address_index } f
 import type { TestToken, HappyTokenPool_v1_0, QLF } from "../types";
 
 import itoJsonABI from "../artifacts/contracts/ito.sol/HappyTokenPool.json";
-
 import itoJsonABI_V1_0 from "../artifacts/contracts/ito_v1.0.sol/HappyTokenPool_v1_0.json";
 const itoInterface_V1_0 = new ethers.utils.Interface(itoJsonABI_V1_0.abi);
 
@@ -35,7 +34,7 @@ let qualificationTesterDeployed;
 let signers;
 let creator;
 let pool_user;
-let fpp;
+let createParams;
 
 let verification;
 let happyTokenPoolDeployed_v1_0;
@@ -69,7 +68,7 @@ describe("smart contract upgrade", async () => {
 
   beforeEach(async () => {
     snapshotId = await takeSnapshot();
-    fpp = {
+    createParams = {
       hash: ethers.utils.keccak256(ethers.utils.toUtf8Bytes(PASSWORD)),
       start_time: 0,
       end_time: 10368000, // duration 120 days
@@ -84,9 +83,9 @@ describe("smart contract upgrade", async () => {
     };
     const nowTimeStamp = Math.floor(new Date().getTime() / 1000);
     // 120 days
-    fpp.end_time = nowTimeStamp + 10368000 - base_timestamp;
+    createParams.end_time = nowTimeStamp + 10368000 - base_timestamp;
     // 150 days
-    fpp.lock_time = nowTimeStamp + 12960000 - base_timestamp;
+    createParams.lock_time = nowTimeStamp + 12960000 - base_timestamp;
 
     const HappyTokenPool_v1_0 = await ethers.getContractFactory("HappyTokenPool_v1_0");
     const HappyTokenPoolProxy_v1_0 = await upgrades.deployProxy(HappyTokenPool_v1_0, [base_timestamp], {
@@ -129,12 +128,12 @@ describe("smart contract upgrade", async () => {
     const approve_amount = ethers.utils.parseEther("0.000000001");
     exchange_amount = approve_amount;
 
-    const { id: pool_id } = await getResultFromPoolFill(happyTokenPoolDeployed_v1_0, fpp);
+    const { id: pool_id } = await getResultFromPoolFill(happyTokenPoolDeployed_v1_0, createParams);
 
     const userTokenABalanceBeforeSwap = await testTokenADeployed.balanceOf(pool_user.address);
 
     const contractTokenABalanceBeforeSwap = await testTokenADeployed.balanceOf(happyTokenPoolDeployed_v1_0.address);
-    const ratio = fpp.exchange_ratios[5] / fpp.exchange_ratios[4]; // tokenA <=> tokenC
+    const ratio = createParams.exchange_ratios[5] / createParams.exchange_ratios[4]; // tokenA <=> tokenC
     const exchanged_tokenA_amount = exchange_amount * ratio;
     {
       await testTokenCDeployed.connect(pool_user).approve(happyTokenPoolDeployed_v1_0.address, approve_amount);
@@ -174,7 +173,7 @@ describe("smart contract upgrade", async () => {
         );
       }
       //-------------------------------------------------------------------------------------------------------------
-      await advanceTimeAndBlock(fpp.lock_time);
+      await advanceTimeAndBlock(createParams.lock_time);
       await happyTokenPoolDeployed_v1_0.connect(pool_user).claim([pool_id]);
       {
         const availability = await getAvailability(happyTokenPoolDeployed_v1_0, pool_id, pool_user.address);
@@ -227,11 +226,11 @@ describe("smart contract upgrade", async () => {
   it("Should ITO v1.0 be compatible with latest, upgrade before claim", async () => {
     const approve_amount = BigNumber.from("10000000000");
     exchange_amount = approve_amount;
-    const { id: pool_id } = await getResultFromPoolFill(happyTokenPoolDeployed_v1_0, fpp);
+    const { id: pool_id } = await getResultFromPoolFill(happyTokenPoolDeployed_v1_0, createParams);
 
     const userTokenABalanceBeforeSwap = await testTokenADeployed.balanceOf(pool_user.address);
     const contractTokenABalanceBeforeSwap = await testTokenADeployed.balanceOf(happyTokenPoolDeployed_v1_0.address);
-    const ratio = fpp.exchange_ratios[5] / fpp.exchange_ratios[4]; // tokenA <=> tokenC
+    const ratio = createParams.exchange_ratios[5] / createParams.exchange_ratios[4]; // tokenA <=> tokenC
     const exchanged_tokenA_amount = exchange_amount * ratio;
     {
       await testTokenCDeployed.connect(pool_user).approve(happyTokenPoolDeployed_v1_0.address, approve_amount);
@@ -287,7 +286,7 @@ describe("smart contract upgrade", async () => {
     const deployedUpgraded = new ethers.Contract(happyTokenPoolDeployed_v1_0.address, itoJsonABI.abi, creator);
     //-------------------------------------------------------------------------------------------------------------
     {
-      await advanceTimeAndBlock(fpp.lock_time);
+      await advanceTimeAndBlock(createParams.lock_time);
       await deployedUpgraded.connect(pool_user).claim([pool_id]);
       {
         const availability = await getAvailability(deployedUpgraded, pool_id, pool_user.address);
@@ -329,13 +328,13 @@ describe("smart contract upgrade", async () => {
   });
 
   it("Should ITO v1.0 be compatible with latest, unlocktime == 0, upgrade after swap", async () => {
-    fpp.lock_time = 0;
+    createParams.lock_time = 0;
     const approve_amount = BigNumber.from("100000000000");
     exchange_amount = approve_amount;
-    const { id: pool_id } = await getResultFromPoolFill(happyTokenPoolDeployed_v1_0, fpp);
+    const { id: pool_id } = await getResultFromPoolFill(happyTokenPoolDeployed_v1_0, createParams);
     const userTokenABalanceBeforeSwap = await testTokenADeployed.balanceOf(pool_user.address);
     const contractTokenABalanceBeforeSwap = await testTokenADeployed.balanceOf(happyTokenPoolDeployed_v1_0.address);
-    const ratio = fpp.exchange_ratios[5] / fpp.exchange_ratios[4]; // tokenA <=> tokenC
+    const ratio = createParams.exchange_ratios[5] / createParams.exchange_ratios[4]; // tokenA <=> tokenC
     const exchanged_tokenA_amount = exchange_amount * ratio;
     await testTokenCDeployed.connect(pool_user).approve(happyTokenPoolDeployed_v1_0.address, approve_amount);
     {
@@ -408,13 +407,13 @@ describe("smart contract upgrade", async () => {
   });
 
   it("Should ITO v1.0 be compatible with latest, unlocktime == 0, upgrade before swap", async () => {
-    fpp.lock_time = 0;
+    createParams.lock_time = 0;
     const approve_amount = BigNumber.from("10000000000");
     exchange_amount = approve_amount;
-    const { id: pool_id } = await getResultFromPoolFill(happyTokenPoolDeployed_v1_0, fpp);
+    const { id: pool_id } = await getResultFromPoolFill(happyTokenPoolDeployed_v1_0, createParams);
     const userTokenABalanceBeforeSwap = await testTokenADeployed.balanceOf(pool_user.address);
     const contractTokenABalanceBeforeSwap = await testTokenADeployed.balanceOf(happyTokenPoolDeployed_v1_0.address);
-    const ratio = fpp.exchange_ratios[5] / fpp.exchange_ratios[4]; // tokenA <=> tokenC
+    const ratio = createParams.exchange_ratios[5] / createParams.exchange_ratios[4]; // tokenA <=> tokenC
     const exchanged_tokenA_amount = exchange_amount * ratio;
     await testTokenCDeployed.connect(pool_user).approve(happyTokenPoolDeployed_v1_0.address, approve_amount);
     //-------------------------------------------------------------------------------------------------------------
