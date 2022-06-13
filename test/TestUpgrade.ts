@@ -1,36 +1,36 @@
 import { ethers, upgrades } from "hardhat";
-import { BytesLike, Signer, BigNumber } from "ethers";
-import { takeSnapshot, revertToSnapShot, advanceTimeAndBlock, getVerification } from "./helper";
-import { assert, use, util } from "chai";
+import { BigNumber } from "ethers";
+import {
+  takeSnapshot,
+  revertToSnapShot,
+  advanceTimeAndBlock,
+  getVerification,
+  getResultFromPoolFill,
+  getAvailability,
+} from "./helper";
+import { assert, use } from "chai";
 import chaiAsPromised from "chai-as-promised";
-import { soliditySha3, hexToNumber, sha3 } from "web3-utils";
 
 const { expect } = use(chaiAsPromised);
 
 import { base_timestamp, eth_address, PASSWORD, amount, tokenC_address_index } from "./constants";
 
 //types
-import type { TestToken, HappyTokenPool, HappyTokenPool_v1_0, QLF } from "../types";
+import type { TestToken, HappyTokenPool_v1_0, QLF } from "../types";
 
-const itoJsonABI = require("../artifacts/contracts/ito.sol/HappyTokenPool.json");
-const itoInterface = new ethers.utils.Interface(itoJsonABI.abi);
+import itoJsonABI from "../artifacts/contracts/ito.sol/HappyTokenPool.json";
 
-const itoJsonABI_V1_0 = require("../artifacts/contracts/ito_v1.0.sol/HappyTokenPool_v1_0.json");
+import itoJsonABI_V1_0 from "../artifacts/contracts/ito_v1.0.sol/HappyTokenPool_v1_0.json";
 const itoInterface_V1_0 = new ethers.utils.Interface(itoJsonABI_V1_0.abi);
 
-const proxyAdminABI = require("@openzeppelin/upgrades-core/artifacts/ProxyAdmin.json");
-
-const qualificationJsonABI = require("../artifacts/contracts/qualification.sol/QLF.json");
+import proxyAdminABI from "@openzeppelin/upgrades-core/artifacts/ProxyAdmin.json";
 
 let snapshotId;
 let testTokenADeployed;
 let testTokenBDeployed;
 let testTokenCDeployed;
 
-let HappyTokenPoolFactory;
-let happyTokenPoolDeployed;
 let qualificationTesterDeployed;
-let HappyTokenPoolProxy;
 
 let signers;
 let creator;
@@ -65,16 +65,6 @@ describe("smart contract upgrade", async () => {
     const transfer_amount = ethers.utils.parseEther("100000000");
     await testTokenBDeployed.connect(creator).transfer(pool_user.address, transfer_amount);
     await testTokenCDeployed.connect(creator).transfer(pool_user.address, transfer_amount);
-
-    const HappyTokenPoolFactory = await ethers.getContractFactory("HappyTokenPool");
-    const HappyTokenPoolProxy = await upgrades.deployProxy(HappyTokenPoolFactory, [base_timestamp], {
-      unsafeAllow: ["delegatecall"],
-    });
-    happyTokenPoolDeployed = new ethers.Contract(
-      HappyTokenPoolProxy.address,
-      itoJsonABI.abi,
-      creator,
-    ) as HappyTokenPool;
   });
 
   beforeEach(async () => {
@@ -504,18 +494,5 @@ describe("smart contract upgrade", async () => {
     const adminAddr = "0x" + storage.substring(addrStoragePrefix.length);
     const proxyAdmin = new ethers.Contract(adminAddr, proxyAdminABI.abi, creator);
     return proxyAdmin;
-  }
-
-  async function getAvailability(happyTokenPoolDeployed, pool_id, account) {
-    const signer = await ethers.getSigner(account);
-    happyTokenPoolDeployed = happyTokenPoolDeployed.connect(signer);
-    return happyTokenPoolDeployed.check_availability(pool_id);
-  }
-
-  async function getResultFromPoolFill(happyTokenPoolDeployed, fpp) {
-    await happyTokenPoolDeployed.fill_pool(...Object.values(fpp));
-    const logs = await ethers.provider.getLogs(happyTokenPoolDeployed.filters.FillSuccess());
-    const result = itoInterface.parseLog(logs[0]);
-    return result.args;
   }
 });

@@ -7,7 +7,7 @@ import chaiAsPromised from "chai-as-promised";
 import { erc165_interface_id, qualification_interface_id, pending_qualification_timestamp } from "./constants";
 
 const { expect } = use(chaiAsPromised);
-const qualificationJsonABI = require("../artifacts/contracts/qualification.sol/QLF.json");
+import qualificationJsonABI from "../artifacts/contracts/qualification.sol/QLF.json";
 const qualificationInterface = new ethers.utils.Interface(qualificationJsonABI.abi);
 
 //types

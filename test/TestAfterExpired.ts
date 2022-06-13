@@ -1,6 +1,14 @@
 import { ethers, upgrades } from "hardhat";
 import { BytesLike, Signer, BigNumber } from "ethers";
-import { takeSnapshot, revertToSnapShot, getRevertMsg, advanceTimeAndBlock, getVerification } from "./helper";
+import {
+  takeSnapshot,
+  revertToSnapShot,
+  getRevertMsg,
+  advanceTimeAndBlock,
+  getVerification,
+  getResultFromPoolFill,
+  getAvailability,
+} from "./helper";
 import { assert, use } from "chai";
 import chaiAsPromised from "chai-as-promised";
 
@@ -17,7 +25,7 @@ import {
   HappyPoolParamType,
 } from "./constants";
 
-const itoJsonABI = require("../artifacts/contracts/ito.sol/HappyTokenPool.json");
+import itoJsonABI from "../artifacts/contracts/ito.sol/HappyTokenPool.json";
 const itoInterface = new ethers.utils.Interface(itoJsonABI.abi);
 
 //types
@@ -29,20 +37,17 @@ describe("HappyTokenPoolExpiredProcess", () => {
   let testTokenADeployed: TestToken;
   let testTokenBDeployed: TestToken;
   let testTokenCDeployed: TestToken;
-  let HappyTokenPool: HappyTokenPool;
 
   let happyTokenPoolDeployed: HappyTokenPool;
   let qualificationTesterDeployed: QLF;
 
   let signers: Signer[];
   let creator: Signer;
-  let ito_user: Signer;
 
   before(async () => {
     signers = await ethers.getSigners();
 
     creator = signers[0];
-    ito_user = signers[1];
 
     const TestTokenA = await ethers.getContractFactory("TestToken");
     const TestTokenB = await ethers.getContractFactory("TestToken");
@@ -142,7 +147,7 @@ describe("HappyTokenPoolExpiredProcess", () => {
 
       await happyTokenPoolDeployed
         .connect(signers[2])
-        .swap(pool_id, verification as BytesLike, ETH_address_index, exchange_ETH_amount, [pool_id], {
+        .swap(pool_id, verification, ETH_address_index, exchange_ETH_amount, [pool_id], {
           value: exchange_ETH_amount,
         });
 
@@ -277,20 +282,7 @@ describe("HappyTokenPoolExpiredProcess", () => {
       await test_token.connect(swapper_acc).approve(happyTokenPoolDeployed.address, approve_amount);
       await happyTokenPoolDeployed
         .connect(swapper_acc)
-        .swap(pool_id, verification as BytesLike, token_address_index, exchange_amount, [pool_id]);
-    }
-
-    async function getResultFromPoolFill(happyTokenPoolDeployed, fpp) {
-      await happyTokenPoolDeployed.fill_pool(...Object.values(fpp));
-      const logs = await ethers.provider.getLogs(happyTokenPoolDeployed.filters.FillSuccess());
-      const result = itoInterface.parseLog(logs[0]);
-      return result.args;
-    }
-
-    async function getAvailability(happyTokenPoolDeployed, pool_id, account) {
-      const signer = await ethers.getSigner(account);
-      happyTokenPoolDeployed = happyTokenPoolDeployed.connect(signer);
-      return happyTokenPoolDeployed.check_availability(pool_id);
+        .swap(pool_id, verification, token_address_index, exchange_amount, [pool_id]);
     }
   });
 });

@@ -1,6 +1,9 @@
 import { network, ethers } from "hardhat";
-import { providers } from "ethers";
+import { providers, BytesLike } from "ethers";
+
 import { soliditySha3, hexToNumber, sha3 } from "web3-utils";
+import itoJsonABI from "../artifacts/contracts/ito.sol/HappyTokenPool.json";
+const itoInterface = new ethers.utils.Interface(itoJsonABI.abi);
 
 /**
  * @param {number} time second
@@ -43,7 +46,20 @@ export function getVerification(password, account) {
   hash = hash_bytes.slice(0, 5);
   hash = "0x" + Buffer.from(hash).toString("hex");
   return {
-    verification: soliditySha3(hexToNumber(hash), account),
+    verification: soliditySha3(hexToNumber(hash), account) as BytesLike,
     validation: sha3(account),
   };
+}
+
+export async function getResultFromPoolFill(happyTokenPoolDeployed, fpp) {
+  await happyTokenPoolDeployed.fill_pool(...Object.values(fpp));
+  const logs = await ethers.provider.getLogs(happyTokenPoolDeployed.filters.FillSuccess());
+  const result = itoInterface.parseLog(logs[0]);
+  return result.args;
+}
+
+export async function getAvailability(happyTokenPoolDeployed, pool_id, account) {
+  const signer = await ethers.getSigner(account);
+  happyTokenPoolDeployed = happyTokenPoolDeployed.connect(signer);
+  return happyTokenPoolDeployed.check_availability(pool_id);
 }

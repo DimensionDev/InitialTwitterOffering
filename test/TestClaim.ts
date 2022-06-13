@@ -1,7 +1,14 @@
 import { ethers, upgrades } from "hardhat";
 import { Signer, BigNumber, FixedNumber } from "ethers";
-import { takeSnapshot, revertToSnapShot, getRevertMsg, advanceTimeAndBlock, getVerification } from "./helper";
-const { soliditySha3, hexToNumber, sha3 } = require("web3-utils");
+import {
+  takeSnapshot,
+  revertToSnapShot,
+  getRevertMsg,
+  advanceTimeAndBlock,
+  getVerification,
+  getResultFromPoolFill,
+  getAvailability,
+} from "./helper";
 
 import { use } from "chai";
 import chaiAsPromised from "chai-as-promised";
@@ -12,10 +19,8 @@ import {
   eth_address,
   PASSWORD,
   amount,
-  ETH_address_index,
   tokenB_address_index,
   tokenC_address_index,
-  pending_qualification_timestamp,
 } from "./constants";
 
 const { expect, assert } = use(chaiAsPromised);
@@ -35,24 +40,17 @@ describe("HappyTokenPool", () => {
 
   let happyTokenPoolDeployed: HappyTokenPool;
   let qualificationTesterDeployed: QLF;
-  let qualificationTesterDeployed2: QLF;
 
   let signers: Signer[];
   let creator: Signer;
-  let ito_user: Signer;
   let pool_user: Signer;
-  let creator_address: string;
-  let user_address: string;
   let pool_user_address: string;
 
   before(async () => {
     signers = await ethers.getSigners();
     creator = signers[0];
-    ito_user = signers[1];
     pool_user = signers[2];
 
-    creator_address = await creator.getAddress();
-    user_address = await ito_user.getAddress();
     pool_user_address = await pool_user.getAddress();
 
     const TestTokenA = await ethers.getContractFactory("TestToken");
@@ -64,13 +62,11 @@ describe("HappyTokenPool", () => {
     const testTokenB = await TestTokenB.deploy(amount, "TestTokenB", "TESTB");
     const testTokenC = await TestTokenC.deploy(amount, "TestTokenC", "TESTC");
     const qualificationTester = await QualificationTester.deploy(0);
-    const qualificationTester2 = await QualificationTester.deploy(pending_qualification_timestamp);
 
     testTokenADeployed = (await testTokenA.deployed()) as TestToken;
     testTokenBDeployed = (await testTokenB.deployed()) as TestToken;
     testTokenCDeployed = (await testTokenC.deployed()) as TestToken;
     qualificationTesterDeployed = (await qualificationTester.deployed()) as QLF;
-    qualificationTesterDeployed2 = (await qualificationTester2.deployed()) as QLF;
 
     const HappyTokenPool = await ethers.getContractFactory("HappyTokenPool");
     const HappyTokenPoolProxy = await upgrades.deployProxy(HappyTokenPool, [base_timestamp], {
@@ -419,17 +415,4 @@ describe("HappyTokenPool", () => {
       }
     });
   });
-
-  async function getResultFromPoolFill(happyTokenPoolDeployed, creationParams) {
-    await happyTokenPoolDeployed.fill_pool(...Object.values(creationParams));
-    const logs = await ethers.provider.getLogs(happyTokenPoolDeployed.filters.FillSuccess());
-    const result = itoInterface.parseLog(logs[0]);
-    return result.args;
-  }
-
-  async function getAvailability(happyTokenPoolDeployed, pool_id, account) {
-    const signer = await ethers.getSigner(account);
-    happyTokenPoolDeployed = happyTokenPoolDeployed.connect(signer);
-    return happyTokenPoolDeployed.check_availability(pool_id);
-  }
 });

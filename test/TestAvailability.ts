@@ -1,29 +1,15 @@
 import { ethers, upgrades } from "hardhat";
 import { Signer, BigNumber, BytesLike } from "ethers";
-import { takeSnapshot, revertToSnapShot, getRevertMsg, getVerification } from "./helper";
-const { soliditySha3, hexToNumber, sha3 } = require("web3-utils");
+import { takeSnapshot, revertToSnapShot, getVerification, getResultFromPoolFill, getAvailability } from "./helper";
 
 import { use } from "chai";
 import chaiAsPromised from "chai-as-promised";
 
-import {
-  HappyPoolParamType,
-  base_timestamp,
-  eth_address,
-  erc165_interface_id,
-  qualification_interface_id,
-  PASSWORD,
-  amount,
-  ETH_address_index,
-  tokenB_address_index,
-  tokenC_address_index,
-  pending_qualification_timestamp,
-} from "./constants";
+import { HappyPoolParamType, base_timestamp, eth_address, PASSWORD, amount, tokenB_address_index } from "./constants";
 
 const { expect } = use(chaiAsPromised);
 
 import itoJsonABI from "../artifacts/contracts/ito.sol/HappyTokenPool.json";
-const itoInterface = new ethers.utils.Interface(itoJsonABI.abi);
 
 //types
 import type { TestToken, HappyTokenPool, QLF } from "../types";
@@ -194,7 +180,7 @@ describe("HappyTokenPool", () => {
       const { verification, validation } = getVerification(PASSWORD, user_address);
       await happyTokenPoolDeployed
         .connect(ito_user)
-        .swap(pool_id, verification as BytesLike, tokenB_address_index, approve_amount, [pool_id]);
+        .swap(pool_id, verification, tokenB_address_index, approve_amount, [pool_id]);
       const availability_current = await getAvailability(happyTokenPoolDeployed, pool_id, creator_address);
       const ratio = (creationParams.exchange_ratios[3] as number) / (creationParams.exchange_ratios[2] as number); // tokenA <=> tokenB
       const exchange_tokenA_amount = approve_amount.mul(ratio * 100000).div(100000);
@@ -233,7 +219,7 @@ describe("HappyTokenPool", () => {
       const { verification, validation } = getVerification(PASSWORD, user_address);
       await happyTokenPoolDeployed
         .connect(signer)
-        .swap(pool_id, verification as BytesLike, tokenB_address_index, approve_amount, [pool_id]);
+        .swap(pool_id, verification, tokenB_address_index, approve_amount, [pool_id]);
       const result_now = await getAvailability(happyTokenPoolDeployed, pool_id, user_address);
       const tokenB_balance = await testTokenBDeployed.balanceOf(user_address);
       const tokenA_balance = await testTokenADeployed.balanceOf(user_address);
@@ -244,17 +230,4 @@ describe("HappyTokenPool", () => {
       expect(result_now.claimed).to.be.eq(true);
     });
   });
-
-  async function getResultFromPoolFill(happyTokenPoolDeployed, fpp) {
-    await happyTokenPoolDeployed.fill_pool(...Object.values(fpp));
-    const logs = await ethers.provider.getLogs(happyTokenPoolDeployed.filters.FillSuccess());
-    const result = itoInterface.parseLog(logs[0]);
-    return result.args;
-  }
-
-  async function getAvailability(happyTokenPoolDeployed, pool_id, account) {
-    const signer = await ethers.getSigner(account);
-    happyTokenPoolDeployed = happyTokenPoolDeployed.connect(signer);
-    return happyTokenPoolDeployed.check_availability(pool_id);
-  }
 });
