@@ -10,13 +10,13 @@ import "@nomiclabs/hardhat-etherscan";
 import "hardhat-abi-exporter";
 import { HardhatUserConfig } from "hardhat/config";
 import {
-  HardhatNetworkConfig,
+  getHardhatNetworkConfig,
   HardhatSolidityConfig,
   HardhatGasReporterConfig,
   EtherscanConfig,
 } from "./SmartContractProjectConfig/config";
 
-const networks = HardhatNetworkConfig;
+const networks = getHardhatNetworkConfig();
 const solidity = HardhatSolidityConfig;
 const gasReporter = HardhatGasReporterConfig;
 const etherscan = EtherscanConfig;
