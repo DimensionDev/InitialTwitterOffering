@@ -1,35 +1,31 @@
-import { ethers, upgrades } from "hardhat";
-import { BytesLike, Signer, BigNumber } from "ethers";
-import {
-  takeSnapshot,
-  revertToSnapShot,
-  getRevertMsg,
-  advanceTimeAndBlock,
-  getVerification,
-  getResultFromPoolFill,
-  getAvailability,
-} from "./helper";
 import { assert, use } from "chai";
 import chaiAsPromised from "chai-as-promised";
-
-const { expect } = use(chaiAsPromised);
-
+import { BigNumber, Signer } from "ethers";
+import { ethers, upgrades } from "hardhat";
+import itoJsonABI from "../artifacts/contracts/ito.sol/HappyTokenPool.json";
+//types
+import type { HappyTokenPool, QLF, TestToken } from "../types";
 import {
+  amount,
   base_timestamp,
   eth_address,
-  PASSWORD,
-  amount,
   ETH_address_index,
+  HappyPoolParamType,
+  PASSWORD,
   tokenB_address_index,
   tokenC_address_index,
-  HappyPoolParamType,
 } from "./constants";
+import {
+  advanceTimeAndBlock,
+  getAvailability,
+  getResultFromPoolFill,
+  getRevertMsg,
+  getVerification,
+  revertToSnapShot,
+  takeSnapshot,
+} from "./helper";
 
-import itoJsonABI from "../artifacts/contracts/ito.sol/HappyTokenPool.json";
-const itoInterface = new ethers.utils.Interface(itoJsonABI.abi);
-
-//types
-import type { TestToken, HappyTokenPool, QLF } from "../types";
+const { expect } = use(chaiAsPromised);
 
 describe("HappyTokenPoolExpiredProcess destruct", () => {
   let createParams: HappyPoolParamType; // fill happyTokenPoolDeployed parameters
@@ -165,9 +161,11 @@ describe("HappyTokenPoolExpiredProcess destruct", () => {
     await advanceTimeAndBlock(2000 * 1000);
     await happyTokenPoolDeployed.connect(creator).destruct(pool_id);
 
-    const logs = await ethers.provider.getLogs(happyTokenPoolDeployed.filters.DestructSuccess());
-    const parsedLog = itoInterface.parseLog(logs[0]);
-    const result = parsedLog.args;
+    const destructSuccessEvents = await happyTokenPoolDeployed.queryFilter(
+      happyTokenPoolDeployed.filters.DestructSuccess(),
+    );
+    const destructSuccessEvent = destructSuccessEvents[0];
+    const result = destructSuccessEvent?.args;
 
     expect(result).to.have.property("id").that.to.be.eq(pool_id);
     expect(result).to.have.property("token_address").that.to.be.eq(testTokenADeployed.address);
@@ -257,9 +255,9 @@ describe("HappyTokenPoolExpiredProcess destruct", () => {
 
     await happyTokenPoolDeployed.connect(creator).destruct(pool_id);
 
-    const logs = await ethers.provider.getLogs(happyTokenPoolDeployed.filters.DestructSuccess());
-    const parsedLog = itoInterface.parseLog(logs[0]);
-    const result = parsedLog.args;
+    const events = await happyTokenPoolDeployed.queryFilter(happyTokenPoolDeployed.filters.DestructSuccess());
+    const event = events[0];
+    const result = event?.args;
 
     expect(result).to.have.property("id").that.to.be.eq(pool_id);
     expect(result).to.have.property("token_address").that.to.be.eq(testTokenADeployed.address);

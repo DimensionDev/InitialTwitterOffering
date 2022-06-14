@@ -1,18 +1,14 @@
-import { ethers, upgrades } from "hardhat";
-import { Signer, BigNumber } from "ethers";
-import { takeSnapshot, revertToSnapShot, getRevertMsg } from "./helper";
 import { use } from "chai";
 import chaiAsPromised from "chai-as-promised";
-
-import { base_timestamp, eth_address, PASSWORD, amount, HappyPoolParamType } from "./constants";
+import { BigNumber, Signer } from "ethers";
+import { ethers, upgrades } from "hardhat";
+import itoJsonABI from "../artifacts/contracts/ito.sol/HappyTokenPool.json";
+//types
+import type { HappyTokenPool, QLF, TestToken } from "../types";
+import { amount, base_timestamp, eth_address, HappyPoolParamType, PASSWORD } from "./constants";
+import { getRevertMsg, revertToSnapShot, takeSnapshot } from "./helper";
 
 const { expect } = use(chaiAsPromised);
-
-import itoJsonABI from "../artifacts/contracts/ito.sol/HappyTokenPool.json";
-const itoInterface = new ethers.utils.Interface(itoJsonABI.abi);
-
-//types
-import type { TestToken, HappyTokenPool, QLF } from "../types";
 
 describe("HappyTokenPool", () => {
   let creationParams: HappyPoolParamType; // fill happyTokenPoolDeployed parameters
@@ -86,7 +82,7 @@ describe("HappyTokenPool", () => {
   });
 
   describe("constructor()", async () => {
-    it("Should variables be initalized properly", async () => {
+    it("Should variables be initialized properly", async () => {
       const base_time = await happyTokenPoolDeployed.base_time();
       expect(base_time.toString()).that.to.be.eq(base_timestamp.toString());
     });
@@ -174,9 +170,9 @@ describe("HappyTokenPool", () => {
       await happyTokenPoolDeployed.fill_pool.apply(null, Object.values(creationParams));
       {
         // filter with signature, should work
-        const logs = await ethers.provider.getLogs(happyTokenPoolDeployed.filters.FillSuccess());
-        const parsedLog = itoInterface.parseLog(logs[0]);
-        const result = parsedLog.args;
+        const events = await happyTokenPoolDeployed.queryFilter(happyTokenPoolDeployed.filters.FillSuccess());
+        const event = events[0];
+        const result = event?.args;
         expect(result.total.toString()).that.to.be.eq(creationParams.total_tokens);
       }
       {
@@ -186,9 +182,9 @@ describe("HappyTokenPool", () => {
       }
 
       // filter with *indexed creator*, should work as expected
-      const logs = await ethers.provider.getLogs(happyTokenPoolDeployed.filters.FillSuccess(creatorAddress));
-      const parsedLog = itoInterface.parseLog(logs[0]);
-      const result = parsedLog.args;
+      const events = await happyTokenPoolDeployed.queryFilter(happyTokenPoolDeployed.filters.FillSuccess());
+      const event = events[0];
+      const result = event?.args;
       expect(result.total.toString()).that.to.be.eq(creationParams.total_tokens);
       expect(result).to.have.property("id").that.to.not.be.null;
       expect(result).to.have.property("creator").that.to.not.be.null;
@@ -212,9 +208,9 @@ describe("HappyTokenPool", () => {
 
       await testTokenADeployed.approve(happyTokenPoolDeployed.address, creationParams.total_tokens);
       await happyTokenPoolDeployed.fill_pool.apply(null, Object.values(newCreationParams));
-      const logs = await ethers.provider.getLogs(happyTokenPoolDeployed.filters.FillSuccess());
-      const parsedLog = itoInterface.parseLog(logs[0]);
-      const result = parsedLog.args;
+      const events = await happyTokenPoolDeployed.queryFilter(happyTokenPoolDeployed.filters.FillSuccess());
+      const event = events[0];
+      const result = event?.args;
       expect(result).to.have.property("id").that.to.not.be.null;
     });
   });

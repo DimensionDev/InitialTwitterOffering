@@ -1,18 +1,14 @@
-import { ethers, upgrades } from "hardhat";
-import { Signer, BigNumber, BytesLike } from "ethers";
-import { takeSnapshot, revertToSnapShot, getVerification, getResultFromPoolFill, getAvailability } from "./helper";
-
 import { use } from "chai";
 import chaiAsPromised from "chai-as-promised";
-
-import { HappyPoolParamType, base_timestamp, eth_address, PASSWORD, amount, tokenB_address_index } from "./constants";
+import { BigNumber, Signer } from "ethers";
+import { ethers, upgrades } from "hardhat";
+import itoJsonABI from "../artifacts/contracts/ito.sol/HappyTokenPool.json";
+//types
+import type { HappyTokenPool, QLF, TestToken } from "../types";
+import { amount, base_timestamp, eth_address, HappyPoolParamType, PASSWORD, tokenB_address_index } from "./constants";
+import { getAvailability, getResultFromPoolFill, getVerification, revertToSnapShot, takeSnapshot } from "./helper";
 
 const { expect } = use(chaiAsPromised);
-
-import itoJsonABI from "../artifacts/contracts/ito.sol/HappyTokenPool.json";
-
-//types
-import type { TestToken, HappyTokenPool, QLF } from "../types";
 
 describe("HappyTokenPool", () => {
   let creationParams: HappyPoolParamType; // fill happyTokenPoolDeployed parameters

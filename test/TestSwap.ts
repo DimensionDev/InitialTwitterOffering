@@ -1,36 +1,30 @@
-import { ethers, upgrades } from "hardhat";
-import { Signer, BigNumber, BytesLike } from "ethers";
-import {
-  takeSnapshot,
-  revertToSnapShot,
-  getRevertMsg,
-  getVerification,
-  getResultFromPoolFill,
-  getAvailability,
-} from "./helper";
-
 import { use } from "chai";
 import chaiAsPromised from "chai-as-promised";
-
+import { BigNumber, Signer } from "ethers";
+import { ethers, upgrades } from "hardhat";
+import itoJsonABI from "../artifacts/contracts/ito.sol/HappyTokenPool.json";
+//types
+import type { HappyTokenPool, QLF, TestToken } from "../types";
 import {
-  HappyPoolParamType,
+  amount,
   base_timestamp,
   eth_address,
-  PASSWORD,
-  amount,
   ETH_address_index,
-  tokenB_address_index,
-  tokenC_address_index,
+  HappyPoolParamType,
+  PASSWORD,
   pending_qualification_timestamp,
+  tokenC_address_index,
 } from "./constants";
+import {
+  getAvailability,
+  getResultFromPoolFill,
+  getRevertMsg,
+  getVerification,
+  revertToSnapShot,
+  takeSnapshot,
+} from "./helper";
 
 const { expect, assert } = use(chaiAsPromised);
-
-import itoJsonABI from "../artifacts/contracts/ito.sol/HappyTokenPool.json";
-const itoInterface = new ethers.utils.Interface(itoJsonABI.abi);
-
-//types
-import type { TestToken, HappyTokenPool, QLF } from "../types";
 
 describe("HappyTokenPool", () => {
   let creationParams: HappyPoolParamType; // fill happyTokenPoolDeployed parameters
@@ -327,9 +321,9 @@ describe("HappyTokenPool", () => {
       await happyTokenPoolDeployed
         .connect(swapUser)
         .swap(pool_id, verification, tokenC_address_index, exchange_amount, [pool_id]);
-      const logs = await ethers.provider.getLogs(happyTokenPoolDeployed.filters.SwapSuccess());
-      const parsedLog = itoInterface.parseLog(logs[0]);
-      const result = parsedLog.args;
+      const events = await happyTokenPoolDeployed.queryFilter(happyTokenPoolDeployed.filters.SwapSuccess());
+      const event = events[0];
+      const result = event?.args;
       const ratio = (creationParams.exchange_ratios[5] as number) / (creationParams.exchange_ratios[4] as number); // tokenA <=> tokenC
 
       const userTokenCBalanceAfterSwap = await testTokenCDeployed.balanceOf(swapUserAddress);
@@ -356,9 +350,9 @@ describe("HappyTokenPool", () => {
       await happyTokenPoolDeployed
         .connect(ito_user)
         .swap(pool_id, verification, tokenC_address_index, exchange_amount, [pool_id]);
-      const logs = await ethers.provider.getLogs(happyTokenPoolDeployed.filters.SwapSuccess());
-      const parsedLog = itoInterface.parseLog(logs[0]);
-      const result = parsedLog.args;
+      const events = await happyTokenPoolDeployed.queryFilter(happyTokenPoolDeployed.filters.SwapSuccess());
+      const event = events[0];
+      const result = event?.args;
       const ratio = (creationParams.exchange_ratios[5] as number) / (creationParams.exchange_ratios[4] as number); // tokenA <=> tokenC
 
       await expect(result.to_value.toString())
@@ -380,9 +374,9 @@ describe("HappyTokenPool", () => {
         value: approve_amount,
       });
       {
-        const logs = await ethers.provider.getLogs(happyTokenPoolDeployed.filters.SwapSuccess());
-        const parsedLog = itoInterface.parseLog(logs[0]);
-        const result_eth = parsedLog.args;
+        const events = await happyTokenPoolDeployed.queryFilter(happyTokenPoolDeployed.filters.SwapSuccess());
+        const event = events[0];
+        const result_eth = event?.args;
         const ratio_eth = (creationParams.exchange_ratios[1] as number) / (creationParams.exchange_ratios[0] as number); // tokenA <=> tokenC
         await expect(result_eth.to_value.toString()).that.to.be.eq(exchange_amount.mul(ratio_eth));
       }
@@ -397,9 +391,9 @@ describe("HappyTokenPool", () => {
       var vr = getVerification(PASSWORD, await signers[3].getAddress());
       await happyTokenPoolDeployed.connect(signers[3]).swap(pool_id, vr.verification, 1, exchange_amount2, [pool_id]);
       {
-        const logs = await ethers.provider.getLogs(happyTokenPoolDeployed.filters.SwapSuccess());
-        const parsedLog = itoInterface.parseLog(logs[0]);
-        const result_b = parsedLog.args;
+        const events = await happyTokenPoolDeployed.queryFilter(happyTokenPoolDeployed.filters.SwapSuccess());
+        const event = events[1];
+        const result_b = event?.args;
         const ratio_b = (creationParams.exchange_ratios[3] as number) / (creationParams.exchange_ratios[2] as number); // tokenA <=> tokenC
 
         await expect(result_b.to_value.toString()).that.to.be.eq(exchange_amount2.mul(ratio_b));
@@ -413,9 +407,9 @@ describe("HappyTokenPool", () => {
         .connect(ito_user)
         .swap(pool_id, verification, tokenC_address_index, exchange_amount3, [pool_id]);
       {
-        const logs = await ethers.provider.getLogs(happyTokenPoolDeployed.filters.SwapSuccess());
-        const parsedLog = itoInterface.parseLog(logs[0]);
-        const result_c = parsedLog.args;
+        const events = await happyTokenPoolDeployed.queryFilter(happyTokenPoolDeployed.filters.SwapSuccess());
+        const event = events[2];
+        const result_c = event?.args;
 
         const ratio_c = (creationParams.exchange_ratios[5] as number) / (creationParams.exchange_ratios[4] as number); // tokenA <=> tokenC
 
@@ -451,9 +445,9 @@ describe("HappyTokenPool", () => {
         .swap(pool_id, v2.verification, ETH_address_index, exchange_ETH_amount, [pool_id], {
           value: exchange_ETH_amount,
         });
-      const logs = await ethers.provider.getLogs(happyTokenPoolDeployed.filters.SwapSuccess());
-      const parsedLog = itoInterface.parseLog(logs[0]);
-      const result = parsedLog.args;
+      const events = await happyTokenPoolDeployed.queryFilter(happyTokenPoolDeployed.filters.SwapSuccess());
+      const event = events[0];
+      const result = event?.args;
       const from_value = result.from_value;
       const to_value = result.to_value;
       await expect(remaining.toString()).to.be.eq(BigNumber.from("500000000000").mul(ratio));

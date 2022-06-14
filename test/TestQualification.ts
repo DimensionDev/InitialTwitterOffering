@@ -1,17 +1,13 @@
-import { ethers } from "hardhat";
-import { Signer } from "ethers";
-import { advanceTimeAndBlock } from "./helper";
 import { use } from "chai";
 import chaiAsPromised from "chai-as-promised";
-
-import { erc165_interface_id, qualification_interface_id, pending_qualification_timestamp } from "./constants";
-
-const { expect } = use(chaiAsPromised);
-import qualificationJsonABI from "../artifacts/contracts/qualification.sol/QLF.json";
-const qualificationInterface = new ethers.utils.Interface(qualificationJsonABI.abi);
-
+import { Signer } from "ethers";
+import { ethers } from "hardhat";
 //types
 import type { QLF } from "../types";
+import { erc165_interface_id, pending_qualification_timestamp, qualification_interface_id } from "./constants";
+import { advanceTimeAndBlock } from "./helper";
+
+const { expect } = use(chaiAsPromised);
 
 describe("qualification", () => {
   let qualificationTesterDeployed: QLF;
@@ -58,13 +54,19 @@ describe("qualification", () => {
       const fakeMerkleProof = "0x1234567833dc44ce38f1024d3ea7d861f13ac29112db0e5b9814c54b12345678";
       const addr10 = await signers[10].getAddress();
       await qualificationTesterDeployed2.connect(signers[10]).logQualified(addr10, [fakeMerkleProof]);
-      let result = await getLogResult();
-      expect(result).to.be.null;
+
+      let events = await qualificationTesterDeployed2.queryFilter(qualificationTesterDeployed2.filters.Qualification());
+      let eventCount = events.length;
+
+      expect(eventCount).to.be.eq(0);
 
       await advanceTimeAndBlock(pending_qualification_timestamp + 1000);
       const addr11 = await signers[11].getAddress();
       await qualificationTesterDeployed2.connect(signers[11]).logQualified(addr11, [fakeMerkleProof]);
-      result = await getLogResult();
+
+      events = await qualificationTesterDeployed2.queryFilter(qualificationTesterDeployed2.filters.Qualification());
+      const result = events[0].args;
+      eventCount = events.length;
 
       if (!result) {
         console.log("result is null");
@@ -72,17 +74,12 @@ describe("qualification", () => {
       }
 
       expect(result.qualified).to.be.true;
+      expect(eventCount).to.be.eq(1);
 
       await qualificationTesterDeployed2.connect(signers[10]).logQualified(addr10, [fakeMerkleProof]);
-      result = await getLogResult();
-      expect(result).to.be.null;
+      events = await qualificationTesterDeployed2.queryFilter(qualificationTesterDeployed2.filters.Qualification());
+      eventCount = events.length;
+      expect(eventCount).to.be.eq(1);
     });
-
-    async function getLogResult() {
-      const logs = await ethers.provider.getLogs(qualificationTesterDeployed2.filters.Qualification());
-      if (logs.length === 0) return null;
-      const result = qualificationInterface.parseLog(logs[0]);
-      return result.args;
-    }
   });
 });

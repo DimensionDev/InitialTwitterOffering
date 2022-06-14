@@ -1,35 +1,30 @@
-import { ethers, upgrades } from "hardhat";
-import { Signer, BigNumber, FixedNumber } from "ethers";
-import {
-  takeSnapshot,
-  revertToSnapShot,
-  getRevertMsg,
-  advanceTimeAndBlock,
-  getVerification,
-  getResultFromPoolFill,
-  getAvailability,
-} from "./helper";
-
 import { use } from "chai";
 import chaiAsPromised from "chai-as-promised";
-
+import { BigNumber, Signer } from "ethers";
+import { ethers, upgrades } from "hardhat";
+import itoJsonABI from "../artifacts/contracts/ito.sol/HappyTokenPool.json";
+//types
+import type { HappyTokenPool, QLF, TestToken } from "../types";
 import {
-  HappyPoolParamType,
+  amount,
   base_timestamp,
   eth_address,
+  HappyPoolParamType,
   PASSWORD,
-  amount,
   tokenB_address_index,
   tokenC_address_index,
 } from "./constants";
+import {
+  advanceTimeAndBlock,
+  getAvailability,
+  getResultFromPoolFill,
+  getRevertMsg,
+  getVerification,
+  revertToSnapShot,
+  takeSnapshot,
+} from "./helper";
 
 const { expect, assert } = use(chaiAsPromised);
-
-import itoJsonABI from "../artifacts/contracts/ito.sol/HappyTokenPool.json";
-const itoInterface = new ethers.utils.Interface(itoJsonABI.abi);
-
-//types
-import type { TestToken, HappyTokenPool, QLF } from "../types";
 
 describe("HappyTokenPool", () => {
   let creationParams: HappyPoolParamType; // fill happyTokenPoolDeployed parameters
@@ -220,14 +215,12 @@ describe("HappyTokenPool", () => {
         .to.be.eq(exchangedTokenA_pool_2.toString())
         .and.to.be.eq(availabilityPrevious2.swapped.toString());
 
-      const logs = await ethers.provider.getLogs(happyTokenPoolDeployed.filters.ClaimSuccess());
+      const events = await happyTokenPoolDeployed.queryFilter(happyTokenPoolDeployed.filters.ClaimSuccess());
 
-      expect(logs).to.have.length(2);
+      expect(events).to.have.length(2);
 
-      let parsedLog = itoInterface.parseLog(logs[0]);
-      const result = parsedLog.args;
-      parsedLog = itoInterface.parseLog(logs[1]);
-      const result2 = parsedLog.args;
+      const result = events[0].args;
+      const result2 = events[1].args;
 
       expect(result.to_value.toString()).to.be.eq(availabilityPrevious.swapped.toString());
 
@@ -258,9 +251,9 @@ describe("HappyTokenPool", () => {
       expect(availabilityNow.claimed).to.be.true;
       expect(availabilityNow.destructed).to.be.true;
 
-      const logs = await ethers.provider.getLogs(happyTokenPoolDeployed.filters.ClaimSuccess());
-      const parsedLog = itoInterface.parseLog(logs[0]);
-      const result = parsedLog.args;
+      const events = await happyTokenPoolDeployed.queryFilter(happyTokenPoolDeployed.filters.ClaimSuccess());
+      const event = events[0];
+      const result = event?.args;
 
       expect(result.to_value.toString()).to.be.eq(availabilityPrevious.swapped.toString());
     });
@@ -328,9 +321,9 @@ describe("HappyTokenPool", () => {
           expect(availabilityNow.swapped.toString()).and.to.be.eq(availabilityPrevious.swapped.toString());
           expect(availabilityNow.claimed).to.be.true;
 
-          const logs = await ethers.provider.getLogs(happyTokenPoolDeployed.filters.ClaimSuccess());
-          const parsedLog = itoInterface.parseLog(logs[0]);
-          const result = parsedLog.args;
+          const events = await happyTokenPoolDeployed.queryFilter(happyTokenPoolDeployed.filters.ClaimSuccess());
+          const event = events[0];
+          const result = event?.args;
           expect(result.to_value.toString()).to.be.eq(availabilityPrevious.swapped.toString());
         }
       });
@@ -368,16 +361,16 @@ describe("HappyTokenPool", () => {
       expect(contractTokenABalanceAfterSwap.toString()).to.be.eq(contractTokenABalanceBeforeSwap.sub(approve_amount));
       expect(userTokenCBalanceAfterSwap).to.be.eq(userTokenCBalanceBeforeSwap.sub(approve_amount));
       {
-        const logs = await ethers.provider.getLogs(happyTokenPoolDeployed.filters.SwapSuccess());
-        const parsedLog = itoInterface.parseLog(logs[0]);
-        const result = parsedLog.args;
+        const events = await happyTokenPoolDeployed.queryFilter(happyTokenPoolDeployed.filters.SwapSuccess());
+        const event = events[0];
+        const result = event?.args;
         expect(result).to.have.property("swapper").that.to.be.eq(pool_user_address);
         expect(result).to.have.property("claimed").that.to.be.eq(true);
       }
       {
-        const logs = await ethers.provider.getLogs(happyTokenPoolDeployed.filters.ClaimSuccess());
-        const parsedLog = itoInterface.parseLog(logs[0]);
-        const result = parsedLog.args;
+        const events = await happyTokenPoolDeployed.queryFilter(happyTokenPoolDeployed.filters.ClaimSuccess());
+        const event = events[0];
+        const result = event?.args;
         expect(result).to.have.property("claimer").that.to.be.eq(pool_user_address);
       }
       // can not swap again

@@ -1,28 +1,23 @@
-import { ethers, upgrades } from "hardhat";
-import { BigNumber } from "ethers";
-import {
-  takeSnapshot,
-  revertToSnapShot,
-  advanceTimeAndBlock,
-  getVerification,
-  getResultFromPoolFill,
-  getAvailability,
-} from "./helper";
+import proxyAdminABI from "@openzeppelin/upgrades-core/artifacts/ProxyAdmin.json";
 import { assert, use } from "chai";
 import chaiAsPromised from "chai-as-promised";
-
-const { expect } = use(chaiAsPromised);
-
-import { base_timestamp, eth_address, PASSWORD, amount, tokenC_address_index } from "./constants";
-
-//types
-import type { TestToken, HappyTokenPool_v1_0, QLF } from "../types";
-
+import { BigNumber } from "ethers";
+import { ethers, upgrades } from "hardhat";
 import itoJsonABI from "../artifacts/contracts/ito.sol/HappyTokenPool.json";
 import itoJsonABI_V1_0 from "../artifacts/contracts/ito_v1.0.sol/HappyTokenPool_v1_0.json";
-const itoInterface_V1_0 = new ethers.utils.Interface(itoJsonABI_V1_0.abi);
+//types
+import type { HappyTokenPool_v1_0, QLF, TestToken } from "../types";
+import { amount, base_timestamp, eth_address, PASSWORD, tokenC_address_index } from "./constants";
+import {
+  advanceTimeAndBlock,
+  getAvailability,
+  getResultFromPoolFill,
+  getVerification,
+  revertToSnapShot,
+  takeSnapshot,
+} from "./helper";
 
-import proxyAdminABI from "@openzeppelin/upgrades-core/artifacts/ProxyAdmin.json";
+const { expect } = use(chaiAsPromised);
 
 let snapshotId;
 let testTokenADeployed;
@@ -150,9 +145,9 @@ describe("smart contract upgrade", async () => {
       }
       // Check SwapSuccess event
       {
-        const logs = await ethers.provider.getLogs(happyTokenPoolDeployed_v1_0.filters.SwapSuccess());
-        const parsedLog = itoInterface_V1_0.parseLog(logs[0]);
-        const result = parsedLog.args;
+        const events = await happyTokenPoolDeployed_v1_0.queryFilter(happyTokenPoolDeployed_v1_0.filters.SwapSuccess());
+        const event = events[0];
+        const result = event?.args;
         expect(result).to.have.property("id").that.to.not.be.null;
         expect(result).to.have.property("swapper").that.to.not.be.null;
         expect(result.from_value.toString()).that.to.be.eq(String(exchange_amount));
@@ -249,9 +244,9 @@ describe("smart contract upgrade", async () => {
 
       // Check SwapSuccess event
       {
-        const logs = await ethers.provider.getLogs(happyTokenPoolDeployed_v1_0.filters.SwapSuccess());
-        const parsedLog = itoInterface_V1_0.parseLog(logs[0]);
-        const result = parsedLog.args;
+        const events = await happyTokenPoolDeployed_v1_0.queryFilter(happyTokenPoolDeployed_v1_0.filters.SwapSuccess());
+        const event = events[0];
+        const result = event?.args;
         expect(result).to.have.property("id").that.to.not.be.null;
         expect(result).to.have.property("swapper").that.to.not.be.null;
         expect(result.from_value.toString()).that.to.be.eq(String(exchange_amount));
