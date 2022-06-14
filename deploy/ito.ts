@@ -6,7 +6,7 @@ import path from "path";
 import { parse } from "csv-parse/sync";
 
 const { base_timestamp } = require('../test/constants');
-const ADDRESS_TABLE_PATH = path.resolve(__dirname, "..", "helper_scripts", "contract-addresses.csv");
+const ADDRESS_TABLE_PATH = path.resolve(__dirname, "..", "contract-addresses.csv");
 
 type MyMapLikeType = Record<string, string>;
 
