@@ -11,6 +11,7 @@
     "lint": "hardhat check",
     "compile": "hardhat compile",
     "deploy": "hardhat deploy --network",
+    "generateReadme": "ts-node ./generate-readme.ts",
     "pretter": "prettier --write ."
   },
   "dependencies": {
