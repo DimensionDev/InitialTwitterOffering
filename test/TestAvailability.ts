@@ -145,11 +145,7 @@ describe("HappyTokenPool", () => {
     it("Should return the exchanged_tokens filled with zero when there was no exchange", async () => {
       const { id: pool_id } = await getResultFromPoolFill(happyTokenPoolDeployed, creationParams);
       const result = await getAvailability(happyTokenPoolDeployed, pool_id, user_address);
-      expect(result.exchanged_tokens.map((bn) => ethers.utils.parseEther(bn.toString()).toString())).to.eql([
-        "0",
-        "0",
-        "0",
-      ]);
+      expect(result.exchanged_tokens.map((bn) => ethers.utils.formatEther(bn))).to.eql(["0.0", "0.0", "0.0"]);
     });
 
     it("Should return the zero swapped token when the spender did no exchange before", async () => {
