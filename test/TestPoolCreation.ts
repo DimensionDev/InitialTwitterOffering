@@ -141,22 +141,6 @@ describe("HappyTokenPool", () => {
       await expect(happyTokenPoolDeployed.fill_pool.apply(null, Object.values(invalidParams))).to.be.reverted;
     });
 
-    // TODO: check
-    // it("Should throw error when time is larger than 28 bits", async () => {
-    //   const invalidParams = {
-    //     ...creationParams,
-    //     start_time: 2 ** 28 - 1,
-    //     end_time: 2 ** 28 + 99,
-    //     lock_time: 0,
-    //   };
-
-    //   await testTokenADeployed.approve(happyTokenPoolDeployed.address, creationParams.total_tokens);
-
-    //   await expect(happyTokenPoolDeployed.fill_pool.apply(null, Object.values(invalidParams))).to.be.revertedWith(
-    //     getRevertMsg("Time is larger than 28 bits"),
-    //   );
-    // });
-
     it("Should emit fillSuccess event correctly when a happyTokenPoolDeployed is filled", async () => {
       const creatorAddress = await creator.getAddress();
       const user_address = await ito_user.getAddress();
