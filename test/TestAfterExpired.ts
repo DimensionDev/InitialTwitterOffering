@@ -175,32 +175,25 @@ describe("HappyTokenPoolExpiredProcess destruct", () => {
     const ratioETH = BigNumber.from(createParams.exchange_ratios[1]).div(createParams.exchange_ratios[0]);
     const ratioB = BigNumber.from(createParams.exchange_ratios[3]).div(createParams.exchange_ratios[2]);
     const remaining_tokens = BigNumber.from(createParams.total_tokens).sub(
-      BigNumber.from(ratioB)
-        .mul(exchange_tokenB_amount)
-        .add(ethers.utils.parseEther("100000"))
-        .add(ratioETH.mul(exchange_ETH_amount)),
+      ratioB.mul(exchange_tokenB_amount).add(ethers.utils.parseEther("100000")).add(ratioETH.mul(exchange_ETH_amount)),
     );
 
     expect(remaining_tokens).to.be.eq(result.remaining_balance.toString());
 
     const eth_balance = await ethers.provider.getBalance(creatorAddress);
-    const r = BigNumber.from(eth_balance.sub(previous_eth_balance));
+    const r = eth_balance.sub(previous_eth_balance);
 
     expect(r.sub(ethers.utils.parseEther("1")).gt(0)).to.be.true;
     expect(r.sub(ethers.utils.parseEther("1.3")).lt(0)).to.be.true;
 
     const transfer_amount = ethers.utils.parseEther("100000000");
     const tokenB_balance = await testTokenBDeployed.balanceOf(creatorAddress);
-    expect(tokenB_balance).to.be.eq(
-      BigNumber.from(previous_tokenB_balance).sub(transfer_amount).add(exchange_tokenB_amount),
-    );
+    expect(tokenB_balance).to.be.eq(previous_tokenB_balance.sub(transfer_amount).add(exchange_tokenB_amount));
 
     const tokenC_balance = await testTokenCDeployed.balanceOf(creatorAddress);
-    expect(tokenC_balance).to.be.not.eq(
-      BigNumber.from(previous_tokenC_balance).sub(transfer_amount).add(exchange_tokenC_amount),
-    );
+    expect(tokenC_balance).to.be.not.eq(previous_tokenC_balance.sub(transfer_amount).add(exchange_tokenC_amount));
     expect(tokenC_balance.toString()).to.be.eq(
-      BigNumber.from(previous_tokenC_balance).sub(transfer_amount).add(exchange_tokenC_pool_limit), // 2000e18 exceeds limit
+      previous_tokenC_balance.sub(transfer_amount).add(exchange_tokenC_pool_limit), // 2000e18 exceeds limit
     );
     {
       // `exchanged_tokens` and `exchange_addrs` should still be available

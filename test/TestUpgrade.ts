@@ -161,11 +161,9 @@ describe("smart contract upgrade", async () => {
         const userTokenCBalanceAfterSwap = await testTokenCDeployed.balanceOf(pool_user.address);
         const contractTokenCBalanceAfterSwap = await testTokenCDeployed.balanceOf(happyTokenPoolDeployed_v1_0.address);
         expect(contractTokenCBalanceAfterSwap.toString()).to.be.eq(
-          BigNumber.from(contractTokenCBalanceBeforeSwap.toString()).add(BigNumber.from(exchange_amount)),
+          contractTokenCBalanceBeforeSwap.add(exchange_amount),
         );
-        expect(userTokenCBalanceAfterSwap.toString()).to.be.eq(
-          BigNumber.from(userTokenCBalanceBeforeSwap.toString()).sub(BigNumber.from(exchange_amount)),
-        );
+        expect(userTokenCBalanceAfterSwap.toString()).to.be.eq(userTokenCBalanceBeforeSwap.sub(exchange_amount));
       }
       //-------------------------------------------------------------------------------------------------------------
       await advanceTimeAndBlock(createParams.lock_time);
@@ -181,10 +179,10 @@ describe("smart contract upgrade", async () => {
         const userTokenABalanceAfterClaim = await testTokenADeployed.balanceOf(pool_user.address);
         const contractTokenABalanceAfterClaim = await testTokenADeployed.balanceOf(happyTokenPoolDeployed_v1_0.address);
         expect(contractTokenABalanceAfterClaim.toString()).to.be.eq(
-          BigNumber.from(contractTokenABalanceBeforeSwap.toString()).sub(BigNumber.from(exchanged_tokenA_amount)),
+          contractTokenABalanceBeforeSwap.sub(exchanged_tokenA_amount),
         );
         expect(userTokenABalanceAfterClaim.toString()).to.be.eq(
-          BigNumber.from(userTokenABalanceBeforeSwap.toString()).add(BigNumber.from(exchanged_tokenA_amount)),
+          userTokenABalanceBeforeSwap.add(exchanged_tokenA_amount),
         );
       }
     }
@@ -209,10 +207,10 @@ describe("smart contract upgrade", async () => {
         const userTokenABalanceAfterClaim = await testTokenADeployed.balanceOf(pool_user.address);
         const contractTokenABalanceAfterClaim = await testTokenADeployed.balanceOf(happyTokenPoolDeployed_v1_0.address);
         expect(contractTokenABalanceAfterClaim.toString()).to.be.eq(
-          BigNumber.from(contractTokenABalanceBeforeSwap.toString()).sub(BigNumber.from(exchanged_tokenA_amount)),
+          contractTokenABalanceBeforeSwap.sub(exchanged_tokenA_amount),
         );
         expect(userTokenABalanceAfterClaim.toString()).to.be.eq(
-          BigNumber.from(userTokenABalanceBeforeSwap.toString()).add(BigNumber.from(exchanged_tokenA_amount)),
+          userTokenABalanceBeforeSwap.add(exchanged_tokenA_amount),
         );
       }
     }
@@ -260,11 +258,9 @@ describe("smart contract upgrade", async () => {
         const userTokenCBalanceAfterSwap = await testTokenCDeployed.balanceOf(pool_user.address);
         const contractTokenCBalanceAfterSwap = await testTokenCDeployed.balanceOf(happyTokenPoolDeployed_v1_0.address);
         expect(contractTokenCBalanceAfterSwap.toString()).to.be.eq(
-          BigNumber.from(contractTokenCBalanceBeforeSwap.toString()).add(exchange_amount),
+          contractTokenCBalanceBeforeSwap.add(exchange_amount),
         );
-        expect(userTokenCBalanceAfterSwap.toString()).to.be.eq(
-          BigNumber.from(userTokenCBalanceBeforeSwap.toString()).sub(BigNumber.from(exchange_amount)),
-        );
+        expect(userTokenCBalanceAfterSwap.toString()).to.be.eq(userTokenCBalanceBeforeSwap.sub(exchange_amount));
       }
       {
         const availability = await getAvailability(happyTokenPoolDeployed_v1_0, pool_id, pool_user.address);
@@ -293,10 +289,10 @@ describe("smart contract upgrade", async () => {
         const userTokenABalanceAfterClaim = await testTokenADeployed.balanceOf(pool_user.address);
         const contractTokenABalanceAfterClaim = await testTokenADeployed.balanceOf(deployedUpgraded.address);
         expect(contractTokenABalanceAfterClaim.toString()).to.be.eq(
-          BigNumber.from(contractTokenABalanceBeforeSwap.toString()).sub(BigNumber.from(exchanged_tokenA_amount)),
+          contractTokenABalanceBeforeSwap.sub(exchanged_tokenA_amount),
         );
         expect(userTokenABalanceAfterClaim.toString()).to.be.eq(
-          BigNumber.from(userTokenABalanceBeforeSwap.toString()).add(BigNumber.from(exchanged_tokenA_amount)),
+          userTokenABalanceBeforeSwap.add(exchanged_tokenA_amount),
         );
       }
     }
@@ -313,10 +309,10 @@ describe("smart contract upgrade", async () => {
         const userTokenABalanceAfterClaim = await testTokenADeployed.balanceOf(pool_user.address);
         const contractTokenABalanceAfterClaim = await testTokenADeployed.balanceOf(happyTokenPoolDeployed_v1_0.address);
         expect(contractTokenABalanceAfterClaim.toString()).to.be.eq(
-          BigNumber.from(contractTokenABalanceBeforeSwap.toString()).sub(BigNumber.from(exchanged_tokenA_amount)),
+          contractTokenABalanceBeforeSwap.sub(exchanged_tokenA_amount),
         );
         expect(userTokenABalanceAfterClaim.toString()).to.be.eq(
-          BigNumber.from(userTokenABalanceBeforeSwap.toString()).add(BigNumber.from(exchanged_tokenA_amount)),
+          userTokenABalanceBeforeSwap.add(exchanged_tokenA_amount),
         );
       }
     }
@@ -349,21 +345,19 @@ describe("smart contract upgrade", async () => {
         const userTokenCBalanceAfterSwap = await testTokenCDeployed.balanceOf(pool_user.address);
         const contractTokenCBalanceAfterSwap = await testTokenCDeployed.balanceOf(happyTokenPoolDeployed_v1_0.address);
         expect(contractTokenCBalanceAfterSwap.toString()).to.be.eq(
-          BigNumber.from(contractTokenCBalanceBeforeSwap.toString()).add(BigNumber.from(exchange_amount)),
+          contractTokenCBalanceBeforeSwap.add(exchange_amount),
         );
-        expect(userTokenCBalanceAfterSwap.toString()).to.be.eq(
-          BigNumber.from(userTokenCBalanceBeforeSwap.toString()).sub(BigNumber.from(exchange_amount)),
-        );
+        expect(userTokenCBalanceAfterSwap.toString()).to.be.eq(userTokenCBalanceBeforeSwap.sub(exchange_amount));
       }
       // check token A balance after swap
       {
         const userTokenABalanceAfterClaim = await testTokenADeployed.balanceOf(pool_user.address);
         const contractTokenABalanceAfterClaim = await testTokenADeployed.balanceOf(happyTokenPoolDeployed_v1_0.address);
         expect(contractTokenABalanceAfterClaim.toString()).to.be.eq(
-          BigNumber.from(contractTokenABalanceBeforeSwap.toString()).sub(BigNumber.from(exchanged_tokenA_amount)),
+          contractTokenABalanceBeforeSwap.sub(exchanged_tokenA_amount),
         );
         expect(userTokenABalanceAfterClaim.toString()).to.be.eq(
-          BigNumber.from(userTokenABalanceBeforeSwap.toString()).add(BigNumber.from(exchanged_tokenA_amount)),
+          userTokenABalanceBeforeSwap.add(exchanged_tokenA_amount),
         );
       }
       {
@@ -392,10 +386,10 @@ describe("smart contract upgrade", async () => {
         const userTokenABalanceAfterClaim = await testTokenADeployed.balanceOf(pool_user.address);
         const contractTokenABalanceAfterClaim = await testTokenADeployed.balanceOf(deployedUpgraded.address);
         expect(contractTokenABalanceAfterClaim.toString()).to.be.eq(
-          BigNumber.from(contractTokenABalanceBeforeSwap.toString()).sub(BigNumber.from(exchanged_tokenA_amount)),
+          contractTokenABalanceBeforeSwap.sub(exchanged_tokenA_amount),
         );
         expect(userTokenABalanceAfterClaim.toString()).to.be.eq(
-          BigNumber.from(userTokenABalanceBeforeSwap.toString()).add(BigNumber.from(exchanged_tokenA_amount)),
+          userTokenABalanceBeforeSwap.add(exchanged_tokenA_amount),
         );
       }
     }
@@ -436,21 +430,19 @@ describe("smart contract upgrade", async () => {
         const userTokenCBalanceAfterSwap = await testTokenCDeployed.balanceOf(pool_user.address);
         const contractTokenCBalanceAfterSwap = await testTokenCDeployed.balanceOf(happyTokenPoolDeployed_v1_0.address);
         expect(contractTokenCBalanceAfterSwap.toString()).to.be.eq(
-          BigNumber.from(contractTokenCBalanceBeforeSwap.toString()).add(BigNumber.from(exchange_amount)),
+          contractTokenCBalanceBeforeSwap.add(exchange_amount),
         );
-        expect(userTokenCBalanceAfterSwap.toString()).to.be.eq(
-          BigNumber.from(userTokenCBalanceBeforeSwap.toString()).sub(BigNumber.from(exchange_amount)),
-        );
+        expect(userTokenCBalanceAfterSwap.toString()).to.be.eq(userTokenCBalanceBeforeSwap.sub(exchange_amount));
       }
       // check token A balance after swap
       {
         const userTokenABalanceAfterClaim = await testTokenADeployed.balanceOf(pool_user.address);
         const contractTokenABalanceAfterClaim = await testTokenADeployed.balanceOf(happyTokenPoolDeployed_v1_0.address);
         expect(contractTokenABalanceAfterClaim.toString()).to.be.eq(
-          BigNumber.from(contractTokenABalanceBeforeSwap.toString()).sub(BigNumber.from(exchanged_tokenA_amount)),
+          contractTokenABalanceBeforeSwap.sub(exchanged_tokenA_amount),
         );
         expect(userTokenABalanceAfterClaim.toString()).to.be.eq(
-          BigNumber.from(userTokenABalanceBeforeSwap.toString()).add(BigNumber.from(exchanged_tokenA_amount)),
+          userTokenABalanceBeforeSwap.add(exchanged_tokenA_amount),
         );
       }
       {
@@ -471,10 +463,10 @@ describe("smart contract upgrade", async () => {
         const userTokenABalanceAfterClaim = await testTokenADeployed.balanceOf(pool_user.address);
         const contractTokenABalanceAfterClaim = await testTokenADeployed.balanceOf(deployedUpgraded.address);
         expect(contractTokenABalanceAfterClaim.toString()).to.be.eq(
-          BigNumber.from(contractTokenABalanceBeforeSwap.toString()).sub(BigNumber.from(exchanged_tokenA_amount)),
+          contractTokenABalanceBeforeSwap.sub(exchanged_tokenA_amount),
         );
         expect(userTokenABalanceAfterClaim.toString()).to.be.eq(
-          BigNumber.from(userTokenABalanceBeforeSwap.toString()).add(BigNumber.from(exchanged_tokenA_amount)),
+          userTokenABalanceBeforeSwap.add(exchanged_tokenA_amount),
         );
       }
     }
