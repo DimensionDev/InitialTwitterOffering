@@ -184,23 +184,23 @@ describe("HappyTokenPoolExpiredProcess destruct", () => {
     expect(remaining_tokens).to.be.eq(result.remaining_balance.toString());
 
     const eth_balance = await ethers.provider.getBalance(creatorAddress);
-    const r = BigNumber.from(eth_balance.sub(previous_eth_balance).toString());
+    const r = BigNumber.from(eth_balance.sub(previous_eth_balance));
 
     expect(r.sub(ethers.utils.parseEther("1")).gt(0)).to.be.true;
     expect(r.sub(ethers.utils.parseEther("1.3")).lt(0)).to.be.true;
 
     const transfer_amount = ethers.utils.parseEther("100000000");
     const tokenB_balance = await testTokenBDeployed.balanceOf(creatorAddress);
-    expect(tokenB_balance.toString()).to.be.eq(
-      BigNumber.from(previous_tokenB_balance.toString()).sub(transfer_amount).add(exchange_tokenB_amount),
+    expect(tokenB_balance).to.be.eq(
+      BigNumber.from(previous_tokenB_balance).sub(transfer_amount).add(exchange_tokenB_amount),
     );
 
     const tokenC_balance = await testTokenCDeployed.balanceOf(creatorAddress);
-    expect(tokenC_balance.toString()).to.be.not.eq(
+    expect(tokenC_balance).to.be.not.eq(
       BigNumber.from(previous_tokenC_balance).sub(transfer_amount).add(exchange_tokenC_amount),
     );
     expect(tokenC_balance.toString()).to.be.eq(
-      BigNumber.from(previous_tokenC_balance.toString()).sub(transfer_amount).add(exchange_tokenC_pool_limit), // 2000e18 exceeds limit
+      BigNumber.from(previous_tokenC_balance).sub(transfer_amount).add(exchange_tokenC_pool_limit), // 2000e18 exceeds limit
     );
     {
       // `exchanged_tokens` and `exchange_addrs` should still be available
@@ -208,11 +208,7 @@ describe("HappyTokenPoolExpiredProcess destruct", () => {
       const result = await getAvailability(happyTokenPoolDeployed, pool_id, test_addr9);
 
       expect(result.exchange_addrs).to.eql(createParams.exchange_addrs);
-      expect(result.exchanged_tokens.map((bn) => bn.toString())).to.eql([
-        exchange_ETH_amount.toString(),
-        exchange_tokenB_amount.toString(),
-        exchange_tokenC_pool_limit.toString(),
-      ]);
+      expect(result.exchanged_tokens).to.eql([exchange_ETH_amount, exchange_tokenB_amount, exchange_tokenC_pool_limit]);
       expect(result.destructed).to.true;
     }
     {

@@ -151,13 +151,13 @@ describe("HappyTokenPool", () => {
     it("Should return the zero swapped token when the spender did no exchange before", async () => {
       const { id: pool_id } = await getResultFromPoolFill(happyTokenPoolDeployed, creationParams);
       const result = await getAvailability(happyTokenPoolDeployed, pool_id, user_address);
-      expect(ethers.utils.parseEther(result.swapped.toString()).toString()).to.be.eq("0");
+      expect(ethers.utils.formatEther(result.swapped)).to.be.eq("0.0");
     });
 
     it("Should return same number of remaining token as total tokens when there was no exchange", async () => {
       const { id: pool_id } = await getResultFromPoolFill(happyTokenPoolDeployed, creationParams);
       const result = await getAvailability(happyTokenPoolDeployed, pool_id, user_address);
-      expect(result.remaining.toString()).to.be.eq(creationParams.total_tokens);
+      expect(result.remaining).to.be.eq(creationParams.total_tokens);
     });
 
     it("Should minus the number of remaining token by exchange amount after swap", async () => {
@@ -216,9 +216,9 @@ describe("HappyTokenPool", () => {
       const tokenB_balance = await testTokenBDeployed.balanceOf(user_address);
       const tokenA_balance = await testTokenADeployed.balanceOf(user_address);
 
-      expect(tokenA_balance.toString()).to.be.eq("1");
-      expect(tokenB_balance.toString()).to.be.eq("0");
-      expect(result_now.remaining.toString()).to.be.eq("9");
+      expect(tokenA_balance).to.be.eq("1");
+      expect(tokenB_balance).to.be.eq("0");
+      expect(result_now.remaining).to.be.eq("9");
       expect(result_now.claimed).to.be.eq(true);
     });
   });
