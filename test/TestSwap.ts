@@ -439,6 +439,7 @@ describe("HappyTokenPool", () => {
       // then, swap amount greater than total token
       let v2 = getVerification(PASSWORD, await signers[3].getAddress());
       const { remaining } = await getAvailability(happyTokenPoolDeployed, pool_id, await signers[3].getAddress());
+
       exchange_ETH_amount = BigNumber.from("1000000000000"); //1 * 10**12
       await happyTokenPoolDeployed
         .connect(signers[3])
@@ -454,9 +455,7 @@ describe("HappyTokenPool", () => {
       await expect(from_value.toString())
         .to.be.eq(BigNumber.from(remaining.toString()).div(ratio))
         .and.to.not.be.eq(exchange_ETH_amount);
-      await expect(to_value.toString())
-        .to.be.eq(remaining.toString())
-        .and.to.not.be.eq(BigNumber.from(exchange_ETH_amount).mul(ratio));
+      await expect(to_value.toString()).to.be.eq(remaining.toString()).and.to.not.be.eq(exchange_ETH_amount.mul(ratio));
     });
   });
 });

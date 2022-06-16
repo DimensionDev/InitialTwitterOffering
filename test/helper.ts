@@ -1,6 +1,7 @@
 import { BytesLike, providers } from "ethers";
 import { ethers, network } from "hardhat";
 import { hexToNumber, sha3, soliditySha3 } from "web3-utils";
+import { AvailableResult } from "./constants";
 
 /**
  * @param {number} time second
@@ -56,7 +57,7 @@ export async function getResultFromPoolFill(happyTokenPoolDeployed, fpp) {
   return lastEvent?.args;
 }
 
-export async function getAvailability(happyTokenPoolDeployed, pool_id, account) {
+export async function getAvailability(happyTokenPoolDeployed, pool_id, account): Promise<AvailableResult> {
   const signer = await ethers.getSigner(account);
   happyTokenPoolDeployed = happyTokenPoolDeployed.connect(signer);
   return happyTokenPoolDeployed.check_availability(pool_id);

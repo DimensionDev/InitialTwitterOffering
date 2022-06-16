@@ -140,6 +140,7 @@ describe("smart contract upgrade", async () => {
         .swap(pool_id, verification, tokenC_address_index, exchange_amount, [pool_id]);
       {
         const availability = await getAvailability(happyTokenPoolDeployed_v1_0, pool_id, pool_user.address);
+
         expect(availability.swapped.toString()).to.be.eq(exchanged_tokenA_amount.toString());
         expect(availability).to.not.have.property("claimed");
       }

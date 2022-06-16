@@ -25,3 +25,18 @@ export interface HappyPoolParamType {
   limit: BigNumber;
   qualification: string;
 }
+
+export interface AvailableResult {
+  exchange_addrs: string[];
+  remaining: BigNumber;
+  started: boolean;
+  expired: boolean;
+  destructed: boolean;
+  unlock_time: number;
+  swapped: BigNumber;
+  exchanged_tokens: Array<BigNumber>;
+  claimed: boolean;
+  start_time: number;
+  end_time: number;
+  qualification_addr: string;
+}
