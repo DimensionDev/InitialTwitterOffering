@@ -4,9 +4,9 @@
  * @author          Yisi Liu
  * @contact         yisiliu@gmail.com
  * @author_time     01/06/2021
-**/
+ **/
 
-pragma solidity >= 0.8.0;
+pragma solidity >=0.8.0;
 
 import "./IQLF.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -15,7 +15,7 @@ contract QLF is IQLF, Ownable {
     uint256 public start_time;
     mapping(address => bool) black_list;
 
-    constructor (uint256 _start_time) {
+    constructor(uint256 _start_time) {
         start_time = _start_time;
     }
 
@@ -31,10 +31,7 @@ contract QLF is IQLF, Ownable {
         public
         pure
         override
-        returns (
-            bool qualified,
-            string memory errorMsg
-        )
+        returns (bool qualified, string memory errorMsg)
     {
         return (true, "");
     }
@@ -42,25 +39,23 @@ contract QLF is IQLF, Ownable {
     function logQualified(address account, bytes32[] memory data)
         public
         override
-        returns (
-            bool qualified,
-            string memory errorMsg
-        )
+        returns (bool qualified, string memory errorMsg)
     {
         if (start_time > block.timestamp) {
             black_list[account] = true;
-            return (false, "not started"); 
+            return (false, "not started");
         }
         if (black_list[account]) {
-            return (false, "blacklisted"); 
+            return (false, "blacklisted");
         }
         emit Qualification(account, true, block.number, block.timestamp);
         return (true, "");
     }
 
-    function supportsInterface(bytes4 interfaceId) external override pure returns (bool) {
-        return interfaceId == this.supportsInterface.selector || 
+    function supportsInterface(bytes4 interfaceId) external pure override returns (bool) {
+        return
+            interfaceId == this.supportsInterface.selector ||
             interfaceId == (this.ifQualified.selector ^ this.logQualified.selector) ||
             interfaceId == this.get_start_time.selector;
-    }    
+    }
 }

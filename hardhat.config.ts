@@ -1,42 +1,50 @@
-import { ethers } from 'ethers'
-const chai = require('chai')
-const expect = chai.expect;
-const assert = chai.assert
-import 'hardhat-deploy'
-import 'hardhat-deploy-ethers'
-import "@nomiclabs/hardhat-waffle"
-import "@nomiclabs/hardhat-ethers"
-import "solidity-coverage"
-import "hardhat-gas-reporter"
-import '@openzeppelin/hardhat-upgrades'
+import "hardhat-deploy";
+import "hardhat-deploy-ethers";
+import "@nomiclabs/hardhat-waffle";
+import "@nomiclabs/hardhat-ethers";
+import "solidity-coverage";
+import "hardhat-gas-reporter";
+import "@openzeppelin/hardhat-upgrades";
+import "@typechain/hardhat";
 import "@nomiclabs/hardhat-etherscan";
+import "hardhat-abi-exporter";
+import { HardhatUserConfig } from "hardhat/config";
+import {
+  getHardhatNetworkConfig,
+  HardhatSolidityConfig,
+  HardhatGasReporterConfig,
+  EtherscanConfig,
+} from "./SmartContractProjectConfig/config";
 
-const {
-    HardhatNetworkConfig,
-    HardhatSolidityConfig,
-    HardhatGasReporterConfig,
-    EtherscanConfig,
-} = require('./SmartContractProjectConfig/config.js');
-
-const networks = HardhatNetworkConfig;
+const networks = getHardhatNetworkConfig();
 const solidity = HardhatSolidityConfig;
 const gasReporter = HardhatGasReporterConfig;
 const etherscan = EtherscanConfig;
 
-/**
- * @type import('hardhat/config').HardhatUserConfig
- */
-module.exports = {
-    networks,
-    mocha: {
-        timeout: 500000,
+const config: HardhatUserConfig = {
+  networks,
+  mocha: {
+    timeout: 500000,
+  },
+  solidity,
+  namedAccounts: {
+    deployer: {
+      default: 0,
     },
-    solidity,
-    namedAccounts: {
-        deployer: {
-            default: 0,
-        },
-    },
-    etherscan,
-    gasReporter,
+  },
+  etherscan,
+  gasReporter,
+  abiExporter: {
+    path: "./abi",
+    runOnCompile: true,
+    flat: true,
+    only: ["HappyTokenPool", "QLF"],
+  },
+  typechain: {
+    outDir: "types",
+    target: "ethers-v5",
+    alwaysGenerateOverloads: false,
+  },
 };
+
+export default config;

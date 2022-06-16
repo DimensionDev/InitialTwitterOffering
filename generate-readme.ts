@@ -1,25 +1,28 @@
 import path from "path";
 import fs from "fs/promises";
 import { format } from "prettier";
-import { ChainId, BlockExplorer, DeployedAddressRow } from "./types";
+import { getAllBrowserPath } from "./SmartContractProjectConfig/chains";
 import { parse } from "csv-parse/sync";
 
-const README_PATH = path.resolve(__dirname, "..", "README.md");
+const README_PATH = path.resolve(__dirname, "README.md");
 const ADDRESS_TABLE_PATH = path.resolve(__dirname, "contract-addresses.csv");
+let contractAddressPath: Record<string, string>;
+let contractBlockPath: Record<string, string>;
+type DeployedAddressRow = {
+  Chain: string;
+  HappyTokenPool: string;
+  Qualification: string;
+  v1Block: string;
+  v2Block: string;
+};
 
 async function main() {
   let content = await fs.readFile(README_PATH, "utf-8");
+  contractAddressPath = await getAllBrowserPath("address");
+  contractBlockPath = await getAllBrowserPath("block");
   const rows: DeployedAddressRow[] = await loadDeployedAddressRows();
-  content = replace(
-    content,
-    "address",
-    Array.from(makeAddressTable(rows)).filter(Boolean).join("\n")
-  );
-  content = replace(
-    content,
-    "block",
-    Array.from(makeBlockTable(rows)).filter(Boolean).join("\n")
-  );
+  content = replace(content, "address", Array.from(makeAddressTable(rows)).filter(Boolean).join("\n"));
+  content = replace(content, "block", Array.from(makeBlockTable(rows)).filter(Boolean).join("\n"));
   const formatted = format(content, {
     parser: "markdown",
     printWidth: 160,
@@ -38,8 +41,8 @@ function* makeAddressTable(rows: DeployedAddressRow[]) {
     yield `| ${Chain} | ${itoElement} | ${qlfElement} |`;
   }
   yield "";
-  yield* rows.map(({ Chain, HappyTokenPool }) => formLink(HappyTokenPool, Chain, "ito"))
-  yield* rows.map(({ Chain, Qualification }) => formLink(Qualification, Chain, "qlf"))
+  yield* rows.map(({ Chain, HappyTokenPool }) => formLink(HappyTokenPool, Chain, "ito"));
+  yield* rows.map(({ Chain, Qualification }) => formLink(Qualification, Chain, "qlf"));
 }
 
 function* makeBlockTable(rows: DeployedAddressRow[]) {
@@ -59,43 +62,32 @@ function* makeBlockTable(rows: DeployedAddressRow[]) {
 
 async function loadDeployedAddressRows(): Promise<DeployedAddressRow[]> {
   const data = await fs.readFile(ADDRESS_TABLE_PATH, "utf-8");
-  const columns = ['Chain', 'HappyTokenPool', 'Qualification', 'v1Block', 'v2Block'];
-  return parse(data, { delimiter: ',', columns, from: 2 });
+  const columns = ["Chain", "HappyTokenPool", "Qualification", "v1Block", "v2Block"];
+  return parse(data, { delimiter: ",", columns, from: 2 });
 }
 
-function formElement(param: string, linkTag: string) {
-  if (param == '') return '';
-  if (!param.includes("0x")) return `[${param}][${linkTag}]`;
-  return `[\`${param.slice(0, 10)}\`][${linkTag}]`;
-}
-
-function formLink(param: string, chain: string, tag: string) {
-  if (param == '') return null;
-  let browserPath;
-  const requiredChainId = getEnumAsMap(ChainId).get(chain);
-  if (param.includes("0x")) {
-    browserPath = BlockExplorer[requiredChainId as ChainId](param, "address");
-  } else {
-    browserPath = BlockExplorer[requiredChainId as ChainId](param, "block");
+function formElement(address: string, linkTag: string) {
+  if (address == "") {
+    return "";
   }
-  return `[${tag}-${chain}]: ${browserPath}`;
+  return `[\`${address.slice(0, 10)}\`][${linkTag}]`;
+}
+
+function formLink(param: string, chain: string, contract: string) {
+  if (param == "") {
+    return null;
+  }
+  let baseUrl: string;
+  if (param.startsWith("0x")) {
+    baseUrl = contractAddressPath[chain];
+  } else {
+    baseUrl = contractBlockPath[chain];
+  }
+  const browserPath = `${baseUrl}${param}`;
+  return `[${contract}-${chain}]:${browserPath}`;
 }
 
 function replace(content: string, name: string, replace: string) {
-  const pattern = new RegExp(
-    `(<!-- begin ${name} -->)(.+)(<!-- end ${name} -->)`,
-    "gs"
-  );
+  const pattern = new RegExp(`(<!-- begin ${name} -->)(.+)(<!-- end ${name} -->)`, "gs");
   return content.replace(pattern, `$1\n${replace}\n$3`);
 }
-
-function getEnumAsMap<T extends object>(enumObject: T) {
-  const pairs = new Map<string, T[keyof T]>();
-  for (const key of Object.keys(enumObject)) {
-    if (Number.isNaN(Number.parseInt(key))) {
-      pairs.set(key, enumObject[key as keyof T]);
-    }
-  }
-  return pairs;
-}
-

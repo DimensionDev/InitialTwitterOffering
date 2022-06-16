@@ -1,16 +1,12 @@
 {
   "compilerOptions": {
-    "target": "ES2017",
-    "strict": true,
+    "target": "es2019",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "outDir": "dist",
     "esModuleInterop": true,
-    "noImplicitAny": true,
-    "strictNullChecks": true,
-    "strictFunctionTypes": true,
-    "strictBindCallApply": true,
-    "strictPropertyInitialization": true,
-    "noImplicitThis": true,
-    "alwaysStrict": true,
-    "noImplicitReturns": true,
-    "moduleResolution": "node"
-  }
+    "strictNullChecks": true
+  },
+  "include": ["./scripts", "./test", "./types", "./SmartContractProjectConfig", "./deploy"],
+  "files": ["./hardhat.config.ts"]
 }
