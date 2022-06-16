@@ -329,13 +329,13 @@ describe("HappyTokenPool", () => {
       const userTokenCBalanceAfterSwap = await testTokenCDeployed.balanceOf(swapUserAddress);
       const contractTokenCBalanceAfterSwap = await testTokenCDeployed.balanceOf(happyTokenPoolDeployed.address);
 
-      expect(contractTokenCBalanceAfterSwap.toString()).to.be.eq(contractTokenCBalanceBeforeSwap.add(exchange_amount));
+      expect(contractTokenCBalanceAfterSwap).to.be.eq(contractTokenCBalanceBeforeSwap.add(exchange_amount));
       expect(userTokenCBalanceAfterSwap).to.be.eq(userTokenCBalanceBeforeSwap.mod(exchange_amount));
 
       expect(result).to.have.property("id").that.to.not.be.null;
       expect(result).to.have.property("swapper").that.to.not.be.null;
-      expect(result.from_value.toString()).that.to.be.eq(String(exchange_amount));
-      expect(result.to_value.toString()).that.to.be.eq(String(exchange_amount * ratio));
+      expect(result.from_value).that.to.be.eq(exchange_amount);
+      expect(result.to_value).that.to.be.eq(exchange_amount * ratio);
       expect(result).to.have.property("from_address").that.to.be.eq(testTokenCDeployed.address);
       expect(result).to.have.property("to_address").that.to.be.eq(testTokenADeployed.address);
       expect(result).to.have.property("claimed").that.to.be.eq(false);
@@ -378,7 +378,7 @@ describe("HappyTokenPool", () => {
         const event = events[0];
         const result_eth = event?.args;
         const ratio_eth = (creationParams.exchange_ratios[1] as number) / (creationParams.exchange_ratios[0] as number); // tokenA <=> tokenC
-        await expect(result_eth.to_value.toString()).that.to.be.eq(exchange_amount.mul(ratio_eth));
+        await expect(result_eth.to_value).that.to.be.eq(exchange_amount.mul(ratio_eth));
       }
       // 0.02 TESTB => 40 TESTA
       const _transfer_amount = ethers.utils.parseEther("0.02");
@@ -396,7 +396,7 @@ describe("HappyTokenPool", () => {
         const result_b = event?.args;
         const ratio_b = (creationParams.exchange_ratios[3] as number) / (creationParams.exchange_ratios[2] as number); // tokenA <=> tokenC
 
-        await expect(result_b.to_value.toString()).that.to.be.eq(exchange_amount2.mul(ratio_b));
+        await expect(result_b.to_value).that.to.be.eq(exchange_amount2.mul(ratio_b));
       }
       // 80000 TESTC => 20 TESTA
       const approve_amount3 = ethers.utils.parseEther("160000");
@@ -413,9 +413,9 @@ describe("HappyTokenPool", () => {
 
         const ratio_c = (creationParams.exchange_ratios[5] as number) / (creationParams.exchange_ratios[4] as number); // tokenA <=> tokenC
 
-        await expect(result_c.to_value.toString()).that.to.not.be.eq(String(exchange_amount * ratio_c));
-        await expect(result_c.to_value.toString()).that.to.not.be.eq(creationParams.limit);
-        await expect(result_c.to_value.toString()).that.to.be.eq(ethers.utils.parseEther("20"));
+        await expect(result_c.to_value).that.to.not.be.eq(exchange_amount * ratio_c);
+        await expect(result_c.to_value).that.to.not.be.eq(creationParams.limit);
+        await expect(result_c.to_value).that.to.be.eq(ethers.utils.parseEther("20"));
       }
     });
 
@@ -451,11 +451,9 @@ describe("HappyTokenPool", () => {
       const result = event?.args;
       const from_value = result.from_value;
       const to_value = result.to_value;
-      await expect(remaining.toString()).to.be.eq(BigNumber.from("500000000000").mul(ratio));
-      await expect(from_value.toString())
-        .to.be.eq(BigNumber.from(remaining.toString()).div(ratio))
-        .and.to.not.be.eq(exchange_ETH_amount);
-      await expect(to_value.toString()).to.be.eq(remaining.toString()).and.to.not.be.eq(exchange_ETH_amount.mul(ratio));
+      await expect(remaining).to.be.eq(BigNumber.from("500000000000").mul(ratio));
+      await expect(from_value).to.be.eq(BigNumber.from(remaining).div(ratio)).and.to.not.be.eq(exchange_ETH_amount);
+      await expect(to_value).to.be.eq(remaining).and.to.not.be.eq(exchange_ETH_amount.mul(ratio));
     });
   });
 });

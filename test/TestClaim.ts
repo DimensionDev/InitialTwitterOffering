@@ -166,15 +166,15 @@ describe("HappyTokenPool", () => {
 
       const availabilityPrevious = await getAvailability(happyTokenPoolDeployed, pool_id, pool_user_address);
 
-      expect(availabilityPrevious.swapped.toString())
-        .to.be.eq(approve_amount.div(creationParams.exchange_ratios[tokenC_address_index * 2]).toString())
+      expect(availabilityPrevious.swapped)
+        .to.be.eq(approve_amount.div(creationParams.exchange_ratios[tokenC_address_index * 2]))
         .and.to.be.eq("2500000");
       expect(availabilityPrevious.claimed).to.be.false;
 
       const availabilityPrevious2 = await getAvailability(happyTokenPoolDeployed, pool_id2, pool_user_address);
 
-      expect(availabilityPrevious2.swapped.toString())
-        .to.be.eq(approve_amount.mul(creationParams.exchange_ratios[tokenB_address_index * 2 + 1]).toString())
+      expect(availabilityPrevious2.swapped)
+        .to.be.eq(approve_amount.mul(creationParams.exchange_ratios[tokenB_address_index * 2 + 1]))
         .and.to.be.eq("20000000000000");
       expect(availabilityPrevious2.claimed).to.be.false;
 
@@ -201,19 +201,13 @@ describe("HappyTokenPool", () => {
       const exchangedTokenA_pool_2 = approve_amount.mul(ratio_b * 100000).div(100000);
       const exchangedTokenA_total = exchangedTokenA_pool_1.add(exchangedTokenA_pool_2);
 
-      expect(userTokenABalanceAfterClaim.toString()).to.be.eq(userTokenABalanceBeforeClaim.add(exchangedTokenA_total));
-      expect(contractTokenABalanceAfterClaim.toString()).to.be.eq(
-        contractTokenABalanceBeforeClaim.sub(exchangedTokenA_total),
-      );
+      expect(userTokenABalanceAfterClaim).to.be.eq(userTokenABalanceBeforeClaim.add(exchangedTokenA_total));
+      expect(contractTokenABalanceAfterClaim).to.be.eq(contractTokenABalanceBeforeClaim.sub(exchangedTokenA_total));
 
       // "swapped amount" should not change
-      expect(availabilityNow.swapped.toString())
-        .to.be.eq(exchangedTokenA_pool_1.toString())
-        .and.to.be.eq(availabilityPrevious.swapped.toString());
+      expect(availabilityNow.swapped).to.be.eq(exchangedTokenA_pool_1).and.to.be.eq(availabilityPrevious.swapped);
 
-      expect(availabilityNow2.swapped.toString())
-        .to.be.eq(exchangedTokenA_pool_2.toString())
-        .and.to.be.eq(availabilityPrevious2.swapped.toString());
+      expect(availabilityNow2.swapped).to.be.eq(exchangedTokenA_pool_2).and.to.be.eq(availabilityPrevious2.swapped);
 
       const events = await happyTokenPoolDeployed.queryFilter(happyTokenPoolDeployed.filters.ClaimSuccess());
 
@@ -222,9 +216,9 @@ describe("HappyTokenPool", () => {
       const result = events[0].args;
       const result2 = events[1].args;
 
-      expect(result.to_value.toString()).to.be.eq(availabilityPrevious.swapped.toString());
+      expect(result.to_value).to.be.eq(availabilityPrevious.swapped);
 
-      expect(result2.to_value.toString()).to.be.eq(availabilityPrevious2.swapped.toString());
+      expect(result2.to_value).to.be.eq(availabilityPrevious2.swapped);
     });
 
     it("should still be able to claim after destruct pool", async () => {
@@ -247,7 +241,7 @@ describe("HappyTokenPool", () => {
       await happyTokenPoolDeployed.connect(pool_user).claim([pool_id]);
       const availabilityNow = await getAvailability(happyTokenPoolDeployed, pool_id, pool_user_address);
 
-      expect(availabilityNow.swapped.toString()).and.to.be.eq(availabilityPrevious.swapped.toString());
+      expect(availabilityNow.swapped).and.to.be.eq(availabilityPrevious.swapped);
       expect(availabilityNow.claimed).to.be.true;
       expect(availabilityNow.destructed).to.be.true;
 
@@ -255,7 +249,7 @@ describe("HappyTokenPool", () => {
       const event = events[0];
       const result = event?.args;
 
-      expect(result.to_value.toString()).to.be.eq(availabilityPrevious.swapped.toString());
+      expect(result.to_value).to.be.eq(availabilityPrevious.swapped);
     });
 
     describe("setUnlockTime()", async () => {
@@ -275,9 +269,9 @@ describe("HappyTokenPool", () => {
           await happyTokenPoolDeployed.connect(signers[2]).claim([pool_id]);
           const availabilityNow = await getAvailability(happyTokenPoolDeployed, pool_id, pool_user_address);
 
-          expect(availabilityPrevious.swapped.toString())
-            .to.be.eq(availabilityNow.swapped.toString())
-            .and.to.be.eq(approve_amount.div(creationParams.exchange_ratios[tokenC_address_index * 2]).toString())
+          expect(availabilityPrevious.swapped)
+            .to.be.eq(availabilityNow.swapped)
+            .and.to.be.eq(approve_amount.div(creationParams.exchange_ratios[tokenC_address_index * 2]))
             .and.to.be.eq("2500000");
           expect(availabilityNow.claimed).to.be.false;
 
@@ -314,17 +308,17 @@ describe("HappyTokenPool", () => {
               pool_id,
               pool_user_address,
             );
-            expect(poolUnlockTime.toString()).and.to.be.eq(now_in_second.toString());
+            expect(poolUnlockTime).and.to.be.eq(now_in_second);
           }
           await happyTokenPoolDeployed.connect(signers[2]).claim([pool_id]);
           const availabilityNow = await getAvailability(happyTokenPoolDeployed, pool_id, pool_user_address);
-          expect(availabilityNow.swapped.toString()).and.to.be.eq(availabilityPrevious.swapped.toString());
+          expect(availabilityNow.swapped).and.to.be.eq(availabilityPrevious.swapped);
           expect(availabilityNow.claimed).to.be.true;
 
           const events = await happyTokenPoolDeployed.queryFilter(happyTokenPoolDeployed.filters.ClaimSuccess());
           const event = events[0];
           const result = event?.args;
-          expect(result.to_value.toString()).to.be.eq(availabilityPrevious.swapped.toString());
+          expect(result.to_value).to.be.eq(availabilityPrevious.swapped);
         }
       });
     });
@@ -347,7 +341,7 @@ describe("HappyTokenPool", () => {
         .swap(pool_id, verification, tokenC_address_index, approve_amount, [pool_id]);
       {
         const availability = await getAvailability(happyTokenPoolDeployed, pool_id, pool_user_address);
-        expect(availability.swapped.toString()).to.be.eq(approve_amount.toString());
+        expect(availability.swapped).to.be.eq(approve_amount);
         expect(availability.claimed).to.be.true;
       }
       const userTokenABalanceAfterSwap = await testTokenADeployed.balanceOf(pool_user_address);
@@ -358,7 +352,7 @@ describe("HappyTokenPool", () => {
       // tokens swapped immmediately
       expect(userTokenABalanceAfterSwap).to.be.eq(userTokenABalanceBeforeSwap.add(approve_amount));
       expect(contractTokenCBalanceAfterSwap).to.be.eq(contractTokenCBalanceBeforeSwap.add(approve_amount));
-      expect(contractTokenABalanceAfterSwap.toString()).to.be.eq(contractTokenABalanceBeforeSwap.sub(approve_amount));
+      expect(contractTokenABalanceAfterSwap).to.be.eq(contractTokenABalanceBeforeSwap.sub(approve_amount));
       expect(userTokenCBalanceAfterSwap).to.be.eq(userTokenCBalanceBeforeSwap.sub(approve_amount));
       {
         const events = await happyTokenPoolDeployed.queryFilter(happyTokenPoolDeployed.filters.SwapSuccess());
@@ -403,7 +397,7 @@ describe("HappyTokenPool", () => {
       }
       {
         const availability = await getAvailability(happyTokenPoolDeployed, pool_id, pool_user_address);
-        expect(availability.swapped.toString()).to.be.eq(approve_amount.toString());
+        expect(availability.swapped).to.be.eq(approve_amount);
         expect(availability.claimed).to.be.true;
       }
     });

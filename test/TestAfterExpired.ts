@@ -178,7 +178,7 @@ describe("HappyTokenPoolExpiredProcess destruct", () => {
       ratioB.mul(exchange_tokenB_amount).add(ethers.utils.parseEther("100000")).add(ratioETH.mul(exchange_ETH_amount)),
     );
 
-    expect(remaining_tokens).to.be.eq(result.remaining_balance.toString());
+    expect(remaining_tokens).to.be.eq(result.remaining_balance);
 
     const eth_balance = await ethers.provider.getBalance(creatorAddress);
     const r = eth_balance.sub(previous_eth_balance);
@@ -192,7 +192,7 @@ describe("HappyTokenPoolExpiredProcess destruct", () => {
 
     const tokenC_balance = await testTokenCDeployed.balanceOf(creatorAddress);
     expect(tokenC_balance).to.be.not.eq(previous_tokenC_balance.sub(transfer_amount).add(exchange_tokenC_amount));
-    expect(tokenC_balance.toString()).to.be.eq(
+    expect(tokenC_balance).to.be.eq(
       previous_tokenC_balance.sub(transfer_amount).add(exchange_tokenC_pool_limit), // 2000e18 exceeds limit
     );
     {
@@ -250,7 +250,7 @@ describe("HappyTokenPoolExpiredProcess destruct", () => {
 
     expect(result).to.have.property("id").that.to.be.eq(pool_id);
     expect(result).to.have.property("token_address").that.to.be.eq(testTokenADeployed.address);
-    expect(result.remaining_balance.toString()).that.to.be.eq("0");
+    expect(result.remaining_balance).that.to.be.eq("0");
     expect(result).to.have.property("exchanged_values");
   });
 

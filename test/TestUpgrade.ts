@@ -141,7 +141,7 @@ describe("smart contract upgrade", async () => {
       {
         const availability = await getAvailability(happyTokenPoolDeployed_v1_0, pool_id, pool_user.address);
 
-        expect(availability.swapped.toString()).to.be.eq(exchanged_tokenA_amount.toString());
+        expect(availability.swapped).to.be.eq(exchanged_tokenA_amount);
         expect(availability).to.not.have.property("claimed");
       }
       // Check SwapSuccess event
@@ -151,8 +151,8 @@ describe("smart contract upgrade", async () => {
         const result = event?.args;
         expect(result).to.have.property("id").that.to.not.be.null;
         expect(result).to.have.property("swapper").that.to.not.be.null;
-        expect(result.from_value.toString()).that.to.be.eq(String(exchange_amount));
-        expect(result.to_value.toString()).that.to.be.eq(String(exchanged_tokenA_amount));
+        expect(result.from_value).that.to.be.eq(exchange_amount);
+        expect(result.to_value).that.to.be.eq(exchanged_tokenA_amount);
         expect(result).to.have.property("from_address").that.to.be.eq(testTokenCDeployed.address);
         expect(result).to.have.property("to_address").that.to.be.eq(testTokenADeployed.address);
         expect(result).to.not.have.property("claimed");
@@ -161,10 +161,8 @@ describe("smart contract upgrade", async () => {
       {
         const userTokenCBalanceAfterSwap = await testTokenCDeployed.balanceOf(pool_user.address);
         const contractTokenCBalanceAfterSwap = await testTokenCDeployed.balanceOf(happyTokenPoolDeployed_v1_0.address);
-        expect(contractTokenCBalanceAfterSwap.toString()).to.be.eq(
-          contractTokenCBalanceBeforeSwap.add(exchange_amount),
-        );
-        expect(userTokenCBalanceAfterSwap.toString()).to.be.eq(userTokenCBalanceBeforeSwap.sub(exchange_amount));
+        expect(contractTokenCBalanceAfterSwap).to.be.eq(contractTokenCBalanceBeforeSwap.add(exchange_amount));
+        expect(userTokenCBalanceAfterSwap).to.be.eq(userTokenCBalanceBeforeSwap.sub(exchange_amount));
       }
       //-------------------------------------------------------------------------------------------------------------
       await advanceTimeAndBlock(createParams.lock_time);
@@ -172,19 +170,15 @@ describe("smart contract upgrade", async () => {
       {
         const availability = await getAvailability(happyTokenPoolDeployed_v1_0, pool_id, pool_user.address);
         // previous behavior(tag: v1.0), changed already
-        expect(availability.swapped.toString()).to.be.eq("0");
+        expect(availability.swapped).to.be.eq("0");
         expect(availability).to.not.have.property("claimed");
       }
       // check token A balance after claim
       {
         const userTokenABalanceAfterClaim = await testTokenADeployed.balanceOf(pool_user.address);
         const contractTokenABalanceAfterClaim = await testTokenADeployed.balanceOf(happyTokenPoolDeployed_v1_0.address);
-        expect(contractTokenABalanceAfterClaim.toString()).to.be.eq(
-          contractTokenABalanceBeforeSwap.sub(exchanged_tokenA_amount),
-        );
-        expect(userTokenABalanceAfterClaim.toString()).to.be.eq(
-          userTokenABalanceBeforeSwap.add(exchanged_tokenA_amount),
-        );
+        expect(contractTokenABalanceAfterClaim).to.be.eq(contractTokenABalanceBeforeSwap.sub(exchanged_tokenA_amount));
+        expect(userTokenABalanceAfterClaim).to.be.eq(userTokenABalanceBeforeSwap.add(exchanged_tokenA_amount));
       }
     }
 
@@ -199,7 +193,7 @@ describe("smart contract upgrade", async () => {
     {
       const availability = await getAvailability(deployedUpgraded, pool_id, pool_user.address);
       // minor problem
-      expect(availability.swapped.toString()).to.be.eq("0");
+      expect(availability.swapped).to.be.eq("0");
       expect(availability.claimed).to.be.false;
       await deployedUpgraded.connect(pool_user).claim([pool_id]);
       // claim-again, check token A balance
@@ -207,12 +201,8 @@ describe("smart contract upgrade", async () => {
         await happyTokenPoolDeployed_v1_0.connect(pool_user).claim([pool_id]);
         const userTokenABalanceAfterClaim = await testTokenADeployed.balanceOf(pool_user.address);
         const contractTokenABalanceAfterClaim = await testTokenADeployed.balanceOf(happyTokenPoolDeployed_v1_0.address);
-        expect(contractTokenABalanceAfterClaim.toString()).to.be.eq(
-          contractTokenABalanceBeforeSwap.sub(exchanged_tokenA_amount),
-        );
-        expect(userTokenABalanceAfterClaim.toString()).to.be.eq(
-          userTokenABalanceBeforeSwap.add(exchanged_tokenA_amount),
-        );
+        expect(contractTokenABalanceAfterClaim).to.be.eq(contractTokenABalanceBeforeSwap.sub(exchanged_tokenA_amount));
+        expect(userTokenABalanceAfterClaim).to.be.eq(userTokenABalanceBeforeSwap.add(exchanged_tokenA_amount));
       }
     }
   });
@@ -237,7 +227,7 @@ describe("smart contract upgrade", async () => {
         .swap(pool_id, verification, tokenC_address_index, exchange_amount, [pool_id]);
       {
         const availability = await getAvailability(happyTokenPoolDeployed_v1_0, pool_id, pool_user.address);
-        expect(availability.swapped.toString()).to.be.eq(exchanged_tokenA_amount.toString());
+        expect(availability.swapped).to.be.eq(exchanged_tokenA_amount);
         expect(availability).to.not.have.property("claimed");
       }
 
@@ -248,8 +238,8 @@ describe("smart contract upgrade", async () => {
         const result = event?.args;
         expect(result).to.have.property("id").that.to.not.be.null;
         expect(result).to.have.property("swapper").that.to.not.be.null;
-        expect(result.from_value.toString()).that.to.be.eq(String(exchange_amount));
-        expect(result.to_value.toString()).that.to.be.eq(String(exchanged_tokenA_amount));
+        expect(result.from_value).that.to.be.eq(exchange_amount);
+        expect(result.to_value).that.to.be.eq(exchanged_tokenA_amount);
         expect(result).to.have.property("from_address").that.to.be.eq(testTokenCDeployed.address);
         expect(result).to.have.property("to_address").that.to.be.eq(testTokenADeployed.address);
         expect(result).to.not.have.property("claimed");
@@ -258,14 +248,12 @@ describe("smart contract upgrade", async () => {
       {
         const userTokenCBalanceAfterSwap = await testTokenCDeployed.balanceOf(pool_user.address);
         const contractTokenCBalanceAfterSwap = await testTokenCDeployed.balanceOf(happyTokenPoolDeployed_v1_0.address);
-        expect(contractTokenCBalanceAfterSwap.toString()).to.be.eq(
-          contractTokenCBalanceBeforeSwap.add(exchange_amount),
-        );
-        expect(userTokenCBalanceAfterSwap.toString()).to.be.eq(userTokenCBalanceBeforeSwap.sub(exchange_amount));
+        expect(contractTokenCBalanceAfterSwap).to.be.eq(contractTokenCBalanceBeforeSwap.add(exchange_amount));
+        expect(userTokenCBalanceAfterSwap).to.be.eq(userTokenCBalanceBeforeSwap.sub(exchange_amount));
       }
       {
         const availability = await getAvailability(happyTokenPoolDeployed_v1_0, pool_id, pool_user.address);
-        expect(availability.swapped.toString()).to.be.eq(exchanged_tokenA_amount.toString());
+        expect(availability.swapped).to.be.eq(exchanged_tokenA_amount);
         expect(availability).to.not.have.property("claimed");
       }
     }
@@ -282,26 +270,22 @@ describe("smart contract upgrade", async () => {
       await deployedUpgraded.connect(pool_user).claim([pool_id]);
       {
         const availability = await getAvailability(deployedUpgraded, pool_id, pool_user.address);
-        expect(availability.swapped.toString()).to.be.eq(exchanged_tokenA_amount.toString());
+        expect(availability.swapped).to.be.eq(exchanged_tokenA_amount);
         expect(availability.claimed).to.be.true;
       }
       // check token A balance after claim
       {
         const userTokenABalanceAfterClaim = await testTokenADeployed.balanceOf(pool_user.address);
         const contractTokenABalanceAfterClaim = await testTokenADeployed.balanceOf(deployedUpgraded.address);
-        expect(contractTokenABalanceAfterClaim.toString()).to.be.eq(
-          contractTokenABalanceBeforeSwap.sub(exchanged_tokenA_amount),
-        );
-        expect(userTokenABalanceAfterClaim.toString()).to.be.eq(
-          userTokenABalanceBeforeSwap.add(exchanged_tokenA_amount),
-        );
+        expect(contractTokenABalanceAfterClaim).to.be.eq(contractTokenABalanceBeforeSwap.sub(exchanged_tokenA_amount));
+        expect(userTokenABalanceAfterClaim).to.be.eq(userTokenABalanceBeforeSwap.add(exchanged_tokenA_amount));
       }
     }
 
     {
       const availability = await getAvailability(deployedUpgraded, pool_id, pool_user.address);
 
-      expect(availability.swapped.toString()).to.be.eq(exchanged_tokenA_amount.toString());
+      expect(availability.swapped).to.be.eq(exchanged_tokenA_amount);
       expect(availability.claimed).to.be.true;
       await deployedUpgraded.connect(pool_user).claim([pool_id]);
       // claim-again, check token A balance
@@ -309,12 +293,8 @@ describe("smart contract upgrade", async () => {
         await happyTokenPoolDeployed_v1_0.connect(pool_user).claim([pool_id]);
         const userTokenABalanceAfterClaim = await testTokenADeployed.balanceOf(pool_user.address);
         const contractTokenABalanceAfterClaim = await testTokenADeployed.balanceOf(happyTokenPoolDeployed_v1_0.address);
-        expect(contractTokenABalanceAfterClaim.toString()).to.be.eq(
-          contractTokenABalanceBeforeSwap.sub(exchanged_tokenA_amount),
-        );
-        expect(userTokenABalanceAfterClaim.toString()).to.be.eq(
-          userTokenABalanceBeforeSwap.add(exchanged_tokenA_amount),
-        );
+        expect(contractTokenABalanceAfterClaim).to.be.eq(contractTokenABalanceBeforeSwap.sub(exchanged_tokenA_amount));
+        expect(userTokenABalanceAfterClaim).to.be.eq(userTokenABalanceBeforeSwap.add(exchanged_tokenA_amount));
       }
     }
   });
@@ -337,7 +317,7 @@ describe("smart contract upgrade", async () => {
         .swap(pool_id, verification, tokenC_address_index, exchange_amount, [pool_id]);
       {
         const availability = await getAvailability(happyTokenPoolDeployed_v1_0, pool_id, pool_user.address);
-        expect(availability.swapped.toString()).to.be.eq(exchanged_tokenA_amount.toString());
+        expect(availability.swapped).to.be.eq(exchanged_tokenA_amount);
         expect(availability).to.not.have.property("claimed");
       }
 
@@ -345,25 +325,19 @@ describe("smart contract upgrade", async () => {
       {
         const userTokenCBalanceAfterSwap = await testTokenCDeployed.balanceOf(pool_user.address);
         const contractTokenCBalanceAfterSwap = await testTokenCDeployed.balanceOf(happyTokenPoolDeployed_v1_0.address);
-        expect(contractTokenCBalanceAfterSwap.toString()).to.be.eq(
-          contractTokenCBalanceBeforeSwap.add(exchange_amount),
-        );
-        expect(userTokenCBalanceAfterSwap.toString()).to.be.eq(userTokenCBalanceBeforeSwap.sub(exchange_amount));
+        expect(contractTokenCBalanceAfterSwap).to.be.eq(contractTokenCBalanceBeforeSwap.add(exchange_amount));
+        expect(userTokenCBalanceAfterSwap).to.be.eq(userTokenCBalanceBeforeSwap.sub(exchange_amount));
       }
       // check token A balance after swap
       {
         const userTokenABalanceAfterClaim = await testTokenADeployed.balanceOf(pool_user.address);
         const contractTokenABalanceAfterClaim = await testTokenADeployed.balanceOf(happyTokenPoolDeployed_v1_0.address);
-        expect(contractTokenABalanceAfterClaim.toString()).to.be.eq(
-          contractTokenABalanceBeforeSwap.sub(exchanged_tokenA_amount),
-        );
-        expect(userTokenABalanceAfterClaim.toString()).to.be.eq(
-          userTokenABalanceBeforeSwap.add(exchanged_tokenA_amount),
-        );
+        expect(contractTokenABalanceAfterClaim).to.be.eq(contractTokenABalanceBeforeSwap.sub(exchanged_tokenA_amount));
+        expect(userTokenABalanceAfterClaim).to.be.eq(userTokenABalanceBeforeSwap.add(exchanged_tokenA_amount));
       }
       {
         const availability = await getAvailability(happyTokenPoolDeployed_v1_0, pool_id, pool_user.address);
-        expect(availability.swapped.toString()).to.be.eq(exchanged_tokenA_amount.toString());
+        expect(availability.swapped).to.be.eq(exchanged_tokenA_amount);
         expect(availability).to.not.have.property("claimed");
       }
     }
@@ -379,19 +353,15 @@ describe("smart contract upgrade", async () => {
       await deployedUpgraded.connect(pool_user).claim([pool_id]);
       {
         const availability = await getAvailability(deployedUpgraded, pool_id, pool_user.address);
-        expect(availability.swapped.toString()).to.be.eq(exchanged_tokenA_amount.toString());
+        expect(availability.swapped).to.be.eq(exchanged_tokenA_amount);
         expect(availability.claimed).to.be.true;
       }
       // check token A balance after claim
       {
         const userTokenABalanceAfterClaim = await testTokenADeployed.balanceOf(pool_user.address);
         const contractTokenABalanceAfterClaim = await testTokenADeployed.balanceOf(deployedUpgraded.address);
-        expect(contractTokenABalanceAfterClaim.toString()).to.be.eq(
-          contractTokenABalanceBeforeSwap.sub(exchanged_tokenA_amount),
-        );
-        expect(userTokenABalanceAfterClaim.toString()).to.be.eq(
-          userTokenABalanceBeforeSwap.add(exchanged_tokenA_amount),
-        );
+        expect(contractTokenABalanceAfterClaim).to.be.eq(contractTokenABalanceBeforeSwap.sub(exchanged_tokenA_amount));
+        expect(userTokenABalanceAfterClaim).to.be.eq(userTokenABalanceBeforeSwap.add(exchanged_tokenA_amount));
       }
     }
   });
@@ -422,7 +392,7 @@ describe("smart contract upgrade", async () => {
         .swap(pool_id, verification, tokenC_address_index, exchange_amount, [pool_id]);
       {
         const availability = await getAvailability(deployedUpgraded, pool_id, pool_user.address);
-        expect(availability.swapped.toString()).to.be.eq(exchanged_tokenA_amount.toString());
+        expect(availability.swapped).to.be.eq(exchanged_tokenA_amount);
         expect(availability.claimed).to.be.true;
       }
 
@@ -430,25 +400,19 @@ describe("smart contract upgrade", async () => {
       {
         const userTokenCBalanceAfterSwap = await testTokenCDeployed.balanceOf(pool_user.address);
         const contractTokenCBalanceAfterSwap = await testTokenCDeployed.balanceOf(happyTokenPoolDeployed_v1_0.address);
-        expect(contractTokenCBalanceAfterSwap.toString()).to.be.eq(
-          contractTokenCBalanceBeforeSwap.add(exchange_amount),
-        );
-        expect(userTokenCBalanceAfterSwap.toString()).to.be.eq(userTokenCBalanceBeforeSwap.sub(exchange_amount));
+        expect(contractTokenCBalanceAfterSwap).to.be.eq(contractTokenCBalanceBeforeSwap.add(exchange_amount));
+        expect(userTokenCBalanceAfterSwap).to.be.eq(userTokenCBalanceBeforeSwap.sub(exchange_amount));
       }
       // check token A balance after swap
       {
         const userTokenABalanceAfterClaim = await testTokenADeployed.balanceOf(pool_user.address);
         const contractTokenABalanceAfterClaim = await testTokenADeployed.balanceOf(happyTokenPoolDeployed_v1_0.address);
-        expect(contractTokenABalanceAfterClaim.toString()).to.be.eq(
-          contractTokenABalanceBeforeSwap.sub(exchanged_tokenA_amount),
-        );
-        expect(userTokenABalanceAfterClaim.toString()).to.be.eq(
-          userTokenABalanceBeforeSwap.add(exchanged_tokenA_amount),
-        );
+        expect(contractTokenABalanceAfterClaim).to.be.eq(contractTokenABalanceBeforeSwap.sub(exchanged_tokenA_amount));
+        expect(userTokenABalanceAfterClaim).to.be.eq(userTokenABalanceBeforeSwap.add(exchanged_tokenA_amount));
       }
       {
         const availability = await getAvailability(deployedUpgraded, pool_id, pool_user.address);
-        expect(availability.swapped.toString()).to.be.eq(exchanged_tokenA_amount.toString());
+        expect(availability.swapped).to.be.eq(exchanged_tokenA_amount);
         expect(availability.claimed).to.be.true;
       }
     }
@@ -456,19 +420,15 @@ describe("smart contract upgrade", async () => {
       await deployedUpgraded.connect(pool_user).claim([pool_id]);
       {
         const availability = await getAvailability(deployedUpgraded, pool_id, pool_user.address);
-        expect(availability.swapped.toString()).to.be.eq(exchanged_tokenA_amount.toString());
+        expect(availability.swapped).to.be.eq(exchanged_tokenA_amount);
         expect(availability.claimed).to.be.true;
       }
       // check token A balance after claim
       {
         const userTokenABalanceAfterClaim = await testTokenADeployed.balanceOf(pool_user.address);
         const contractTokenABalanceAfterClaim = await testTokenADeployed.balanceOf(deployedUpgraded.address);
-        expect(contractTokenABalanceAfterClaim.toString()).to.be.eq(
-          contractTokenABalanceBeforeSwap.sub(exchanged_tokenA_amount),
-        );
-        expect(userTokenABalanceAfterClaim.toString()).to.be.eq(
-          userTokenABalanceBeforeSwap.add(exchanged_tokenA_amount),
-        );
+        expect(contractTokenABalanceAfterClaim).to.be.eq(contractTokenABalanceBeforeSwap.sub(exchanged_tokenA_amount));
+        expect(userTokenABalanceAfterClaim).to.be.eq(userTokenABalanceBeforeSwap.add(exchanged_tokenA_amount));
       }
     }
   });

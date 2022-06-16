@@ -84,7 +84,7 @@ describe("HappyTokenPool", () => {
   describe("constructor()", async () => {
     it("Should variables be initialized properly", async () => {
       const base_time = await happyTokenPoolDeployed.base_time();
-      expect(base_time.toString()).that.to.be.eq(base_timestamp.toString());
+      expect(base_time).that.to.be.eq(base_timestamp);
     });
   });
 
@@ -157,7 +157,7 @@ describe("HappyTokenPool", () => {
         const events = await happyTokenPoolDeployed.queryFilter(happyTokenPoolDeployed.filters.FillSuccess());
         const event = events[0];
         const result = event?.args;
-        expect(result.total.toString()).that.to.be.eq(creationParams.total_tokens);
+        expect(result.total).that.to.be.eq(creationParams.total_tokens);
       }
       {
         // filtered with user's address(not creator), should not get anything
@@ -169,7 +169,7 @@ describe("HappyTokenPool", () => {
       const events = await happyTokenPoolDeployed.queryFilter(happyTokenPoolDeployed.filters.FillSuccess());
       const event = events[0];
       const result = event?.args;
-      expect(result.total.toString()).that.to.be.eq(creationParams.total_tokens);
+      expect(result.total).that.to.be.eq(creationParams.total_tokens);
       expect(result).to.have.property("id").that.to.not.be.null;
       expect(result).to.have.property("creator").that.to.not.be.null;
       expect(result.creation_time.toString()).to.length(10);
