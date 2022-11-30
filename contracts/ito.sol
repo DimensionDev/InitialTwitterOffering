@@ -227,6 +227,7 @@ contract HappyTokenPool is Initializable {
     )
     public payable returns (uint256 swapped) {
 
+        require(tx.origin == msg.sender, "not a real user");
         uint128 from_value = input_total;
         Pool storage pool = pool_by_id[id];
         Packed1 memory packed1 = pool.packed1;
